@@ -83,7 +83,7 @@
   }
   
   body {
-    @apply bg-neutral-ultralight text-foreground;
+    @apply bg-background text-foreground;
     font-family: 'Open Sans', sans-serif;
   }
   
