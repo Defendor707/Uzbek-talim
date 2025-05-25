@@ -79,9 +79,14 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Username already exists' });
     }
     
-    // Create new user (omitting confirmPassword)
-    const { confirmPassword, ...userDataToInsert } = userData;
-    const newUser = await storage.createUser(userDataToInsert);
+    // Create new user with only required fields
+    const { confirmPassword, ...userDataWithoutConfirm } = userData;
+    
+    // Add generated email since our database still requires it
+    const newUser = await storage.createUser({
+      ...userDataWithoutConfirm,
+      email: dummyEmail
+    });
     
     // Create profile based on role
     if (userData.role === 'student' && req.body.studentProfile) {
