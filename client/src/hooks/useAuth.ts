@@ -23,7 +23,6 @@ export type LoginCredentials = {
 
 export type RegisterData = {
   username: string;
-  email: string;
   password: string;
   confirmPassword: string;
   role: 'teacher' | 'student' | 'parent' | 'center';

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import useAuth from '@/hooks/useAuth';
-import { Textarea } from '@/components/ui/textarea';
 
 const registerSchema = z.object({
   username: z.string().min(3, 'Foydalanuvchi nomi kamida 3 ta belgidan iborat bo\'lishi kerak'),
@@ -43,35 +42,16 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
     },
   });
   
-  const selectedRole = form.watch('role');
+  // No longer need role-specific fields
   
   const onSubmit = (values: RegisterFormValues) => {
-    const registerData: any = {
+    const registerData = {
       username: values.username,
       fullName: values.fullName,
-      email: values.email,
       password: values.password,
       confirmPassword: values.confirmPassword,
       role: values.role,
-      phone: values.phone,
     };
-    
-    // Add role-specific profile data
-    if (values.role === 'student') {
-      registerData.studentProfile = {
-        grade: values.grade,
-        classroom: values.classroom,
-      };
-    } else if (values.role === 'teacher') {
-      registerData.teacherProfile = {
-        subjects: values.subjects?.split(',').map(s => s.trim()),
-      };
-    } else if (values.role === 'center') {
-      registerData.centerProfile = {
-        address: values.address,
-        description: values.description,
-      };
-    }
     
     register(registerData);
     
@@ -160,142 +140,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
             )}
           />
           
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-neutral-medium">Email manzil</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="email@example.com" 
-                    {...field} 
-                    className="px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    type="email"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-neutral-medium">Telefon raqam</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="+998 XX XXX XX XX" 
-                    {...field} 
-                    className="px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {selectedRole === 'student' && (
-            <>
-              <FormField
-                control={form.control}
-                name="grade"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-neutral-medium">Sinf</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="9" 
-                        {...field} 
-                        className="px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="classroom"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-neutral-medium">Guruh</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="A" 
-                        {...field} 
-                        className="px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </>
-          )}
-          
-          {selectedRole === 'teacher' && (
-            <FormField
-              control={form.control}
-              name="subjects"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-neutral-medium">Fanlar (vergul bilan ajrating)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Matematika, Fizika" 
-                      {...field} 
-                      className="px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-          
-          {selectedRole === 'center' && (
-            <>
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-neutral-medium">Manzil</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Toshkent sh., Yunusobod tumani, 4-mavze" 
-                        {...field} 
-                        className="px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-neutral-medium">Ta'rif</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="O'quv markaz haqida qisqacha ma'lumot" 
-                        {...field} 
-                        className="px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </>
-          )}
+
           
           <FormField
             control={form.control}
