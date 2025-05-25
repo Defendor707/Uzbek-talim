@@ -70,11 +70,8 @@ export const register = async (req: Request, res: Response) => {
     // Validate request body
     const userData = registerUserSchema.parse(req.body);
     
-    // Check if user with email already exists
-    const existingEmail = await storage.getUserByEmail(userData.email);
-    if (existingEmail) {
-      return res.status(400).json({ message: 'Email already exists' });
-    }
+    // For simplified registration, we'll generate a dummy email from username
+    const dummyEmail = `${userData.username}@uzbektalim.local`;
     
     // Check if username already exists
     const existingUsername = await storage.getUserByUsername(userData.username);
@@ -132,16 +129,16 @@ export const login = async (req: Request, res: Response) => {
     // Validate request body
     const credentials = loginSchema.parse(req.body);
     
-    // Find user by email
-    const user = await storage.getUserByEmail(credentials.email);
+    // Find user by username
+    const user = await storage.getUserByUsername(credentials.username);
     if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: 'Noto\'g\'ri foydalanuvchi nomi yoki parol' });
     }
     
     // Compare passwords
     const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: 'Noto\'g\'ri foydalanuvchi nomi yoki parol' });
     }
     
     // Generate token

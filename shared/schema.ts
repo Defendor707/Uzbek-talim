@@ -6,7 +6,13 @@ import { z } from "zod";
 export const roleEnum = pgEnum('role', ['teacher', 'student', 'parent', 'center']);
 
 // Define test types enum
-export const testTypeEnum = pgEnum('test_type', ['multiple_choice', 'true_false', 'matching', 'short_answer', 'essay']);
+export const testTypeEnum = pgEnum('test_type', [
+  'simple', // Oddiy test
+  'open',   // Ochiq test
+  'dtm',    // DTM test
+  'certificate', // Sertifikat test
+  'disciplinary' // Intizomli test
+]);
 
 // Define test statuses enum
 export const testStatusEnum = pgEnum('test_status', ['draft', 'active', 'completed']);
@@ -32,6 +38,8 @@ export const studentProfiles = pgTable("student_profiles", {
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   grade: text("grade").notNull(),
   classroom: text("classroom").notNull(), // e.g., "9-A"
+  certificates: text("certificates").array(),
+  bio: text("bio"),
   parentId: integer("parent_id").references(() => users.id),
   centerId: integer("center_id").references(() => users.id),
 });
@@ -41,6 +49,10 @@ export const teacherProfiles = pgTable("teacher_profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   subjects: text("subjects").array().notNull(),
+  age: integer("age"),
+  experience: integer("experience"), // in years
+  certificates: text("certificates").array(),
+  bio: text("bio"),
   centerId: integer("center_id").references(() => users.id),
 });
 
@@ -202,18 +214,22 @@ export const insertStudentAnswerSchema = createInsertSchema(studentAnswers)
 export const insertScheduleSchema = createInsertSchema(schedules)
   .omit({ id: true });
 
-// Registration schema with password confirmation
-export const registerUserSchema = insertUserSchema.extend({
-  confirmPassword: z.string()
+// Simplified registration schema with only required fields
+export const registerUserSchema = z.object({
+  fullName: z.string().min(3, "Ism familiya kamida 3 ta belgidan iborat bo'lishi kerak"),
+  username: z.string().min(3, "Foydalanuvchi nomi kamida 3 ta belgidan iborat bo'lishi kerak"),
+  password: z.string().min(6, "Parol kamida 6 ta belgidan iborat bo'lishi kerak"),
+  confirmPassword: z.string(),
+  role: z.enum(['teacher', 'student', 'parent', 'center'])
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "Parol va takroriy parol bir xil bo'lishi kerak",
   path: ["confirmPassword"],
 });
 
 // Login schema
 export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+  username: z.string().min(3, "Foydalanuvchi nomi kamida 3 ta belgidan iborat bo'lishi kerak"),
+  password: z.string().min(6, "Parol kamida 6 ta belgidan iborat bo'lishi kerak"),
 });
 
 // Types
