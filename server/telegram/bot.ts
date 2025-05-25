@@ -3,6 +3,8 @@ import { storage } from '../storage';
 import { generateToken, verifyToken } from '../utils/auth';
 import bcrypt from 'bcrypt';
 import * as schema from '@shared/schema';
+import { db } from '../db';
+import { eq } from 'drizzle-orm';
 
 // Type for our session data
 interface BotSessionData extends Scenes.SceneSession {
@@ -290,11 +292,20 @@ bot.command('lessons', async (ctx) => {
     }
     
     for (const lesson of lessons.slice(0, 5)) {
+      // Get subject name if subjectId is available
+      let subjectName = "Mavjud emas";
+      if (lesson.subjectId) {
+        const subject = await db.select().from(schema.subjects).where(eq(schema.subjects.id, lesson.subjectId)).limit(1);
+        if (subject && subject.length > 0) {
+          subjectName = subject[0].name;
+        }
+      }
+
       await ctx.reply(
         `📚 *${lesson.title}*\n\n` +
-        `📝 *Tavsif*: ${lesson.description}\n` +
+        `📝 *Tavsif*: ${lesson.description || 'Tavsif mavjud emas'}\n` +
         `🎓 *Sinf*: ${lesson.grade}\n` +
-        `📚 *Fan*: ${lesson.subject}\n` +
+        `📚 *Fan*: ${subjectName}\n` +
         `📅 *Yaratilgan sana*: ${new Date(lesson.createdAt).toLocaleDateString('uz-UZ')}`,
         { parse_mode: 'Markdown' }
       );
@@ -345,9 +356,17 @@ bot.command('tests', async (ctx) => {
     }
     
     // Create inline keyboard for tests
-    const testButtons = tests.slice(0, 10).map(test => [
-      Markup.button.callback(`${test.title} (${test.subject})`, `view_test_${test.id}`)
-    ]);
+    const testButtons = await Promise.all(tests.slice(0, 10).map(async test => {
+      // Get subject name if subjectId is available
+      let subjectName = "Mavjud emas";
+      if (test.subjectId) {
+        const subject = await db.select().from(schema.subjects).where(eq(schema.subjects.id, test.subjectId)).limit(1);
+        if (subject && subject.length > 0) {
+          subjectName = subject[0].name;
+        }
+      }
+      return [Markup.button.callback(`${test.title} (${subjectName})`, `view_test_${test.id}`)];
+    }));
     
     await ctx.reply(
       '📝 *Mavjud testlar ro\'yxati*\n\n' +
@@ -384,9 +403,18 @@ bot.action(/view_test_(\d+)/, async (ctx) => {
       return;
     }
     
+    // Get subject name if subjectId is available
+    let subjectName = "Mavjud emas";
+    if (test.subjectId) {
+      const subject = await db.select().from(schema.subjects).where(eq(schema.subjects.id, test.subjectId)).limit(1);
+      if (subject && subject.length > 0) {
+        subjectName = subject[0].name;
+      }
+    }
+
     await ctx.reply(
       `📝 *${test.title}*\n\n` +
-      `📚 *Fan*: ${test.subject}\n` +
+      `📚 *Fan*: ${subjectName}\n` +
       `🎓 *Sinf*: ${test.grade}\n` +
       `🏫 *Sinf xonasi*: ${test.classroom || 'Barcha sinflar'}\n` +
       `⏱ *Davomiyligi*: ${test.duration} daqiqa\n` +
