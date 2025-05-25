@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import useAuth from '@/hooks/useAuth';
 
 const loginSchema = z.object({
-  email: z.string().email('Yaroqli email kiriting'),
+  username: z.string().min(3, 'Foydalanuvchi nomi kamida 3 ta belgidan iborat bo\'lishi kerak'),
   password: z.string().min(6, 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak'),
   rememberMe: z.boolean().optional().default(false),
 });
@@ -28,7 +28,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
       rememberMe: false,
     },
@@ -36,7 +36,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   
   const onSubmit = (values: LoginFormValues) => {
     login({
-      email: values.email,
+      username: values.username,
       password: values.password,
     });
     
@@ -60,13 +60,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
-            name="email"
+            name="username"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-neutral-medium">Email manzil</FormLabel>
+                <FormLabel className="text-neutral-medium">Foydalanuvchi nomi</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder="email@example.com" 
+                    placeholder="foydalanuvchi_nomi" 
                     {...field} 
                     className="px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />

@@ -13,56 +13,15 @@ import { Textarea } from '@/components/ui/textarea';
 const registerSchema = z.object({
   username: z.string().min(3, 'Foydalanuvchi nomi kamida 3 ta belgidan iborat bo\'lishi kerak'),
   fullName: z.string().min(2, 'To\'liq ism kamida 2 ta belgidan iborat bo\'lishi kerak'),
-  email: z.string().email('Yaroqli email kiriting'),
   password: z.string().min(6, 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak'),
   confirmPassword: z.string().min(6, 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak'),
   role: z.enum(['teacher', 'student', 'parent', 'center'], {
     required_error: 'Iltimos, rolni tanlang',
   }),
-  // Conditional fields based on role
-  grade: z.string().optional(),
-  classroom: z.string().optional(),
-  subjects: z.string().optional(),
-  address: z.string().optional(),
-  description: z.string().optional(),
-  phone: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Parollar mos kelmadi',
   path: ['confirmPassword'],
-}).refine(
-  (data) => {
-    if (data.role === 'student') {
-      return !!data.grade && !!data.classroom;
-    }
-    return true;
-  },
-  {
-    message: 'Sinf va guruh majburiy',
-    path: ['grade'],
-  }
-).refine(
-  (data) => {
-    if (data.role === 'teacher') {
-      return !!data.subjects;
-    }
-    return true;
-  },
-  {
-    message: 'Fanlarni kiriting',
-    path: ['subjects'],
-  }
-).refine(
-  (data) => {
-    if (data.role === 'center') {
-      return !!data.address;
-    }
-    return true;
-  },
-  {
-    message: 'Manzilni kiriting',
-    path: ['address'],
-  }
-);
+});
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
@@ -78,16 +37,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
     defaultValues: {
       username: '',
       fullName: '',
-      email: '',
       password: '',
       confirmPassword: '',
       role: 'student',
-      grade: '',
-      classroom: '',
-      subjects: '',
-      address: '',
-      description: '',
-      phone: '',
     },
   });
   
