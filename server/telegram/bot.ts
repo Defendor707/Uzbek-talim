@@ -650,20 +650,42 @@ bot.catch((err, ctx) => {
 
 // Helper functions
 function getKeyboardByRole(role: string) {
-  const baseButtons = [
+  if (role === 'teacher') {
+    return [
+      ['👤 Profil', '📚 Darsliklar'],
+      ['📝 Testlar', '👥 O\'quvchilarim'],
+      ['📊 Statistika', '⚙️ Sozlamalar'],
+      ['🔙 Chiqish']
+    ];
+  } else if (role === 'student') {
+    return [
+      ['👤 Profil', '📚 Darsliklarim'],
+      ['📝 Test ishlash', '📊 Natijalarim'],
+      ['🔍 Qidiruv', '🏆 Raqobat'],
+      ['⚙️ Sozlamalar', '🔙 Chiqish']
+    ];
+  } else if (role === 'parent') {
+    return [
+      ['👤 Profil', '👨‍👩‍👧‍👦 Farzandlarim'],
+      ['📊 Statistika', '💳 To\'lovlar'],
+      ['🔍 Qidiruv', '⚙️ Sozlamalar'],
+      ['🔙 Chiqish']
+    ];
+  } else if (role === 'center') {
+    return [
+      ['👤 Profil', '👨‍🏫 O\'qituvchilar'],
+      ['👥 O\'quvchilar', '📚 Kurslar'],
+      ['📊 Statistika', '⚙️ Sozlamalar'],
+      ['🔙 Chiqish']
+    ];
+  }
+  
+  // Default keyboard
+  return [
     ['👤 Profil', '📚 Darslar'],
     ['📝 Testlar', '📊 Statistika'],
     ['🔙 Chiqish']
   ];
-  
-  // Add role-specific buttons
-  if (role === 'teacher') {
-    baseButtons.unshift(['➕ Dars qo\'shish', '➕ Test qo\'shish']);
-  } else if (role === 'student') {
-    baseButtons.unshift(['📊 Natijalarim', '📅 Jadval']);
-  }
-  
-  return baseButtons;
 }
 
 function getRoleNameInUzbek(role: string): string {
@@ -686,5 +708,242 @@ function getTestStatusInUzbek(status: string): string {
   
   return statusMap[status] || status;
 }
+
+// Role-specific menu handlers
+
+// Teacher menu handlers
+bot.hears('📚 Darsliklar', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    return;
+  }
+  
+  await ctx.reply(
+    '📚 *Darsliklar bo\'limi*\n\nQuyidagi amallardan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['➕ Online darslik yaratish', '➕ Offline darslik yaratish'],
+        ['📖 Mavjud darsliklar', '📊 Darslik statistikasi'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+bot.hears('📝 Testlar', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Tizimga kirmagansiz.');
+    return;
+  }
+  
+  if (ctx.session.role === 'teacher') {
+    await ctx.reply(
+      '📝 *Testlar bo\'limi*\n\nQuyidagi test turlaridan birini tanlang:',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard([
+          ['📝 Oddiy test', '🔓 Ochiq test'],
+          ['🎯 DTM test', '🏆 Sertifikat test'],
+          ['⏰ Intizomli test', '📋 Mavjud testlar'],
+          ['🔙 Orqaga']
+        ]).resize()
+      }
+    );
+  } else if (ctx.session.role === 'student') {
+    await ctx.reply(
+      '📝 *Test ishlash*\n\nQuyidagi amallardan birini tanlang:',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard([
+          ['🔢 Maxsus raqam orqali', '🌐 Ommaviy testlar'],
+          ['📋 Mavjud testlar', '📊 Test natijalari'],
+          ['🔙 Orqaga']
+        ]).resize()
+      }
+    );
+  }
+});
+
+bot.hears('👥 O\'quvchilarim', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    return;
+  }
+  
+  await ctx.reply(
+    '👥 *O\'quvchilar bo\'limi*\n\nQuyidagi amallardan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['👤 O\'quvchi qo\'shish', '📋 Barcha o\'quvchilar'],
+        ['📊 O\'quvchi statistikasi', '🔐 Login/Parol berish'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+// Student menu handlers
+bot.hears('📚 Darsliklarim', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'student') {
+    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun.');
+    return;
+  }
+  
+  await ctx.reply(
+    '📚 *Darsliklarim*\n\nQuyidagi amallardan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['📖 Mavjud darsliklar', '📊 O\'rganish statistikasi'],
+        ['🔍 Darslik qidirish', '⭐ Sevimli darsliklar'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+bot.hears('📝 Test ishlash', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'student') {
+    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun.');
+    return;
+  }
+  
+  await ctx.reply(
+    '📝 *Test ishlash*\n\nQuyidagi amallardan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['🔢 Maxsus raqam orqali', '🌐 Ommaviy testlar'],
+        ['📋 Mavjud testlar', '📊 Test natijalari'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+bot.hears('🔍 Qidiruv', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Tizimga kirmagansiz.');
+    return;
+  }
+  
+  if (ctx.session.role === 'student') {
+    await ctx.reply(
+      '🔍 *Qidiruv*\n\nNimani qidiryapsiz?',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard([
+          ['👨‍🏫 O\'qituvchi qidirish', '📚 Darslik qidirish'],
+          ['🏫 O\'quv markaz qidirish', '👥 Guruh qidirish'],
+          ['🔙 Orqaga']
+        ]).resize()
+      }
+    );
+  } else if (ctx.session.role === 'parent') {
+    await ctx.reply(
+      '🔍 *Qidiruv*\n\nNimani qidiryapsiz?',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard([
+          ['👨‍👩‍👧‍👦 Farzand qidirish', '👨‍🏫 O\'qituvchi qidirish'],
+          ['🏫 O\'quv markaz qidirish', '🔙 Orqaga']
+        ]).resize()
+      }
+    );
+  }
+});
+
+// Parent menu handlers
+bot.hears('👨‍👩‍👧‍👦 Farzandlarim', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'parent') {
+    await ctx.reply('❌ Bu funksiya faqat ota-onalar uchun.');
+    return;
+  }
+  
+  await ctx.reply(
+    '👨‍👩‍👧‍👦 *Farzandlarim*\n\nQuyidagi amallardan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['👤 Farzand qo\'shish', '📋 Farzandlar ro\'yxati'],
+        ['📊 Farzand statistikasi', '📝 O\'qituvchiga xabar'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+bot.hears('💳 To\'lovlar', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'parent') {
+    await ctx.reply('❌ Bu funksiya faqat ota-onalar uchun.');
+    return;
+  }
+  
+  await ctx.reply(
+    '💳 *To\'lovlar*\n\nQuyidagi amallardan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['💰 To\'lov qilish', '📋 To\'lov tarixi'],
+        ['📊 To\'lov statistikasi', '🔔 To\'lov eslatmalari'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+// Common menu handlers
+bot.hears('⚙️ Sozlamalar', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Tizimga kirmagansiz.');
+    return;
+  }
+  
+  let settingsMenu = [
+    ['🔐 Parolni o\'zgartirish', '👤 Profil tahrirlash'],
+    ['🔔 Bildirishnomalar', '🌐 Til sozlamalari']
+  ];
+  
+  if (ctx.session.role === 'teacher' || ctx.session.role === 'student') {
+    settingsMenu.push(['🗑️ Hisobni o\'chirish', '🔙 Orqaga']);
+  } else {
+    settingsMenu.push(['🔙 Orqaga']);
+  }
+  
+  await ctx.reply(
+    '⚙️ *Sozlamalar*\n\nQuyidagi amallardan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard(settingsMenu).resize()
+    }
+  );
+});
+
+// Back to main menu handler
+bot.hears('🔙 Orqaga', async (ctx) => {
+  if (!ctx.session.userId) {
+    // Not logged in, go to main menu
+    ctx.session.loginStep = undefined;
+    ctx.session.registrationStep = undefined;
+    ctx.session.registrationData = undefined;
+    ctx.session.tempLoginData = undefined;
+    
+    await ctx.reply(
+      'Bosh menyuga qaytdingiz.\n\nQuyidagi amallardan birini tanlang:',
+      Markup.keyboard([
+        ['🔑 Kirish', '📝 Ro\'yxatdan o\'tish'],
+        ['ℹ️ Ma\'lumot', '📊 Statistika']
+      ]).resize()
+    );
+  } else {
+    // Logged in, go to role dashboard
+    await ctx.reply(
+      `Bosh sahifaga qaytdingiz.\n\nQuyidagi funksiyalardan foydalaning:`,
+      Markup.keyboard(getKeyboardByRole(ctx.session.role!)).resize()
+    );
+  }
+});
 
 export { bot };
