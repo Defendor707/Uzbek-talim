@@ -652,30 +652,45 @@ bot.catch((err, ctx) => {
 function getKeyboardByRole(role: string) {
   if (role === 'teacher') {
     return [
-      ['👤 Profil', '📚 Darsliklar'],
-      ['📝 Testlar', '👥 O\'quvchilarim'],
-      ['📊 Statistika', '⚙️ Sozlamalar'],
+      ['👤 Profil'],
+      ['🖼️ Shaxsiy rasm', '👤 Ism familiya'],
+      ['📜 Sertifikat', '🎂 Yoshi'],
+      ['💼 Tajribasi', 'ℹ️ Haqida'],
+      ['📚 Darslik'],
+      ['💻 Online darslik yaratish', '📖 Offline darslik yaratish'],
+      ['📋 Mavjud darsliklar'],
+      ['📝 Testlar'],
+      ['📝 Oddiy test', '🔓 Ochiq test'],
+      ['🎯 DTM test', '🏆 Sertifikat test'],
+      ['⏰ Intizomli test'],
+      ['🔧 Boshqa'],
       ['🔙 Chiqish']
     ];
   } else if (role === 'student') {
     return [
-      ['👤 Profil', '📚 Darsliklarim'],
-      ['📝 Test ishlash', '📊 Natijalarim'],
-      ['🔍 Qidiruv', '🏆 Raqobat'],
-      ['⚙️ Sozlamalar', '🔙 Chiqish']
+      ['👤 Profil'],
+      ['👤 Ism familiya', '🖼️ Shaxsiy rasmi'],
+      ['📜 Sertifikatlar', 'ℹ️ Haqida'],
+      ['📝 Test ishlash'],
+      ['🔢 Maxsus raqam orqali', '🌐 Ommaviy testlar'],
+      ['📚 Darsliklarim'],
+      ['📖 Mavjud darsliklar', '📊 Statistika'],
+      ['🔧 Boshqa'],
+      ['🔙 Chiqish']
     ];
   } else if (role === 'parent') {
     return [
-      ['👤 Profil', '👨‍👩‍👧‍👦 Farzandlarim'],
-      ['📊 Statistika', '💳 To\'lovlar'],
-      ['🔍 Qidiruv', '⚙️ Sozlamalar'],
+      ['👨‍👩‍👧‍👦 Farzand qidiruv'],
+      ['📊 Statistika'],
+      ['💳 To\'lovlar'],
+      ['🔧 Boshqa'],
       ['🔙 Chiqish']
     ];
   } else if (role === 'center') {
     return [
       ['👤 Profil', '👨‍🏫 O\'qituvchilar'],
       ['👥 O\'quvchilar', '📚 Kurslar'],
-      ['📊 Statistika', '⚙️ Sozlamalar'],
+      ['🔧 Boshqa'],
       ['🔙 Chiqish']
     ];
   }
@@ -683,7 +698,7 @@ function getKeyboardByRole(role: string) {
   // Default keyboard
   return [
     ['👤 Profil', '📚 Darslar'],
-    ['📝 Testlar', '📊 Statistika'],
+    ['📝 Testlar', '🔧 Boshqa'],
     ['🔙 Chiqish']
   ];
 }
@@ -921,6 +936,49 @@ bot.hears('⚙️ Sozlamalar', async (ctx) => {
   );
 });
 
+// "Boshqa" menu handler
+bot.hears('🔧 Boshqa', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Tizimga kirmagansiz.');
+    return;
+  }
+  
+  let boshqaMenu = [];
+  
+  if (ctx.session.role === 'teacher') {
+    boshqaMenu = [
+      ['👥 O\'quvchilari', '🔐 Login parol'],
+      ['🗑️ Hisobi o\'chirish', '⚙️ Sozlamalar'],
+      ['📊 Statistika', '🔙 Orqaga']
+    ];
+  } else if (ctx.session.role === 'student') {
+    boshqaMenu = [
+      ['📨 O\'qituvchiga murojaat', '🔍 O\'qituvchi qidirish'],
+      ['📚 Darslik qidirish', '🏫 O\'quv Markaz qidirish'],
+      ['🏆 Raqobat', '⚙️ Sozlamalar'],
+      ['📊 Statistika', '🔙 Orqaga']
+    ];
+  } else if (ctx.session.role === 'parent') {
+    boshqaMenu = [
+      ['⚙️ Sozlamalar', '📊 Statistika'],
+      ['🔙 Orqaga']
+    ];
+  } else {
+    boshqaMenu = [
+      ['⚙️ Sozlamalar', '📊 Statistika'],
+      ['🔙 Orqaga']
+    ];
+  }
+  
+  await ctx.reply(
+    '🔧 *Boshqa funksiyalar*\n\nQuyidagi amallardan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard(boshqaMenu).resize()
+    }
+  );
+});
+
 // Back to main menu handler
 bot.hears('🔙 Orqaga', async (ctx) => {
   if (!ctx.session.userId) {
@@ -940,10 +998,23 @@ bot.hears('🔙 Orqaga', async (ctx) => {
   } else {
     // Logged in, go to role dashboard
     await ctx.reply(
-      `Bosh sahifaga qaytdingiz.\n\nQuyidagi funksiyalardan foydalaning:`,
+      `Dashboard'ga qaytdingiz.\n\nQuyidagi funksiyalardan foydalaning:`,
       Markup.keyboard(getKeyboardByRole(ctx.session.role!)).resize()
     );
   }
+});
+
+// 🔙 Chiqish handler
+bot.hears('🔙 Chiqish', async (ctx) => {
+  ctx.session = {};
+  await ctx.reply(
+    '✅ Siz tizimdan muvaffaqiyatli chiqdingiz.\n\n' +
+    'Iltimos, quyidagi amallardan birini tanlang:',
+    Markup.keyboard([
+      ['🔑 Kirish', '📝 Ro\'yxatdan o\'tish'],
+      ['ℹ️ Ma\'lumot', '📊 Statistika']
+    ]).resize()
+  );
 });
 
 export { bot };
