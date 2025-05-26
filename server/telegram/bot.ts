@@ -56,6 +56,222 @@ bot.use((ctx, next) => {
   return next();
 });
 
+// Main message handler for login and registration flows
+bot.on('text', async (ctx, next) => {
+  const messageText = ctx.message.text;
+  
+  // Handle login flow
+  if (ctx.session.loginStep) {
+    if (ctx.session.loginStep === 'username') {
+      ctx.session.tempLoginData = { username: messageText };
+      ctx.session.loginStep = 'password';
+      await ctx.reply('🔐 Parolingizni kiriting:');
+      return;
+    }
+    
+    if (ctx.session.loginStep === 'password') {
+      try {
+        const username = ctx.session.tempLoginData?.username;
+        if (!username) {
+          await ctx.reply('❌ Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
+          ctx.session.loginStep = undefined;
+          ctx.session.tempLoginData = undefined;
+          return;
+        }
+        
+        const user = await storage.getUserByUsername(username);
+        
+        if (!user) {
+          await ctx.reply('❌ Bunday foydalanuvchi topilmadi. Qaytadan urinib ko\'ring.');
+          ctx.session.loginStep = undefined;
+          ctx.session.tempLoginData = undefined;
+          return;
+        }
+        
+        const isPasswordValid = await bcrypt.compare(messageText, user.password);
+        
+        if (!isPasswordValid) {
+          await ctx.reply('❌ Noto\'g\'ri parol. Qaytadan urinib ko\'ring.');
+          ctx.session.loginStep = undefined;
+          ctx.session.tempLoginData = undefined;
+          return;
+        }
+        
+        // Login successful
+        const token = generateToken(user.id, user.role);
+        ctx.session.userId = user.id;
+        ctx.session.role = user.role;
+        ctx.session.token = token;
+        ctx.session.loginStep = undefined;
+        ctx.session.tempLoginData = undefined;
+        
+        await ctx.reply(
+          `✅ Xush kelibsiz, ${user.fullName}!\n\n` +
+          `🎯 Siz ${getRoleNameInUzbek(user.role)} sifatida tizimga kirdingiz.\n\n` +
+          'Quyidagi funksiyalardan foydalanishingiz mumkin:',
+          Markup.keyboard(getKeyboardByRole(user.role)).resize()
+        );
+      } catch (error) {
+        console.error('Login error:', error);
+        await ctx.reply('❌ Tizimga kirishda xatolik yuz berdi. Iltimos, qaytadan urinib ko\'ring.');
+        ctx.session.loginStep = undefined;
+        ctx.session.tempLoginData = undefined;
+      }
+      return;
+    }
+  }
+  
+  // Handle registration flow
+  if (ctx.session.registrationStep) {
+    if (ctx.session.registrationStep === 'fullName') {
+      if (!ctx.session.registrationData) ctx.session.registrationData = {};
+      ctx.session.registrationData.fullName = messageText;
+      ctx.session.registrationStep = 'email';
+      await ctx.reply('📧 Email manzilingizni kiriting:');
+      return;
+    }
+    
+    if (ctx.session.registrationStep === 'email') {
+      if (!ctx.session.registrationData) ctx.session.registrationData = {};
+      
+      // Simple email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(messageText)) {
+        await ctx.reply('❌ Noto\'g\'ri email format. Qaytadan kiriting:');
+        return;
+      }
+      
+      ctx.session.registrationData.email = messageText;
+      ctx.session.registrationStep = 'username';
+      await ctx.reply('👤 Foydalanuvchi nomini kiriting:');
+      return;
+    }
+    
+    if (ctx.session.registrationStep === 'username') {
+      if (!ctx.session.registrationData) ctx.session.registrationData = {};
+      
+      // Check if username already exists
+      try {
+        const existingUser = await storage.getUserByUsername(messageText);
+        if (existingUser) {
+          await ctx.reply('❌ Bu foydalanuvchi nomi allaqachon mavjud. Boshqa nom kiriting:');
+          return;
+        }
+        
+        ctx.session.registrationData.username = messageText;
+        ctx.session.registrationStep = 'password';
+        await ctx.reply('🔐 Parol yarating (kamida 6 ta belgi):');
+        return;
+      } catch (error) {
+        console.error('Username check error:', error);
+        await ctx.reply('❌ Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
+        return;
+      }
+    }
+    
+    if (ctx.session.registrationStep === 'password') {
+      if (!ctx.session.registrationData) ctx.session.registrationData = {};
+      
+      if (messageText.length < 6) {
+        await ctx.reply('❌ Parol kamida 6 ta belgidan iborat bo\'lishi kerak. Qaytadan kiriting:');
+        return;
+      }
+      
+      ctx.session.registrationData.password = messageText;
+      ctx.session.registrationStep = 'confirmPassword';
+      await ctx.reply('🔐 Parolni tasdiqlang:');
+      return;
+    }
+    
+    if (ctx.session.registrationStep === 'confirmPassword') {
+      if (!ctx.session.registrationData) ctx.session.registrationData = {};
+      
+      if (messageText !== ctx.session.registrationData.password) {
+        await ctx.reply('❌ Parollar mos kelmadi. Qaytadan tasdiqlang:');
+        return;
+      }
+      
+      // Registration complete
+      try {
+        const hashedPassword = await bcrypt.hash(ctx.session.registrationData.password, 10);
+        
+        const newUser = await storage.createUser({
+          username: ctx.session.registrationData.username!,
+          password: hashedPassword,
+          email: ctx.session.registrationData.email!,
+          role: ctx.session.registrationData.role!,
+          fullName: ctx.session.registrationData.fullName!
+        });
+        
+        // Auto login
+        const token = generateToken(newUser.id, newUser.role);
+        ctx.session.userId = newUser.id;
+        ctx.session.role = newUser.role;
+        ctx.session.token = token;
+        ctx.session.registrationStep = undefined;
+        ctx.session.registrationData = undefined;
+        
+        await ctx.reply(
+          `🎉 Tabriklaymiz! Siz muvaffaqiyatli ro'yxatdan o'tdingiz.\n\n` +
+          `👤 Ism: ${newUser.fullName}\n` +
+          `🎯 Rol: ${getRoleNameInUzbek(newUser.role)}\n\n` +
+          'Quyidagi funksiyalardan foydalanishingiz mumkin:',
+          Markup.keyboard(getKeyboardByRole(newUser.role)).resize()
+        );
+      } catch (error) {
+        console.error('Registration error:', error);
+        await ctx.reply('❌ Ro\'yxatdan o\'tishda xatolik yuz berdi. Iltimos, qaytadan urinib ko\'ring.');
+        ctx.session.registrationStep = undefined;
+        ctx.session.registrationData = undefined;
+      }
+      return;
+    }
+  }
+  
+  return next();
+});
+
+// Role selection handlers for registration
+bot.hears(['👨‍🏫 O\'qituvchi', '👨‍🎓 O\'quvchi', '👨‍👩‍👧‍👦 Ota-ona', '🏫 O\'quv markazi'], async (ctx) => {
+  if (ctx.session.registrationStep === 'role') {
+    const roleMap: Record<string, schema.User['role']> = {
+      '👨‍🏫 O\'qituvchi': 'teacher',
+      '👨‍🎓 O\'quvchi': 'student',
+      '👨‍👩‍👧‍👦 Ota-ona': 'parent',
+      '🏫 O\'quv markazi': 'center'
+    };
+    
+    if (!ctx.session.registrationData) {
+      ctx.session.registrationData = {};
+    }
+    
+    const messageText = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+    ctx.session.registrationData.role = roleMap[messageText];
+    ctx.session.registrationStep = 'fullName';
+    
+    await ctx.reply(
+      `✅ Siz ${messageText} sifatida ro'yxatdan o'tyapsiz.\n\n` +
+      '👤 To\'liq ismingizni kiriting:'
+    );
+  }
+});
+
+// Back button handler
+bot.hears('🔙 Orqaga', async (ctx) => {
+  ctx.session.loginStep = undefined;
+  ctx.session.registrationStep = undefined;
+  ctx.session.registrationData = undefined;
+  ctx.session.tempLoginData = undefined;
+  
+  await ctx.reply(
+    'Bosh menyuga qaytdingiz.\n\nQuyidagi amallardan birini tanlang:',
+    Markup.keyboard([
+      ['🔑 Kirish', '📝 Ro\'yxatdan o\'tish'],
+      ['ℹ️ Ma\'lumot', '📊 Statistika']
+    ]).resize()
+  );
+});
+
 // Command handlers
 
 // Start command - entry point
@@ -113,38 +329,19 @@ bot.command('register', async (ctx) => {
 
 async function startRegistration(ctx: BotContext) {
   ctx.session.registrationData = {};
+  ctx.session.registrationStep = 'role';
   
   await ctx.reply(
-    'Ro\'yxatdan o\'tish uchun o\'z rolingizni tanlang:',
-    Markup.keyboard([
-      ['👨‍🏫 O\'qituvchi', '👨‍🎓 O\'quvchi'],
-      ['👨‍👩‍👧‍👦 Ota-ona', '🏫 O\'quv markazi'],
-      ['🔙 Orqaga']
-    ]).resize()
-  );
-  
-  // Setup role selection handler
-  bot.hears(['👨‍🏫 O\'qituvchi', '👨‍🎓 O\'quvchi', '👨‍👩‍👧‍👦 Ota-ona', '🏫 O\'quv markazi'], async (ctx) => {
-    const roleMap: Record<string, schema.User['role']> = {
-      '👨‍🏫 O\'qituvchi': 'teacher',
-      '👨‍🎓 O\'quvchi': 'student',
-      '👨‍👩‍👧‍👦 Ota-ona': 'parent',
-      '🏫 O\'quv markazi': 'center'
-    };
-    
-    if (!ctx.session.registrationData) {
-      ctx.session.registrationData = {};
+    '📝 *Ro\'yxatdan o\'tish*\n\nO\'z rolingizni tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['👨‍🏫 O\'qituvchi', '👨‍🎓 O\'quvchi'],
+        ['👨‍👩‍👧‍👦 Ota-ona', '🏫 O\'quv markazi'],
+        ['🔙 Orqaga']
+      ]).resize()
     }
-    
-    const messageText = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
-    ctx.session.registrationData.role = roleMap[messageText];
-    
-    await ctx.reply('To\'liq ismingizni kiriting:');
-    
-    // Continue with registration flow...
-    // This is a simplified version, in a real application you would
-    // need to handle each step of the registration process
-  });
+  );
 }
 
 // Profile command
