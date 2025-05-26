@@ -11,11 +11,18 @@ interface BotSessionData extends Scenes.SceneSession {
   userId?: number;
   role?: string;
   token?: string;
+  loginStep?: 'username' | 'password';
+  registrationStep?: 'role' | 'fullName' | 'email' | 'username' | 'password' | 'confirmPassword';
   registrationData?: {
     username?: string;
     password?: string;
+    confirmPassword?: string;
     role?: 'teacher' | 'student' | 'parent' | 'center';
     fullName?: string;
+    email?: string;
+  };
+  tempLoginData?: {
+    username?: string;
   };
   testAttempt?: {
     testId?: number;
@@ -88,66 +95,11 @@ bot.command('login', async (ctx) => {
 });
 
 async function startLogin(ctx: BotContext) {
-  await ctx.reply('Foydalanuvchi nomingizni kiriting:');
-  bot.use(async (ctx, next) => {
-    if (!ctx.session.userId && ctx.message && 'text' in ctx.message) {
-      // First message after login request should be username
-      if (!ctx.session.registrationData) {
-        ctx.session.registrationData = {};
-      }
-      
-      if (!ctx.session.registrationData.username) {
-        ctx.session.registrationData.username = ctx.message.text;
-        await ctx.reply('Parolingizni kiriting:');
-        return;
-      }
-      
-      // Second message should be password
-      if (ctx.session.registrationData.username && !ctx.session.registrationData.password) {
-        ctx.session.registrationData.password = ctx.message.text;
-        
-        // Try to log in
-        try {
-          const user = await storage.getUserByUsername(ctx.session.registrationData.username);
-          
-          if (!user) {
-            await ctx.reply('❌ Bunday foydalanuvchi topilmadi. Qaytadan urinib ko\'ring.');
-            ctx.session.registrationData = {};
-            return;
-          }
-          
-          const isPasswordValid = await bcrypt.compare(
-            ctx.session.registrationData.password, 
-            user.password
-          );
-          
-          if (!isPasswordValid) {
-            await ctx.reply('❌ Noto\'g\'ri parol. Qaytadan urinib ko\'ring.');
-            ctx.session.registrationData = {};
-            return;
-          }
-          
-          // Login successful
-          const token = generateToken(user.id, user.role);
-          ctx.session.userId = user.id;
-          ctx.session.role = user.role;
-          ctx.session.token = token;
-          ctx.session.registrationData = {};
-          
-          await ctx.reply(
-            `✅ Tizimga muvaffaqiyatli kirdingiz, ${user.fullName}!\n\n` +
-            'Quyidagi amallardan birini tanlang:',
-            Markup.keyboard(getKeyboardByRole(user.role)).resize()
-          );
-        } catch (error) {
-          console.error('Login error:', error);
-          await ctx.reply('❌ Tizimga kirishda xatolik yuz berdi. Iltimos, qaytadan urinib ko\'ring.');
-          ctx.session.registrationData = {};
-        }
-      }
-    }
-    return next();
-  });
+  ctx.session.loginStep = 'username';
+  await ctx.reply(
+    '🔑 *Tizimga kirish*\n\nFoydalanuvchi nomingizni kiriting:',
+    { parse_mode: 'Markdown' }
+  );
 }
 
 // Registration handlers
