@@ -13,7 +13,6 @@ interface BotSessionData extends Scenes.SceneSession {
   token?: string;
   registrationData?: {
     username?: string;
-    email?: string;
     password?: string;
     role?: 'teacher' | 'student' | 'parent' | 'center';
     fullName?: string;

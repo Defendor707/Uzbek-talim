@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,7 +23,6 @@ interface LoginFormProps {
 
 const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const { login, isLoggingIn } = useAuth();
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -43,10 +42,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     if (onSuccess) {
       onSuccess();
     }
-  };
-  
-  const handleRoleSelect = (role: string) => {
-    setSelectedRole(role);
   };
   
   return (
@@ -153,60 +148,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
                   Ro'yxatdan o'tish
                 </Button>
               </Link>
-            </div>
-          </div>
-          
-          <div className="text-center mt-8">
-            <div className="text-sm text-neutral-medium mb-4">Foydalanuvchi rolini tanlang:</div>
-            <div className="inline-flex rounded-md shadow-sm" role="group">
-              <Button
-                type="button"
-                variant={selectedRole === 'teacher' ? 'default' : 'outline'}
-                className={`px-4 py-2 text-sm font-medium rounded-l-lg ${
-                  selectedRole === 'teacher' 
-                    ? 'bg-primary text-white' 
-                    : 'text-primary bg-white border border-primary hover:bg-primary hover:text-white'
-                }`}
-                onClick={() => handleRoleSelect('teacher')}
-              >
-                Ustoz
-              </Button>
-              <Button
-                type="button"
-                variant={selectedRole === 'student' ? 'default' : 'outline'}
-                className={`px-4 py-2 text-sm font-medium border-t border-b ${
-                  selectedRole === 'student' 
-                    ? 'bg-primary text-white' 
-                    : 'text-primary bg-white border-primary hover:bg-primary hover:text-white'
-                }`}
-                onClick={() => handleRoleSelect('student')}
-              >
-                O'quvchi
-              </Button>
-              <Button
-                type="button"
-                variant={selectedRole === 'parent' ? 'default' : 'outline'}
-                className={`px-4 py-2 text-sm font-medium border-t border-b ${
-                  selectedRole === 'parent' 
-                    ? 'bg-primary text-white' 
-                    : 'text-primary bg-white border-primary hover:bg-primary hover:text-white'
-                }`}
-                onClick={() => handleRoleSelect('parent')}
-              >
-                Ota-ona
-              </Button>
-              <Button
-                type="button"
-                variant={selectedRole === 'center' ? 'default' : 'outline'}
-                className={`px-4 py-2 text-sm font-medium rounded-r-lg ${
-                  selectedRole === 'center' 
-                    ? 'bg-primary text-white' 
-                    : 'text-primary bg-white border border-primary hover:bg-primary hover:text-white'
-                }`}
-                onClick={() => handleRoleSelect('center')}
-              >
-                O'quv markaz
-              </Button>
             </div>
           </div>
         </form>
