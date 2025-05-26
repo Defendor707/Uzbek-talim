@@ -88,27 +88,27 @@ bot.command('login', async (ctx) => {
 });
 
 async function startLogin(ctx: BotContext) {
-  await ctx.reply('Email manzilingizni kiriting:');
+  await ctx.reply('Foydalanuvchi nomingizni kiriting:');
   bot.use(async (ctx, next) => {
     if (!ctx.session.userId && ctx.message && 'text' in ctx.message) {
-      // First message after login request should be email
+      // First message after login request should be username
       if (!ctx.session.registrationData) {
         ctx.session.registrationData = {};
       }
       
-      if (!ctx.session.registrationData.email) {
-        ctx.session.registrationData.email = ctx.message.text;
+      if (!ctx.session.registrationData.username) {
+        ctx.session.registrationData.username = ctx.message.text;
         await ctx.reply('Parolingizni kiriting:');
         return;
       }
       
       // Second message should be password
-      if (ctx.session.registrationData.email && !ctx.session.registrationData.password) {
+      if (ctx.session.registrationData.username && !ctx.session.registrationData.password) {
         ctx.session.registrationData.password = ctx.message.text;
         
         // Try to log in
         try {
-          const user = await storage.getUserByEmail(ctx.session.registrationData.email);
+          const user = await storage.getUserByUsername(ctx.session.registrationData.username);
           
           if (!user) {
             await ctx.reply('❌ Bunday foydalanuvchi topilmadi. Qaytadan urinib ko\'ring.');
