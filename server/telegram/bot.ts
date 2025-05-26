@@ -126,22 +126,6 @@ bot.on('text', async (ctx, next) => {
     if (ctx.session.registrationStep === 'fullName') {
       if (!ctx.session.registrationData) ctx.session.registrationData = {};
       ctx.session.registrationData.fullName = messageText;
-      ctx.session.registrationStep = 'email';
-      await ctx.reply('📧 Email manzilingizni kiriting:');
-      return;
-    }
-    
-    if (ctx.session.registrationStep === 'email') {
-      if (!ctx.session.registrationData) ctx.session.registrationData = {};
-      
-      // Simple email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(messageText)) {
-        await ctx.reply('❌ Noto\'g\'ri email format. Qaytadan kiriting:');
-        return;
-      }
-      
-      ctx.session.registrationData.email = messageText;
       ctx.session.registrationStep = 'username';
       await ctx.reply('👤 Foydalanuvchi nomini kiriting:');
       return;
@@ -195,10 +179,13 @@ bot.on('text', async (ctx, next) => {
       try {
         const hashedPassword = await bcrypt.hash(ctx.session.registrationData.password, 10);
         
+        // Create email from username
+        const email = `${ctx.session.registrationData.username}@uzbektalim.uz`;
+        
         const newUser = await storage.createUser({
           username: ctx.session.registrationData.username!,
           password: hashedPassword,
-          email: ctx.session.registrationData.email!,
+          email: email,
           role: ctx.session.registrationData.role!,
           fullName: ctx.session.registrationData.fullName!
         });
@@ -652,45 +639,30 @@ bot.catch((err, ctx) => {
 function getKeyboardByRole(role: string) {
   if (role === 'teacher') {
     return [
-      ['👤 Profil'],
-      ['🖼️ Shaxsiy rasm', '👤 Ism familiya'],
-      ['📜 Sertifikat', '🎂 Yoshi'],
-      ['💼 Tajribasi', 'ℹ️ Haqida'],
-      ['📚 Darslik'],
-      ['💻 Online darslik yaratish', '📖 Offline darslik yaratish'],
-      ['📋 Mavjud darsliklar'],
-      ['📝 Testlar'],
-      ['📝 Oddiy test', '🔓 Ochiq test'],
-      ['🎯 DTM test', '🏆 Sertifikat test'],
-      ['⏰ Intizomli test'],
-      ['🔧 Boshqa'],
+      ['1️⃣ Profil'],
+      ['2️⃣ Darslik'],
+      ['3️⃣ Testlar'],
+      ['4️⃣ Boshqa'],
       ['🔙 Chiqish']
     ];
   } else if (role === 'student') {
     return [
-      ['👤 Profil'],
-      ['👤 Ism familiya', '🖼️ Shaxsiy rasmi'],
-      ['📜 Sertifikatlar', 'ℹ️ Haqida'],
-      ['📝 Test ishlash'],
-      ['🔢 Maxsus raqam orqali', '🌐 Ommaviy testlar'],
-      ['📚 Darsliklarim'],
-      ['📖 Mavjud darsliklar', '📊 Statistika'],
-      ['🔧 Boshqa'],
+      ['1️⃣ Profil'],
+      ['2️⃣ Test ishlash'],
+      ['3️⃣ Darsliklarim'],
+      ['4️⃣ Boshqa'],
       ['🔙 Chiqish']
     ];
   } else if (role === 'parent') {
     return [
-      ['👨‍👩‍👧‍👦 Farzand qidiruv'],
-      ['📊 Statistika'],
-      ['💳 To\'lovlar'],
-      ['🔧 Boshqa'],
+      ['1️⃣ Farzand qidiruv'],
+      ['2️⃣ Statistika'],
+      ['3️⃣ To\'lovlar'],
       ['🔙 Chiqish']
     ];
   } else if (role === 'center') {
     return [
-      ['👤 Profil', '👨‍🏫 O\'qituvchilar'],
-      ['👥 O\'quvchilar', '📚 Kurslar'],
-      ['🔧 Boshqa'],
+      ['🔧 Hozircha faol emas'],
       ['🔙 Chiqish']
     ];
   }
@@ -726,24 +698,187 @@ function getTestStatusInUzbek(status: string): string {
 
 // Role-specific menu handlers
 
-// Teacher menu handlers
-bot.hears('📚 Darsliklar', async (ctx) => {
+// TEACHER MENU HANDLERS
+bot.hears('1️⃣ Profil', async (ctx) => {
   if (!ctx.session.userId || ctx.session.role !== 'teacher') {
     await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun.');
     return;
   }
   
   await ctx.reply(
-    '📚 *Darsliklar bo\'limi*\n\nQuyidagi amallardan birini tanlang:',
+    '👤 *Profil bo\'limi*\n\nQuyidagi amallardan birini tanlang:',
     {
       parse_mode: 'Markdown',
       ...Markup.keyboard([
-        ['➕ Online darslik yaratish', '➕ Offline darslik yaratish'],
-        ['📖 Mavjud darsliklar', '📊 Darslik statistikasi'],
+        ['🖼️ Shaxsiy rasm', '👤 Ism familiya'],
+        ['📜 Sertifikat', '🎂 Yoshi'],
+        ['💼 Tajribasi', 'ℹ️ Haqida'],
         ['🔙 Orqaga']
       ]).resize()
     }
   );
+});
+
+bot.hears('2️⃣ Darslik', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    return;
+  }
+  
+  await ctx.reply(
+    '📚 *Darslik bo\'limi*\n\nQuyidagi amallardan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['💻 Online darslik yaratish', '📖 Offline darslik yaratish'],
+        ['📋 Mavjud darsliklar'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+bot.hears('3️⃣ Testlar', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    return;
+  }
+  
+  await ctx.reply(
+    '📝 *Testlar bo\'limi*\n\nQuyidagi test turlaridan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['📝 Oddiy test', '🔓 Ochiq test'],
+        ['🎯 DTM test', '🏆 Sertifikat test'],
+        ['⏰ Intizomli test'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+bot.hears('4️⃣ Boshqa', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    return;
+  }
+  
+  await ctx.reply(
+    '🔧 *Boshqa funksiyalar*\n\nQuyidagi amallardan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['👥 O\'quvchilari', '🔐 Login parol'],
+        ['🗑️ Hisobi o\'chirish'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+// STUDENT MENU HANDLERS  
+bot.hears('1️⃣ Profil', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'student') {
+    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun.');
+    return;
+  }
+  
+  await ctx.reply(
+    '👤 *Profil bo\'limi*\n\nQuyidagi amallardan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['👤 Ism familiya', '🖼️ Shaxsiy rasmi'],
+        ['📜 Sertifikatlar', 'ℹ️ Haqida'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+bot.hears('2️⃣ Test ishlash', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'student') {
+    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun.');
+    return;
+  }
+  
+  await ctx.reply(
+    '📝 *Test ishlash*\n\nQuyidagi amallardan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['🔢 Maxsus raqam orqali', '🌐 Ommaviy testlar'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+bot.hears('3️⃣ Darsliklarim', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'student') {
+    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun.');
+    return;
+  }
+  
+  await ctx.reply(
+    '📚 *Darsliklarim*\n\nQuyidagi amallardan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['📖 Mavjud darsliklar', '📊 Statistika'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+bot.hears('4️⃣ Boshqa', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'student') {
+    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun.');
+    return;
+  }
+  
+  await ctx.reply(
+    '🔧 *Boshqa funksiyalar*\n\nQuyidagi amallardan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['📨 O\'qituvchiga murojaat', '🔍 O\'qituvchi qidirish'],
+        ['📚 Darslik qidirish', '🏫 O\'quv Markaz qidirish'],
+        ['🏆 Raqobat'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+// PARENT MENU HANDLERS
+bot.hears('1️⃣ Farzand qidiruv', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'parent') {
+    await ctx.reply('❌ Bu funksiya faqat ota-onalar uchun.');
+    return;
+  }
+  
+  await ctx.reply('👨‍👩‍👧‍👦 Farzand qidiruv funksiyasi hozircha ishlab chiqilmoqda...');
+});
+
+bot.hears('2️⃣ Statistika', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'parent') {
+    await ctx.reply('❌ Bu funksiya faqat ota-onalar uchun.');
+    return;
+  }
+  
+  await ctx.reply('📊 Statistika funksiyasi hozircha ishlab chiqilmoqda...');
+});
+
+bot.hears('3️⃣ To\'lovlar', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'parent') {
+    await ctx.reply('❌ Bu funksiya faqat ota-onalar uchun.');
+    return;
+  }
+  
+  await ctx.reply('💳 To\'lovlar funksiyasi hozircha ishlab chiqilmoqda...');
 });
 
 bot.hears('📝 Testlar', async (ctx) => {
@@ -936,48 +1071,7 @@ bot.hears('⚙️ Sozlamalar', async (ctx) => {
   );
 });
 
-// "Boshqa" menu handler
-bot.hears('🔧 Boshqa', async (ctx) => {
-  if (!ctx.session.userId) {
-    await ctx.reply('❌ Tizimga kirmagansiz.');
-    return;
-  }
-  
-  let boshqaMenu = [];
-  
-  if (ctx.session.role === 'teacher') {
-    boshqaMenu = [
-      ['👥 O\'quvchilari', '🔐 Login parol'],
-      ['🗑️ Hisobi o\'chirish', '⚙️ Sozlamalar'],
-      ['📊 Statistika', '🔙 Orqaga']
-    ];
-  } else if (ctx.session.role === 'student') {
-    boshqaMenu = [
-      ['📨 O\'qituvchiga murojaat', '🔍 O\'qituvchi qidirish'],
-      ['📚 Darslik qidirish', '🏫 O\'quv Markaz qidirish'],
-      ['🏆 Raqobat', '⚙️ Sozlamalar'],
-      ['📊 Statistika', '🔙 Orqaga']
-    ];
-  } else if (ctx.session.role === 'parent') {
-    boshqaMenu = [
-      ['⚙️ Sozlamalar', '📊 Statistika'],
-      ['🔙 Orqaga']
-    ];
-  } else {
-    boshqaMenu = [
-      ['⚙️ Sozlamalar', '📊 Statistika'],
-      ['🔙 Orqaga']
-    ];
-  }
-  
-  await ctx.reply(
-    '🔧 *Boshqa funksiyalar*\n\nQuyidagi amallardan birini tanlang:',
-    {
-      parse_mode: 'Markdown',
-      ...Markup.keyboard(boshqaMenu).resize()
-    }
-  );
-});
+
 
 // Back to main menu handler
 bot.hears('🔙 Orqaga', async (ctx) => {
