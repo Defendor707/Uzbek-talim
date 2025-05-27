@@ -179,8 +179,8 @@ bot.on('text', async (ctx, next) => {
       try {
         const hashedPassword = await bcrypt.hash(ctx.session.registrationData.password, 10);
         
-        // Create email from username - use a simpler format
-        const email = `${ctx.session.registrationData.username}@uz.local`;
+        // Create email from username - match website format
+        const email = `${ctx.session.registrationData.username}@uzbektalim.uz`;
         
         const newUser = await storage.createUser({
           username: ctx.session.registrationData.username!,
@@ -1197,12 +1197,11 @@ bot.hears('ℹ️ Yordam', async (ctx) => {
 
 bot.hears('📞 Aloqa', async (ctx) => {
   await ctx.reply(
-    '📞 *Biz bilan bog\'laning*\n\n' +
+    '📞 Biz bilan bog\'laning\n\n' +
     '📧 Email: info@repititor.uz\n' +
     '📱 Telegram: @repititor_support\n' +
     '🕐 Ish vaqti: 9:00-18:00 (Dush-Juma)\n\n' +
-    'Sizning savollaringiz bizga muhim!',
-    { parse_mode: 'Markdown' }
+    'Sizning savollaringiz bizga muhim!'
   );
 });
 

@@ -27,7 +27,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
   progressColor = 'bg-primary',
 }) => {
   return (
-    <div className="bg-white p-6 rounded-lg card-shadow">
+    <div className="bg-white p-4 md:p-6 rounded-lg card-shadow">
       <div className="flex items-center">
         <div className={`p-3 rounded-full ${iconBgColor} mr-4`}>
           <span className={`material-icons ${iconColor}`}>{icon}</span>
@@ -77,7 +77,7 @@ interface StatsRowProps {
 
 const StatsRow: React.FC<StatsRowProps> = ({ stats }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
       {stats.map((stat, index) => (
         <StatsCard key={index} {...stat} />
       ))}

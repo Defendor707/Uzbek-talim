@@ -111,15 +111,15 @@ const ProfilePage: React.FC = () => {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      fullName: profile?.fullName || '',
-      email: profile?.email || '',
-      phone: profile?.phone || '',
-      bio: profile?.bio || '',
-      grade: roleProfile?.grade || '',
-      classroom: roleProfile?.classroom || '',
-      subjects: Array.isArray(roleProfile?.subjects) ? roleProfile?.subjects.join(', ') : roleProfile?.subjects || '',
-      address: roleProfile?.address || '',
-      description: roleProfile?.description || '',
+      fullName: (profile as any)?.fullName || '',
+      email: (profile as any)?.email || '',
+      phone: (profile as any)?.phone || '',
+      bio: (profile as any)?.bio || '',
+      grade: (roleProfile as any)?.grade || '',
+      classroom: (roleProfile as any)?.classroom || '',
+      subjects: Array.isArray((roleProfile as any)?.subjects) ? (roleProfile as any)?.subjects.join(', ') : (roleProfile as any)?.subjects || '',
+      address: (roleProfile as any)?.address || '',
+      description: (roleProfile as any)?.description || '',
     },
   });
   
