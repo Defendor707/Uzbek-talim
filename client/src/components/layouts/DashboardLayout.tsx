@@ -28,10 +28,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
         />
         
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-8">
+        <main className="flex-1 p-2 md:p-4 lg:p-8 pb-20 md:pb-8">
           {/* Header with user info */}
-          <header className="bg-white rounded-lg p-4 mb-6 flex justify-between items-center card-shadow">
-            <h1 className="text-xl font-heading font-bold text-neutral-dark">{title}</h1>
+          <header className="bg-white rounded-lg p-3 md:p-4 mb-4 md:mb-6 flex justify-between items-center card-shadow">
+            <h1 className="text-lg md:text-xl font-heading font-bold text-neutral-dark truncate">{title}</h1>
             <div className="flex items-center">
               {/* Notifications */}
               <div className="relative mr-4">

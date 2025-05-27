@@ -651,30 +651,30 @@ function getKeyboardByRole(role: string) {
     return [
       ['👤 Profil', '📚 Darslik'],
       ['📝 Testlar', '📊 Statistika'],
-      ['⚙️ Sozlamalar']
+      ['⚡ Boshqalar']
     ];
   } else if (role === 'student') {
     return [
       ['👤 Profil', '📝 Test ishlash'],
       ['📚 Darsliklarim', '📊 Natijalarim'],
-      ['⚙️ Sozlamalar']
+      ['⚡ Boshqalar']
     ];
   } else if (role === 'parent') {
     return [
       ['👶 Farzandim', '📊 Statistika'],
-      ['💳 To\'lovlar', '⚙️ Sozlamalar']
+      ['💳 To\'lovlar', '⚡ Boshqalar']
     ];
   } else if (role === 'center') {
     return [
       ['👨‍🏫 O\'qituvchilar', '👨‍🎓 O\'quvchilar'],
-      ['📊 Hisobotlar', '⚙️ Sozlamalar']
+      ['📊 Hisobotlar', '⚡ Boshqalar']
     ];
   }
   
   // Default keyboard
   return [
     ['👤 Profil', '📚 Darslar'],
-    ['📝 Testlar', '⚙️ Sozlamalar']
+    ['📝 Testlar', '⚡ Boshqalar']
   ];
 }
 
@@ -1101,18 +1101,19 @@ bot.hears('🔙 Orqaga', async (ctx) => {
   }
 });
 
-// ⚙️ Sozlamalar handler
-bot.hears('⚙️ Sozlamalar', async (ctx) => {
+// ⚡ Boshqalar handler
+bot.hears('⚡ Boshqalar', async (ctx) => {
   if (!ctx.session.userId) {
     await ctx.reply('❌ Siz tizimga kirmagansiz.');
     return;
   }
   
   await ctx.reply(
-    '⚙️ Sozlamalar menyusi',
+    '⚡ Boshqa funksiyalar',
     Markup.keyboard([
-      ['👤 Profil tahrirlash', '🔔 Bildirishnomalar'],
-      ['🚪 Tizimdan chiqish'],
+      ['🔔 Bildirishnomalar', '🌐 Veb-sayt'],
+      ['ℹ️ Yordam', '📞 Aloqa'],
+      ['🚪 Hisobdan chiqish'],
       ['🔙 Orqaga']
     ]).resize()
   );
@@ -1167,12 +1168,50 @@ bot.hears(['👨‍🏫 O\'qituvchilar', '👨‍🎓 O\'quvchilar', '📊 Hisob
   await ctx.reply(`${action} bo'limi boshqaruv panelida ko'rish mumkin. Veb-saytga tashrif buyuring! 🏢`);
 });
 
-// 🚪 Tizimdan chiqish handler
-bot.hears('🚪 Tizimdan chiqish', async (ctx) => {
+// New handlers for "Boshqalar" menu items
+bot.hears('🔔 Bildirishnomalar', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Avval tizimga kiring.');
+    return;
+  }
+  await ctx.reply('🔔 Bildirishnomalar funksiyasi tez orada qo\'shiladi! Joriy holda veb-saytdan foydalaning.');
+});
+
+bot.hears('🌐 Veb-sayt', async (ctx) => {
+  await ctx.reply('🌐 Bizning veb-saytimiz: https://your-domain.replit.app\n\nTo\'liq funksiyalardan foydalanish uchun veb-saytga tashrif buyuring!');
+});
+
+bot.hears('ℹ️ Yordam', async (ctx) => {
+  await ctx.reply(
+    'ℹ️ *Yordam bo\'limi*\n\n' +
+    '🤖 *Bot buyruqlari:*\n' +
+    '/start - Botni qayta ishga tushirish\n' +
+    '/profile - Profil ma\'lumotlari\n' +
+    '/lessons - Darslar ro\'yxati\n' +
+    '/tests - Testlar ro\'yxati\n\n' +
+    '📞 *Yordam kerakmi?*\n' +
+    'Qo\'shimcha yordam uchun "📞 Aloqa" tugmasini bosing.',
+    { parse_mode: 'Markdown' }
+  );
+});
+
+bot.hears('📞 Aloqa', async (ctx) => {
+  await ctx.reply(
+    '📞 *Biz bilan bog\'laning*\n\n' +
+    '📧 Email: info@repititor.uz\n' +
+    '📱 Telegram: @repititor_support\n' +
+    '🕐 Ish vaqti: 9:00-18:00 (Dush-Juma)\n\n' +
+    'Sizning savollaringiz bizga muhim!',
+    { parse_mode: 'Markdown' }
+  );
+});
+
+// 🚪 Hisobdan chiqish handler
+bot.hears('🚪 Hisobdan chiqish', async (ctx) => {
   ctx.session = {};
   await ctx.reply(
-    '✅ Siz tizimdan muvaffaqiyatli chiqdingiz.\n\n' +
-    'Iltimos, quyidagi amallardan birini tanlang:',
+    '✅ Siz hisobdan muvaffaqiyatli chiqdingiz.\n\n' +
+    'Qaytadan kirish uchun quyidagi tugmalardan foydalaning:',
     Markup.keyboard([
       ['🔑 Kirish', '📝 Ro\'yxatdan o\'tish'],
       ['ℹ️ Ma\'lumot', '📊 Statistika']

@@ -304,7 +304,9 @@ const ProfilePage: React.FC = () => {
                   {user?.role === 'center' && (
                     <TabsTrigger value="center">Markaz ma'lumotlari</TabsTrigger>
                   )}
-                  <TabsTrigger value="security">Xavfsizlik</TabsTrigger>
+                  {user?.role !== 'parent' && (
+                    <TabsTrigger value="security">Xavfsizlik</TabsTrigger>
+                  )}
                 </TabsList>
                 
                 <Form {...form}>
@@ -325,19 +327,30 @@ const ProfilePage: React.FC = () => {
                           )}
                         />
                         
-                        <FormField
-                          control={form.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email manzil</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        {user?.role !== 'parent' && (
+                          <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Email manzil</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                        
+                        {user?.role === 'parent' && (
+                          <div className="p-4 bg-blue-50 rounded-lg">
+                            <p className="text-sm text-blue-700">
+                              <span className="material-icons text-blue-700 mr-1 text-base">info</span>
+                              Ota-ona sifatida siz faqat ismingizni o'zgartira olasiz.
+                            </p>
+                          </div>
+                        )}
                         
                         <FormField
                           control={form.control}
