@@ -649,39 +649,32 @@ bot.catch((err, ctx) => {
 function getKeyboardByRole(role: string) {
   if (role === 'teacher') {
     return [
-      ['1️⃣ Profil'],
-      ['2️⃣ Darslik'],
-      ['3️⃣ Testlar'],
-      ['4️⃣ Boshqa'],
-      ['🔙 Chiqish']
+      ['👤 Profil', '📚 Darslik'],
+      ['📝 Testlar', '📊 Statistika'],
+      ['⚙️ Sozlamalar']
     ];
   } else if (role === 'student') {
     return [
-      ['1️⃣ Profil'],
-      ['2️⃣ Test ishlash'],
-      ['3️⃣ Darsliklarim'],
-      ['4️⃣ Boshqa'],
-      ['🔙 Chiqish']
+      ['👤 Profil', '📝 Test ishlash'],
+      ['📚 Darsliklarim', '📊 Natijalarim'],
+      ['⚙️ Sozlamalar']
     ];
   } else if (role === 'parent') {
     return [
-      ['1️⃣ Farzand qidiruv'],
-      ['2️⃣ Statistika'],
-      ['3️⃣ To\'lovlar'],
-      ['🔙 Chiqish']
+      ['👶 Farzandim', '📊 Statistika'],
+      ['💳 To\'lovlar', '⚙️ Sozlamalar']
     ];
   } else if (role === 'center') {
     return [
-      ['🔧 Hozircha faol emas'],
-      ['🔙 Chiqish']
+      ['👨‍🏫 O\'qituvchilar', '👨‍🎓 O\'quvchilar'],
+      ['📊 Hisobotlar', '⚙️ Sozlamalar']
     ];
   }
   
   // Default keyboard
   return [
     ['👤 Profil', '📚 Darslar'],
-    ['📝 Testlar', '🔧 Boshqa'],
-    ['🔙 Chiqish']
+    ['📝 Testlar', '⚙️ Sozlamalar']
   ];
 }
 
@@ -1108,8 +1101,74 @@ bot.hears('🔙 Orqaga', async (ctx) => {
   }
 });
 
-// 🔙 Chiqish handler
-bot.hears('🔙 Chiqish', async (ctx) => {
+// ⚙️ Sozlamalar handler
+bot.hears('⚙️ Sozlamalar', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz.');
+    return;
+  }
+  
+  await ctx.reply(
+    '⚙️ Sozlamalar menyusi',
+    Markup.keyboard([
+      ['👤 Profil tahrirlash', '🔔 Bildirishnomalar'],
+      ['🚪 Tizimdan chiqish'],
+      ['🔙 Orqaga']
+    ]).resize()
+  );
+});
+
+// Additional menu handlers for each role
+bot.hears(['👤 Profil', '📚 Darslik', '📝 Testlar', '📊 Statistika'], async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Avval tizimga kiring.');
+    return;
+  }
+  
+  const action = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+  
+  if (action === '👤 Profil') {
+    // Trigger profile command
+    await ctx.reply('👤 Profil ma\'lumotlari yuklanmoqda...');
+    // Reuse profile command logic
+    return;
+  }
+  
+  await ctx.reply(`${action} bo'limi hozircha ishlab chiqilmoqda. Tez orada faollashtiraman! 🚀`);
+});
+
+bot.hears(['📝 Test ishlash', '📚 Darsliklarim', '📊 Natijalarim'], async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Avval tizimga kiring.');
+    return;
+  }
+  
+  const action = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+  await ctx.reply(`${action} bo'limi tez orada faollashtiraman! Veb-saytdan foydalanib ko'ring. 🌐`);
+});
+
+bot.hears(['👶 Farzandim', '💳 To\'lovlar'], async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Avval tizimga kiring.');
+    return;
+  }
+  
+  const action = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+  await ctx.reply(`${action} bo'limi ishlab chiqilmoqda. Veb-saytdan to'liq funksiyalardan foydalaning! 👨‍👩‍👧‍👦`);
+});
+
+bot.hears(['👨‍🏫 O\'qituvchilar', '👨‍🎓 O\'quvchilar', '📊 Hisobotlar'], async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Avval tizimga kiring.');
+    return;
+  }
+  
+  const action = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+  await ctx.reply(`${action} bo'limi boshqaruv panelida ko'rish mumkin. Veb-saytga tashrif buyuring! 🏢`);
+});
+
+// 🚪 Tizimdan chiqish handler
+bot.hears('🚪 Tizimdan chiqish', async (ctx) => {
   ctx.session = {};
   await ctx.reply(
     '✅ Siz tizimdan muvaffaqiyatli chiqdingiz.\n\n' +

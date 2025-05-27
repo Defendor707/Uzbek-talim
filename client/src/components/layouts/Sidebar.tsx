@@ -84,7 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="p-4 border-b border-neutral-ultralight flex justify-between items-center md:block">
           <div className="flex items-center">
             <span className="material-icons text-primary mr-2">school</span>
-            <h2 className={`text-lg font-heading font-bold text-neutral-dark ${isCollapsed ? 'hidden' : 'hidden md:block'}`}>O'zbek Talim</h2>
+            <h2 className={`text-lg font-heading font-bold text-neutral-dark ${isCollapsed ? 'hidden' : 'hidden md:block'}`}>Repititor</h2>
           </div>
           <button className="text-neutral-medium md:hidden" onClick={toggleMobileMenu}>
             <span className="material-icons">menu</span>
