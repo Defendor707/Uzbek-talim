@@ -134,8 +134,12 @@ export const login = async (req: Request, res: Response) => {
     // Validate request body
     const credentials = loginSchema.parse(req.body);
     
-    // Find user by username
-    const user = await storage.getUserByUsername(credentials.username);
+    // Find user by username or email
+    let user = await storage.getUserByUsername(credentials.username);
+    if (!user) {
+      // Try to find by email if username doesn't work
+      user = await storage.getUserByEmail(credentials.username);
+    }
     if (!user) {
       return res.status(401).json({ message: 'Noto\'g\'ri foydalanuvchi nomi yoki parol' });
     }

@@ -107,8 +107,8 @@ const StudentDashboard: React.FC = () => {
     { subject: 'Algebra', percentage: 85 },
     { subject: 'Geometriya', percentage: 72 },
     { subject: 'Fizika', percentage: 68 },
-    { subject: 'Kimyo', percentage: 60, status: 'warning' },
-    { subject: 'Ona tili', percentage: 90, status: 'success' },
+    { subject: 'Kimyo', percentage: 60, status: 'warning' as const },
+    { subject: 'Ona tili', percentage: 90, status: 'success' as const },
   ];
   
   // Recent results data

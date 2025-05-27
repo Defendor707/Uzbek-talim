@@ -100,14 +100,14 @@ const Sidebar: React.FC<SidebarProps> = ({
             {navItems.map((item) => (
               <li key={item.path}>
                 <Link href={item.path}>
-                  <a className={`flex items-center p-2 ${isCollapsed ? 'justify-center' : ''} ${
+                  <div className={`flex items-center p-2 cursor-pointer ${isCollapsed ? 'justify-center' : ''} ${
                     currentPath === item.path 
                       ? 'text-primary bg-blue-50' 
                       : 'text-neutral-medium hover:text-primary hover:bg-blue-50'
                     } rounded-lg`}>
                     <span className="material-icons mr-3">{item.icon}</span>
                     {!isCollapsed && <span>{item.label}</span>}
-                  </a>
+                  </div>
                 </Link>
               </li>
             ))}
@@ -121,14 +121,14 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex justify-around p-2">
             {mobileNavItems.map((item) => (
               <Link key={item.path} href={item.path}>
-                <a className={`flex flex-col items-center p-2 ${
+                <div className={`flex flex-col items-center p-2 cursor-pointer ${
                   currentPath === item.path 
                     ? 'text-primary' 
                     : 'text-neutral-medium'
                   }`}>
                   <span className="material-icons">{item.icon}</span>
                   <span className="text-xs mt-1">{item.label}</span>
-                </a>
+                </div>
               </Link>
             ))}
             {/* More menu for remaining items */}
