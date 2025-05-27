@@ -179,8 +179,8 @@ bot.on('text', async (ctx, next) => {
       try {
         const hashedPassword = await bcrypt.hash(ctx.session.registrationData.password, 10);
         
-        // Create email from username
-        const email = `${ctx.session.registrationData.username}@uzbektalim.uz`;
+        // Create email from username - use a simpler format
+        const email = `${ctx.session.registrationData.username}@uz.local`;
         
         const newUser = await storage.createUser({
           username: ctx.session.registrationData.username!,
@@ -245,6 +245,16 @@ bot.hears(['👨‍🏫 O\'qituvchi', '👨‍🎓 O\'quvchi', '👨‍👩‍�
 
 // Back button handler
 bot.hears('🔙 Orqaga', async (ctx) => {
+  // Check if user is logged in - return to their dashboard
+  if (ctx.session.userId && ctx.session.role) {
+    await ctx.reply(
+      'Asosiy menyuga qaytdingiz.',
+      Markup.keyboard(getKeyboardByRole(ctx.session.role)).resize()
+    );
+    return;
+  }
+  
+  // If not logged in, clear session and return to login menu
   ctx.session.loginStep = undefined;
   ctx.session.registrationStep = undefined;
   ctx.session.registrationData = undefined;
