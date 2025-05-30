@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,10 +10,18 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import useAuth from '@/hooks/useAuth';
 
 const registerSchema = z.object({
-  username: z.string().min(3, 'Foydalanuvchi nomi kamida 3 ta belgidan iborat bo\'lishi kerak'),
-  fullName: z.string().min(2, 'To\'liq ism kamida 2 ta belgidan iborat bo\'lishi kerak'),
-  password: z.string().min(6, 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak'),
-  confirmPassword: z.string().min(6, 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak'),
+  username: z.string()
+    .min(3, 'Foydalanuvchi nomi kamida 3 ta belgidan iborat bo\'lishi kerak')
+    .max(20, 'Foydalanuvchi nomi 20 ta belgidan oshmasligi kerak')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Foydalanuvchi nomida faqat harflar, raqamlar va pastki chiziq bo\'lishi mumkin'),
+  fullName: z.string()
+    .min(4, 'To\'liq ism kamida 4 ta harfdan iborat bo\'lishi kerak')
+    .max(20, 'To\'liq ism 20 ta harfdan oshmasligi kerak')
+    .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]+$/, 'To\'liq ismda faqat harflar va bo\'sh joy bo\'lishi mumkin'),
+  password: z.string()
+    .min(8, 'Parol kamida 8 ta belgidan iborat bo\'lishi kerak')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Parolda kamida bitta kichik harf, bitta katta harf va bitta raqam bo\'lishi kerak'),
+  confirmPassword: z.string().min(8, 'Parol kamida 8 ta belgidan iborat bo\'lishi kerak'),
   role: z.enum(['teacher', 'student', 'parent', 'center'], {
     required_error: 'Iltimos, rolni tanlang',
   }),
@@ -30,6 +38,8 @@ interface RegisterFormProps {
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
   const { register, isRegistering } = useAuth();
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
   
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -41,6 +51,25 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
       role: 'student',
     },
   });
+
+  // Parol kuchini hisoblash funksiyasi
+  const calculatePasswordStrength = (password: string) => {
+    let strength = 0;
+    if (password.length >= 8) strength += 1;
+    if (/[a-z]/.test(password)) strength += 1;
+    if (/[A-Z]/.test(password)) strength += 1;
+    if (/\d/.test(password)) strength += 1;
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength += 1;
+    return strength;
+  };
+
+  const getPasswordStrengthText = (strength: number) => {
+    if (strength <= 1) return { text: 'Juda zaif', color: 'text-red-600' };
+    if (strength <= 2) return { text: 'Zaif', color: 'text-orange-600' };
+    if (strength <= 3) return { text: 'O\'rtacha', color: 'text-yellow-600' };
+    if (strength <= 4) return { text: 'Kuchli', color: 'text-green-600' };
+    return { text: 'Juda kuchli', color: 'text-green-700' };
+  };
   
   // No longer need role-specific fields
   
@@ -154,13 +183,73 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
                 <FormItem>
                   <FormLabel className="text-gray-700 font-medium">Parol</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="password" 
-                      placeholder="••••••••" 
-                      {...field} 
-                      className="h-12 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                    />
+                    <div className="relative">
+                      <Input 
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••" 
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setPasswordStrength(calculatePasswordStrength(e.target.value));
+                        }}
+                        className="h-12 px-4 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </FormControl>
+                  {field.value && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm text-gray-600">Parol kuchi:</span>
+                        <span className={`text-sm font-medium ${getPasswordStrengthText(passwordStrength).color}`}>
+                          {getPasswordStrengthText(passwordStrength).text}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            passwordStrength <= 1 ? 'bg-red-500' :
+                            passwordStrength <= 2 ? 'bg-orange-500' :
+                            passwordStrength <= 3 ? 'bg-yellow-500' :
+                            passwordStrength <= 4 ? 'bg-green-500' : 'bg-green-600'
+                          }`}
+                          style={{ width: `${(passwordStrength / 5) * 100}%` }}
+                        />
+                      </div>
+                      <div className="mt-2 text-xs text-gray-600">
+                        <p>Parol quyidagilarni o'z ichiga olishi kerak:</p>
+                        <ul className="mt-1 space-y-1">
+                          <li className={field.value.length >= 8 ? 'text-green-600' : 'text-gray-500'}>
+                            ✓ Kamida 8 ta belgi
+                          </li>
+                          <li className={/[a-z]/.test(field.value) ? 'text-green-600' : 'text-gray-500'}>
+                            ✓ Kichik harf (a-z)
+                          </li>
+                          <li className={/[A-Z]/.test(field.value) ? 'text-green-600' : 'text-gray-500'}>
+                            ✓ Katta harf (A-Z)
+                          </li>
+                          <li className={/\d/.test(field.value) ? 'text-green-600' : 'text-gray-500'}>
+                            ✓ Raqam (0-9)
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

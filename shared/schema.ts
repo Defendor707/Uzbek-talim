@@ -216,9 +216,17 @@ export const insertScheduleSchema = createInsertSchema(schedules)
 
 // Simplified registration schema with only required fields
 export const registerUserSchema = z.object({
-  fullName: z.string().min(3, "Ism familiya kamida 3 ta belgidan iborat bo'lishi kerak"),
-  username: z.string().min(3, "Foydalanuvchi nomi kamida 3 ta belgidan iborat bo'lishi kerak"),
-  password: z.string().min(6, "Parol kamida 6 ta belgidan iborat bo'lishi kerak"),
+  fullName: z.string()
+    .min(4, "To'liq ism kamida 4 ta harfdan iborat bo'lishi kerak")
+    .max(20, "To'liq ism 20 ta harfdan oshmasligi kerak")
+    .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]+$/, "To'liq ismda faqat harflar va bo'sh joy bo'lishi mumkin"),
+  username: z.string()
+    .min(3, "Foydalanuvchi nomi kamida 3 ta belgidan iborat bo'lishi kerak")
+    .max(20, "Foydalanuvchi nomi 20 ta belgidan oshmasligi kerak")
+    .regex(/^[a-zA-Z0-9_]+$/, "Foydalanuvchi nomida faqat harflar, raqamlar va pastki chiziq bo'lishi mumkin"),
+  password: z.string()
+    .min(8, "Parol kamida 8 ta belgidan iborat bo'lishi kerak")
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Parolda kamida bitta kichik harf, bitta katta harf va bitta raqam bo'lishi kerak"),
   confirmPassword: z.string(),
   role: z.enum(['teacher', 'student', 'parent', 'center'])
 }).refine((data) => data.password === data.confirmPassword, {
