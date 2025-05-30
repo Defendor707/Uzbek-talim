@@ -18,7 +18,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
   };
 
   return (
-    <div className="min-h-screen bg-neutral-ultralight">
+    <div className="min-h-screen bg-gray-50">
       <div className="flex flex-col md:flex-row">
         {/* Sidebar */}
         <Sidebar 
@@ -28,16 +28,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
         />
         
         {/* Main Content */}
-        <main className="flex-1 p-2 md:p-4 lg:p-8 pb-20 md:pb-8">
+        <main className="flex-1 p-3 md:p-6 pb-20 md:pb-8">
           {/* Header with user info */}
-          <header className="bg-white rounded-lg p-3 md:p-4 mb-4 md:mb-6 flex justify-between items-center card-shadow">
-            <h1 className="text-lg md:text-xl font-heading font-bold text-neutral-dark truncate">{title}</h1>
+          <header className="bg-white rounded-xl p-4 mb-6 flex justify-between items-center shadow-sm border border-gray-100">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-800 truncate">{title}</h1>
             <div className="flex items-center">
               {/* Notifications */}
-              <div className="relative mr-4">
-                <button className="text-neutral-medium hover:text-primary">
-                  <span className="material-icons">notifications</span>
-                  <span className="absolute top-0 right-0 h-2 w-2 bg-status-error rounded-full"></span>
+              <div className="relative mr-3">
+                <button className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-3.5-3.5a50.002 50.002 0 00-2.5-2.5h6a3 3 0 003-3V7a3 3 0 00-3-3H6a3 3 0 00-3 3v1a3 3 0 003 3h6a50.002 50.002 0 00-2.5 2.5L6.5 17H12"/>
+                  </svg>
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
                 </button>
               </div>
               
