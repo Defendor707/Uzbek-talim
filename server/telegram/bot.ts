@@ -1,6 +1,7 @@
 import { Telegraf, session, Scenes, Markup } from 'telegraf';
 import { storage } from '../storage';
 import { generateToken, verifyToken } from '../utils/auth';
+import { botNotificationService } from '../sync/botNotifications';
 import bcrypt from 'bcrypt';
 import * as schema from '@shared/schema';
 import { db } from '../db';
@@ -696,6 +697,54 @@ function getTestStatusInUzbek(status: string): string {
   };
   
   return statusMap[status] || status;
+}
+
+// Check and send pending notifications to user
+async function checkAndSendNotifications(ctx: BotContext) {
+  if (!ctx.session.userId) return;
+  
+  const notifications = botNotificationService.getNotifications(ctx.session.userId);
+  
+  if (notifications.length > 0) {
+    // Group notifications by type
+    const testNotifications = notifications.filter(n => n.type === 'test_created');
+    const lessonNotifications = notifications.filter(n => n.type === 'lesson_updated');
+    const profileNotifications = notifications.filter(n => n.type === 'profile_updated');
+    const scheduleNotifications = notifications.filter(n => n.type === 'schedule_changed');
+    
+    // Send notifications
+    if (testNotifications.length > 0) {
+      await ctx.reply(
+        `🔔 *Yangi bildirishnomalar*\n\n` +
+        `📝 ${testNotifications.length} ta yangi test yaratildi!\n` +
+        testNotifications.map(n => `• ${n.message.replace('📝 Yangi test yaratildi: ', '')}`).join('\n'),
+        { parse_mode: 'Markdown' }
+      );
+    }
+    
+    if (lessonNotifications.length > 0) {
+      await ctx.reply(
+        `📚 ${lessonNotifications.length} ta dars yangilandi!\n` +
+        lessonNotifications.map(n => `• ${n.message.replace('📚 Dars yangilandi: ', '')}`).join('\n'),
+        { parse_mode: 'Markdown' }
+      );
+    }
+    
+    if (scheduleNotifications.length > 0) {
+      await ctx.reply(
+        `📅 Dars jadvali o'zgartirildi!\n` +
+        `${scheduleNotifications.length} ta yangilanish`,
+        { parse_mode: 'Markdown' }
+      );
+    }
+    
+    if (profileNotifications.length > 0) {
+      await ctx.reply('👤 Profilingiz yangilandi!');
+    }
+    
+    // Clear notifications after sending
+    botNotificationService.clearNotifications(ctx.session.userId);
+  }
 }
 
 // Role-specific menu handlers
