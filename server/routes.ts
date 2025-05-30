@@ -88,6 +88,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     uploadProfileImage
   );
 
+  // Sync profile data with Telegram bot
+  app.post("/api/users/sync-profile", authenticate, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.user!.userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      return res.status(200).json({ 
+        message: "Profile synced successfully",
+        user: { ...user, password: undefined }
+      });
+    } catch (error) {
+      console.error("Error syncing profile:", error);
+      return res.status(500).json({ message: "Failed to sync profile" });
+    }
+  });
+
   // Profile specific routes for different roles
   app.get("/api/profile/student", authenticate, authorize(["student"]), async (req, res) => {
     try {
@@ -152,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/lessons", authenticate, async (req, res) => {
     try {
-      let lessons;
+      let lessons: any[] = [];
 
       if (req.user?.role === "teacher") {
         // Teachers see their own lessons
@@ -164,10 +183,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Student profile not found" });
         }
         lessons = await storage.getLessonsByGrade(profile.grade);
-      } else {
-        // Default to fetch all active lessons
-        // This would need additional filtering for production
-        lessons = [];
       }
 
       return res.status(200).json(lessons);
