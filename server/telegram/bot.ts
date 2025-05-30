@@ -177,14 +177,13 @@ bot.on('text', async (ctx, next) => {
       
       // Registration complete
       try {
-        const hashedPassword = await bcrypt.hash(ctx.session.registrationData.password, 10);
-        
+        // Don't hash password here - storage layer will handle it
         // Create email from username - match website format
         const email = `${ctx.session.registrationData.username}@uzbektalim.uz`;
         
         const newUser = await storage.createUser({
           username: ctx.session.registrationData.username!,
-          password: hashedPassword,
+          password: ctx.session.registrationData.password!,
           email: email,
           role: ctx.session.registrationData.role!,
           fullName: ctx.session.registrationData.fullName!
