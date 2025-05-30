@@ -1,333 +1,175 @@
 import React from 'react';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
-import StatsRow from '@/components/shared/Stats';
-import { DataTable } from '@/components/ui/data-table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'wouter';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
-} from 'recharts';
-
-// Types
-interface Teacher {
-  id: number;
-  fullName: string;
-  subjects: string[];
-  studentsCount: number;
-  rating: number;
-}
-
-interface Student {
-  id: number;
-  fullName: string;
-  grade: string;
-  classroom: string;
-  parentName?: string;
-  joinedDate: string;
-}
-
-interface PerformanceData {
-  month: string;
-  attendance: number;
-  scores: number;
-}
+import useAuth from '@/hooks/useAuth';
 
 const CenterDashboard: React.FC = () => {
   const { toast } = useToast();
+  const { user, logout } = useAuth();
   
-  // Sample data - would be fetched from API in real app
-  const teachers: Teacher[] = [
-    {
-      id: 1,
-      fullName: 'Nilufar Qodirova',
-      subjects: ['Matematika'],
-      studentsCount: 45,
-      rating: 4.8
-    },
-    {
-      id: 2,
-      fullName: 'Akmal Karimov',
-      subjects: ['Fizika', 'Informatika'],
-      studentsCount: 32,
-      rating: 4.5
-    },
-    {
-      id: 3,
-      fullName: 'Dilorom Aliyeva',
-      subjects: ['Ona tili', 'Adabiyot'],
-      studentsCount: 38,
-      rating: 4.9
-    }
-  ];
+  // Fetch teachers data
+  const { data: teachers } = useQuery<any[]>({
+    queryKey: ['/api/center/teachers'],
+  });
   
-  const students: Student[] = [
-    {
-      id: 1,
-      fullName: 'Olim Karimov',
-      grade: '9',
-      classroom: 'A',
-      parentName: 'Javlon Karimov',
-      joinedDate: '2022-09-01'
-    },
-    {
-      id: 2,
-      fullName: 'Nargiza Aliyeva',
-      grade: '8',
-      classroom: 'B',
-      parentName: 'Nodira Aliyeva',
-      joinedDate: '2022-09-01'
-    },
-    {
-      id: 3,
-      fullName: 'Jasur Toshmatov',
-      grade: '11',
-      classroom: 'A',
-      parentName: 'Sherzod Toshmatov',
-      joinedDate: '2022-09-01'
-    }
-  ];
+  // Fetch students data
+  const { data: students } = useQuery<any[]>({
+    queryKey: ['/api/center/students'],
+  });
   
-  const performanceData: PerformanceData[] = [
-    { month: 'Yanvar', attendance: 92, scores: 78 },
-    { month: 'Fevral', attendance: 90, scores: 80 },
-    { month: 'Mart', attendance: 94, scores: 82 },
-    { month: 'Aprel', attendance: 95, scores: 85 },
-    { month: 'May', attendance: 93, scores: 88 }
-  ];
-  
-  // Stats data
-  const statsData = [
-    {
-      title: 'O\'qituvchilar',
-      value: teachers.length,
-      icon: 'school',
-      iconBgColor: 'bg-blue-100',
-      iconColor: 'text-primary',
-      trend: {
-        value: '+1',
-        label: 'O\'tgan oyga nisbatan',
-        isPositive: true,
-      },
-      progressValue: 75,
-    },
-    {
-      title: 'O\'quvchilar',
-      value: students.length,
-      icon: 'people',
-      iconBgColor: 'bg-green-100',
-      iconColor: 'text-secondary',
-      trend: {
-        value: '+5',
-        label: 'O\'tgan oyga nisbatan',
-        isPositive: true,
-      },
-      progressValue: 60,
-      progressColor: 'bg-secondary',
-    },
-    {
-      title: 'O\'rtacha o\'zlashtirish',
-      value: '88%',
-      icon: 'analytics',
-      iconBgColor: 'bg-amber-100',
-      iconColor: 'text-accent',
-      trend: {
-        value: '+3%',
-        label: 'O\'tgan oyga nisbatan',
-        isPositive: true,
-      },
-      progressValue: 88,
-      progressColor: 'bg-accent',
-    },
-  ];
-  
-  // Teachers table columns
-  const teacherColumns = [
-    {
-      id: 'teacher',
-      header: 'O\'qituvchi',
-      cell: (teacher: Teacher) => (
-        <div className="flex items-center">
-          <span className="material-icons mr-2 text-primary">person</span>
-          <div>
-            <div className="text-sm font-medium text-neutral-dark">{teacher.fullName}</div>
-            <div className="text-xs text-neutral-medium">{teacher.subjects.join(', ')}</div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: 'students',
-      header: 'O\'quvchilar',
-      cell: (teacher: Teacher) => (
-        <span className="text-sm text-neutral-medium">{teacher.studentsCount}</span>
-      ),
-    },
-    {
-      id: 'rating',
-      header: 'Reyting',
-      cell: (teacher: Teacher) => (
-        <div className="flex items-center">
-          <span className="text-sm font-medium text-neutral-dark mr-2">{teacher.rating}</span>
-          <div className="flex text-accent">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <span key={index} className="material-icons text-sm">
-                {index < Math.floor(teacher.rating) ? 'star' : index < teacher.rating ? 'star_half' : 'star_outline'}
-              </span>
-            ))}
-          </div>
-        </div>
-      ),
-    },
-  ];
-  
-  // Students table columns
-  const studentColumns = [
-    {
-      id: 'student',
-      header: 'O\'quvchi',
-      cell: (student: Student) => (
-        <div className="flex items-center">
-          <span className="material-icons mr-2 text-primary">person</span>
-          <div>
-            <div className="text-sm font-medium text-neutral-dark">{student.fullName}</div>
-            <div className="text-xs text-neutral-medium">{student.grade}-{student.classroom} sinf</div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: 'parent',
-      header: 'Ota-ona',
-      cell: (student: Student) => (
-        <span className="text-sm text-neutral-medium">{student.parentName || 'Ko\'rsatilmagan'}</span>
-      ),
-    },
-    {
-      id: 'joinedDate',
-      header: 'Qo\'shilgan sana',
-      cell: (student: Student) => (
-        <span className="text-sm text-neutral-medium">
-          {new Date(student.joinedDate).toLocaleDateString()}
-        </span>
-      ),
-    },
-  ];
-  
+  // Fetch statistics
+  const { data: statistics } = useQuery<any>({
+    queryKey: ['/api/center/statistics'],
+  });
+
   return (
-    <DashboardLayout title="O'quv markaz paneli">
-      {/* Stats Row */}
-      <StatsRow stats={statsData} />
-      
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">O'quv markaz paneli</h1>
+              <p className="text-gray-600">Xush kelibsiz, {user?.fullName}</p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={logout}
+              className="text-red-600 border-red-600 hover:bg-red-50"
+            >
+              Chiqish
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Teachers Table */}
-        <div className="lg:col-span-2">
-          <DataTable
-            data={teachers}
-            columns={teacherColumns}
-            title="O'qituvchilar"
-            enableSearch={true}
-            searchPlaceholder="O'qituvchilarni qidirish..."
-            actionButton={{
-              label: "O'qituvchi qo'shish",
-              icon: "add",
-              onClick: () => {
-                toast({
-                  title: 'Amal',
-                  description: "O'qituvchi qo'shish sahifasiga o'tilmoqda",
-                });
-              },
-            }}
-          />
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Performance Chart */}
-        <div>
-          <Card className="bg-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-heading font-medium text-neutral-dark">O'quv markaz ko'rsatkichlari</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={performanceData}
-                    margin={{
-                      top: 20,
-                      right: 20,
-                      left: 0,
-                      bottom: 0,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="attendance" name="Davomad (%)" fill="hsl(var(--primary))" />
-                    <Bar dataKey="scores" name="Ball (%)" fill="hsl(var(--secondary))" />
-                  </BarChart>
-                </ResponsiveContainer>
+        {/* 4 Main Sections */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          
+          {/* 1. Profil */}
+          <div className="bg-white rounded-lg shadow-sm border p-6 text-center hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Profil</h3>
+            <p className="text-gray-600 text-sm mb-4">Markaz ma'lumotlarini boshqaring</p>
+            <Link href="/center/profile">
+              <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                Ko'rish
+              </Button>
+            </Link>
+          </div>
+
+          {/* 2. O'qituvchilar */}
+          <div className="bg-white rounded-lg shadow-sm border p-6 text-center hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-green-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">O'qituvchilar</h3>
+            <p className="text-gray-600 text-sm mb-1">Jami: {teachers?.length || 0}</p>
+            <p className="text-gray-500 text-xs mb-4">O'qituvchilarni boshqarish</p>
+            <Link href="/center/teachers">
+              <Button className="w-full bg-green-600 hover:bg-green-700">
+                Ko'rish
+              </Button>
+            </Link>
+          </div>
+
+          {/* 3. O'quvchilar */}
+          <div className="bg-white rounded-lg shadow-sm border p-6 text-center hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
+              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">O'quvchilar</h3>
+            <p className="text-gray-600 text-sm mb-1">Jami: {students?.length || 0}</p>
+            <p className="text-gray-500 text-xs mb-4">O'quvchilarni boshqarish</p>
+            <Link href="/center/students">
+              <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                Ko'rish
+              </Button>
+            </Link>
+          </div>
+
+          {/* 4. Hisobotlar */}
+          <div className="bg-white rounded-lg shadow-sm border p-6 text-center hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-orange-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
+              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Hisobotlar</h3>
+            <p className="text-gray-600 text-sm mb-4">Markaz statistikalari va hisobotlari</p>
+            <Link href="/center/reports">
+              <Button className="w-full bg-orange-600 hover:bg-orange-700">
+                Ko'rish
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Jami o'qituvchilar</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {teachers?.length || 0}
+                </p>
               </div>
-              
-              <div className="mt-4">
-                <h4 className="text-sm font-medium text-neutral-dark mb-3">Umumiy ko'rsatkichlar</h4>
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-neutral-medium">Davomad</span>
-                      <span className="text-sm text-neutral-medium">93%</span>
-                    </div>
-                    <Progress value={93} className="h-2" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-neutral-medium">O'zlashtirish</span>
-                      <span className="text-sm text-neutral-medium">88%</span>
-                    </div>
-                    <Progress value={88} className="h-2 bg-secondary" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-neutral-medium">Ota-onalar ishtiroki</span>
-                      <span className="text-sm text-neutral-medium">76%</span>
-                    </div>
-                    <Progress value={76} className="h-2 bg-accent" />
-                  </div>
-                </div>
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                </svg>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Jami o'quvchilar</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {students?.length || 0}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Markaz reytingi</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {statistics?.rating || 'N/A'}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      
-      {/* Students Table */}
-      <div>
-        <DataTable
-          data={students}
-          columns={studentColumns}
-          title="O'quvchilar"
-          enableSearch={true}
-          searchPlaceholder="O'quvchilarni qidirish..."
-          actionButton={{
-            label: "O'quvchi qo'shish",
-            icon: "add",
-            onClick: () => {
-              toast({
-                title: 'Amal',
-                description: "O'quvchi qo'shish sahifasiga o'tilmoqda",
-              });
-            },
-          }}
-        />
-      </div>
-    </DashboardLayout>
+    </div>
   );
 };
 
