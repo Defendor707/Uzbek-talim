@@ -310,7 +310,7 @@ bot.command('login', async (ctx) => {
 async function startLogin(ctx: BotContext) {
   ctx.session.loginStep = 'username';
   await ctx.reply(
-    '🔑 *Tizimga kirish*\n\nFoydalanuvchi nomingizni kiriting:',
+    '🔑 *Tizimga kirish*\n\nFoydali nomingizni kiriting:',
     { parse_mode: 'Markdown' }
   );
 }

@@ -67,7 +67,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             name="username"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-gray-700 font-medium">Foydalanuvchi nomi</FormLabel>
+                <FormLabel className="text-gray-700 font-medium">Foydali nomi</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="foydalanuvchi_nomi" 
@@ -86,7 +86,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             render={({ field }) => (
               <FormItem>
                 <div className="flex justify-between items-center">
-                  <FormLabel className="text-gray-700 font-medium">Parol</FormLabel>
+                  <FormLabel className="text-gray-700 font-medium">Shartnoma</FormLabel>
                   <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700">
                     Parolni unutdingizmi?
                   </Link>
