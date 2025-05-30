@@ -124,7 +124,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
               name="role"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel className="text-gray-700 font-medium">Foydali turi</FormLabel>
+                  <FormLabel className="text-gray-700 font-medium">Foydalanuvchi turi</FormLabel>
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
@@ -177,7 +177,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-700 font-medium">Foydali nomi</FormLabel>
+                  <FormLabel className="text-gray-700 font-medium">Foydalanuvchi nomi</FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="foydalanuvchi_nomi" 
@@ -195,7 +195,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-700 font-medium">Shartnoma</FormLabel>
+                  <FormLabel className="text-gray-700 font-medium">Parol</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input 
@@ -277,7 +277,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-700 font-medium">Shartnomani tasdiqlang</FormLabel>
+                  <FormLabel className="text-gray-700 font-medium">Parolni tasdiqlang</FormLabel>
                   <FormControl>
                     <Input 
                       type="password" 

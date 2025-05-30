@@ -66,7 +66,7 @@ bot.on('text', async (ctx, next) => {
     if (ctx.session.loginStep === 'username') {
       ctx.session.tempLoginData = { username: messageText };
       ctx.session.loginStep = 'password';
-      await ctx.reply('🔐 Shartnomangizni kiriting:');
+      await ctx.reply('🔐 Parolingizni kiriting:');
       return;
     }
     
@@ -92,7 +92,7 @@ bot.on('text', async (ctx, next) => {
         const isPasswordValid = await bcrypt.compare(messageText, user.password);
         
         if (!isPasswordValid) {
-          await ctx.reply('❌ Noto\'g\'ri shartnoma. Qaytadan urinib ko\'ring.');
+          await ctx.reply('❌ Noto\'g\'ri parol. Qaytadan urinib ko\'ring.');
           ctx.session.loginStep = undefined;
           ctx.session.tempLoginData = undefined;
           return;
@@ -310,7 +310,7 @@ bot.command('login', async (ctx) => {
 async function startLogin(ctx: BotContext) {
   ctx.session.loginStep = 'username';
   await ctx.reply(
-    '🔑 *Tizimga kirish*\n\nFoydali nomingizni kiriting:',
+    '🔑 *Tizimga kirish*\n\nFoydalanuvchi nomingizni kiriting:',
     { parse_mode: 'Markdown' }
   );
 }
