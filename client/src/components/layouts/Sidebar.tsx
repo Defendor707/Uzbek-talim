@@ -117,13 +117,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       
       {/* Mobile Navigation */}
       {isMobile && (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-          <div className="flex justify-around py-2 px-1">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50 safe-area-inset-bottom">
+          <div className="flex justify-around py-1 px-1">
             {mobileNavItems.map((item) => (
               <Link key={item.path} href={item.path}>
-                <div className={`flex flex-col items-center p-2 rounded-lg min-w-[60px] transition-colors ${
+                <div className={`mobile-nav-item flex flex-col items-center p-3 rounded-xl min-w-[64px] transition-all duration-200 ${
                   currentPath === item.path 
-                    ? 'text-blue-600 bg-blue-50' 
+                    ? 'text-blue-600 bg-blue-50 scale-105' 
                     : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
                   }`}>
                   <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

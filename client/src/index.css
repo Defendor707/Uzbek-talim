@@ -2,6 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile-first responsive design utilities */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+  }
+}
+
+/* Touch-friendly interactive elements */
+@layer components {
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+  
+  .mobile-card {
+    @apply bg-white rounded-xl p-4 shadow-sm border border-gray-100 transition-all duration-200;
+  }
+  
+  .mobile-card:active {
+    @apply scale-[0.98] shadow-md;
+  }
+  
+  .mobile-button {
+    @apply touch-target bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 active:scale-95 active:bg-blue-700;
+  }
+  
+  .mobile-input {
+    @apply w-full h-12 px-4 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;
+  }
+  
+  .mobile-nav-item {
+    @apply touch-target rounded-lg transition-all duration-200 active:scale-95;
+  }
+}
+
 :root {
   --background: 0 0% 100%;
   --foreground: 222 47% 11%;
