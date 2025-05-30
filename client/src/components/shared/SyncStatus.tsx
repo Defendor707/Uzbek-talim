@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth';
 import { apiRequest } from '@/lib/queryClient';
 import { Badge } from '@/components/ui/badge';
 import { Wifi, WifiOff, Users, Bot } from 'lucide-react';
@@ -27,7 +27,12 @@ export function SyncStatus() {
     // Fetch initial sync status
     const fetchSyncStatus = async () => {
       try {
-        const response = await apiRequest('/api/sync/status');
+        const response = await fetch('/api/sync/status', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
         const data = await response.json();
         setSyncStatus(data);
       } catch (error) {

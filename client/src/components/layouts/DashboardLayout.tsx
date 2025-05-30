@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
 import Sidebar from './Sidebar';
+import { SyncStatus } from '@/components/shared/SyncStatus';
 import useAuth from '@/hooks/useAuth';
 
 type DashboardLayoutProps = {
@@ -97,6 +98,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
               </div>
             </div>
           </header>
+          
+          {/* Sync Status */}
+          <div className="mb-4">
+            <SyncStatus />
+          </div>
           
           {/* Dashboard Content */}
           {children}
