@@ -158,6 +158,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const newLesson = await storage.createLesson(lessonData);
+      
+      // Notify bot users and sync with website
+      await botNotificationService.notifyLessonUpdated(newLesson);
+      await syncService.notifyLessonCreated(newLesson);
+      
       return res.status(201).json(newLesson);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -291,6 +296,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const newTest = await storage.createTest(testData);
+      
+      // Notify bot users and sync with website
+      await botNotificationService.notifyTestCreated(newTest);
+      await syncService.notifyTestCreated(newTest);
+      
       return res.status(201).json(newTest);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -681,6 +691,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const newSchedule = await storage.createSchedule(scheduleData);
+        
+        // Notify bot users and sync with website
+        await botNotificationService.notifyScheduleChanged(newSchedule);
+        await syncService.notifyScheduleUpdate(newSchedule);
+        
         return res.status(201).json(newSchedule);
       } catch (error) {
         console.error("Error creating schedule:", error);
@@ -714,8 +729,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bot Sync Routes - for Telegram bot data synchronization
+  app.get("/api/bot/notifications/:userId", authenticate, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      // Only allow users to get their own notifications or admins
+      if (req.user?.userId !== userId && req.user?.role !== 'center') {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const notifications = botNotificationService.getNotifications(userId);
+      return res.status(200).json(notifications);
+    } catch (error) {
+      console.error("Error fetching bot notifications:", error);
+      return res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.delete("/api/bot/notifications/:userId", authenticate, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      // Only allow users to clear their own notifications
+      if (req.user?.userId !== userId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      botNotificationService.clearNotifications(userId);
+      return res.status(200).json({ message: "Notifications cleared" });
+    } catch (error) {
+      console.error("Error clearing bot notifications:", error);
+      return res.status(500).json({ message: "Failed to clear notifications" });
+    }
+  });
+
+  // Sync status endpoint
+  app.get("/api/sync/status", authenticate, async (req, res) => {
+    try {
+      const connectedUsers = syncService.getConnectedUsersCount();
+      const connectedByRole = {
+        teacher: syncService.getConnectedUsersByRole('teacher').length,
+        student: syncService.getConnectedUsersByRole('student').length,
+        parent: syncService.getConnectedUsersByRole('parent').length,
+        center: syncService.getConnectedUsersByRole('center').length
+      };
+
+      return res.status(200).json({
+        connectedUsers,
+        connectedByRole,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      console.error("Error fetching sync status:", error);
+      return res.status(500).json({ message: "Failed to fetch sync status" });
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
+  
+  // Initialize WebSocket sync service
+  syncService.init(httpServer);
 
   return httpServer;
 }
