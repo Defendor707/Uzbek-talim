@@ -225,8 +225,11 @@ export const registerUserSchema = z.object({
     .max(20, "Foydalanuvchi nomi 20 ta belgidan oshmasligi kerak")
     .regex(/^[a-zA-Z0-9_]+$/, "Foydalanuvchi nomida faqat harflar, raqamlar va pastki chiziq bo'lishi mumkin"),
   password: z.string()
-    .min(8, "Parol kamida 8 ta belgidan iborat bo'lishi kerak")
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Parolda kamida bitta kichik harf, bitta katta harf va bitta raqam bo'lishi kerak"),
+    .min(6, "Parol kamida 6 ta belgidan iborat bo'lishi kerak")
+    .refine((password) => {
+      // O'rtacha darajada parol: kamida 6 belgi va kamida bitta harf yoki raqam
+      return password.length >= 6 && (/[a-zA-Z]/.test(password) || /\d/.test(password));
+    }, "Parol kamida 6 ta belgi va kamida bitta harf yoki raqam bo'lishi kerak"),
   confirmPassword: z.string(),
   role: z.enum(['teacher', 'student', 'parent', 'center'])
 }).refine((data) => data.password === data.confirmPassword, {

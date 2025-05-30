@@ -9,6 +9,17 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import useAuth from '@/hooks/useAuth';
 
+// Static parol kuchini hisoblash funksiyasi
+const calculatePasswordStrengthStatic = (password: string) => {
+  let strength = 0;
+  if (password.length >= 6) strength += 1;
+  if (/[a-z]/.test(password)) strength += 1;
+  if (/[A-Z]/.test(password)) strength += 1;
+  if (/\d/.test(password)) strength += 1;
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength += 1;
+  return strength;
+};
+
 const registerSchema = z.object({
   username: z.string()
     .min(3, 'Foydalanuvchi nomi kamida 3 ta belgidan iborat bo\'lishi kerak')
@@ -19,9 +30,12 @@ const registerSchema = z.object({
     .max(20, 'To\'liq ism 20 ta harfdan oshmasligi kerak')
     .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]+$/, 'To\'liq ismda faqat harflar va bo\'sh joy bo\'lishi mumkin'),
   password: z.string()
-    .min(8, 'Parol kamida 8 ta belgidan iborat bo\'lishi kerak')
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Parolda kamida bitta kichik harf, bitta katta harf va bitta raqam bo\'lishi kerak'),
-  confirmPassword: z.string().min(8, 'Parol kamida 8 ta belgidan iborat bo\'lishi kerak'),
+    .min(6, 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak')
+    .refine((password) => {
+      // O'rtacha darajada parol: kamida 6 belgi va kamida bitta harf yoki raqam
+      return password.length >= 6 && (/[a-zA-Z]/.test(password) || /\d/.test(password));
+    }, 'Parol kamida 6 ta belgi va kamida bitta harf yoki raqam bo\'lishi kerak'),
+  confirmPassword: z.string().min(6, 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak'),
   role: z.enum(['teacher', 'student', 'parent', 'center'], {
     required_error: 'Iltimos, rolni tanlang',
   }),
@@ -234,17 +248,20 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
                       <div className="mt-2 text-xs text-gray-600">
                         <p>Parol quyidagilarni o'z ichiga olishi kerak:</p>
                         <ul className="mt-1 space-y-1">
-                          <li className={field.value.length >= 8 ? 'text-green-600' : 'text-gray-500'}>
-                            ✓ Kamida 8 ta belgi
+                          <li className={field.value.length >= 6 ? 'text-green-600' : 'text-gray-500'}>
+                            ✓ Kamida 6 ta belgi
+                          </li>
+                          <li className={/[a-zA-Z]/.test(field.value) || /\d/.test(field.value) ? 'text-green-600' : 'text-gray-500'}>
+                            ✓ Kamida bitta harf yoki raqam
                           </li>
                           <li className={/[a-z]/.test(field.value) ? 'text-green-600' : 'text-gray-500'}>
-                            ✓ Kichik harf (a-z)
+                            + Kichik harf (a-z) - ixtiyoriy
                           </li>
                           <li className={/[A-Z]/.test(field.value) ? 'text-green-600' : 'text-gray-500'}>
-                            ✓ Katta harf (A-Z)
+                            + Katta harf (A-Z) - ixtiyoriy
                           </li>
                           <li className={/\d/.test(field.value) ? 'text-green-600' : 'text-gray-500'}>
-                            ✓ Raqam (0-9)
+                            + Raqam (0-9) - ixtiyoriy
                           </li>
                         </ul>
                       </div>
