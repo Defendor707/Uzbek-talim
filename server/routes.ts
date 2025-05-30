@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { authenticate, authorize, login, register } from "./utils/auth";
 import { upload, uploadLessonFile, uploadProfileImage } from "./utils/upload";
+import { syncService } from "./sync/syncService";
+import { botNotificationService } from "./sync/botNotifications";
 import express from "express";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
