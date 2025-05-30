@@ -4,8 +4,8 @@ import { Link } from 'wouter';
 
 const LoginPage: React.FC = () => {
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Left side - Image and Welcome Text */}
+    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
+      {/* Left side - Image and Welcome Text - Hidden on mobile */}
       <div className="login-bg hidden md:flex md:w-1/2 p-10 text-white justify-center items-center">
         <div className="max-w-md">
           <h1 className="text-4xl font-heading font-bold mb-4">O'zbek Talim</h1>
@@ -35,8 +35,16 @@ const LoginPage: React.FC = () => {
         </div>
       </div>
       
+      {/* Mobile Header - Only visible on mobile */}
+      <div className="md:hidden bg-white border-b border-gray-200 px-6 py-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Tizimga kirish</h1>
+          <p className="text-gray-600 text-sm">O'zbek Talim platformasidan foydalanish uchun tizimga kiring</p>
+        </div>
+      </div>
+      
       {/* Right side - Login Form */}
-      <div className="w-full md:w-1/2 flex justify-center items-center p-4 md:p-10 bg-white">
+      <div className="w-full md:w-1/2 flex justify-center items-center px-6 py-8 md:p-10 bg-white md:bg-gray-50">
         <LoginForm />
       </div>
     </div>
