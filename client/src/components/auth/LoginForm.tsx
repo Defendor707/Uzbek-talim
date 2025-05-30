@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'wouter';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { MobileInput, MobileButton, MobileCard } from '@/components/ui/mobile-form';
 import { Checkbox } from '@/components/ui/checkbox';
 import useAuth from '@/hooks/useAuth';
@@ -53,8 +55,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             </svg>
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Tizimga kirish</h2>
-        <p className="text-neutral-medium">O'zbek Talim platformasidan foydalanish uchun tizimga kiring</p>
-      </div>
+          <p className="text-neutral-medium">O'zbek Talim platformasidan foydalanish uchun tizimga kiring</p>
+        </div>
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -157,6 +159,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
           </div>
         </form>
       </Form>
+      </MobileCard>
     </div>
   );
 };
