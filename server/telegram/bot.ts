@@ -128,7 +128,7 @@ bot.on('text', async (ctx, next) => {
       if (!ctx.session.registrationData) ctx.session.registrationData = {};
       ctx.session.registrationData.fullName = messageText;
       ctx.session.registrationStep = 'username';
-      await ctx.reply('👤 Foydali nomini kiriting:');
+      await ctx.reply('👤 Foydalanuvchi nomini kiriting:');
       return;
     }
     
@@ -145,7 +145,7 @@ bot.on('text', async (ctx, next) => {
         
         ctx.session.registrationData.username = messageText;
         ctx.session.registrationStep = 'password';
-        await ctx.reply('🔐 Shartnoma yarating (kamida 6 ta belgi):');
+        await ctx.reply('🔐 Parol yarating (kamida 6 ta belgi):');
         return;
       } catch (error) {
         console.error('Username check error:', error);
@@ -158,13 +158,13 @@ bot.on('text', async (ctx, next) => {
       if (!ctx.session.registrationData) ctx.session.registrationData = {};
       
       if (messageText.length < 6) {
-        await ctx.reply('❌ Shartnoma kamida 6 ta belgidan iborat bo\'lishi kerak. Qaytadan kiriting:');
+        await ctx.reply('❌ Parol kamida 6 ta belgidan iborat bo\'lishi kerak. Qaytadan kiriting:');
         return;
       }
       
       ctx.session.registrationData.password = messageText;
       ctx.session.registrationStep = 'confirmPassword';
-      await ctx.reply('🔐 Shartnomani tasdiqlang:');
+      await ctx.reply('🔐 Parolni tasdiqlang:');
       return;
     }
     
@@ -172,7 +172,7 @@ bot.on('text', async (ctx, next) => {
       if (!ctx.session.registrationData) ctx.session.registrationData = {};
       
       if (messageText !== ctx.session.registrationData.password) {
-        await ctx.reply('❌ Shartnomalar mos kelmadi. Qaytadan tasdiqlang:');
+        await ctx.reply('❌ Parollar mos kelmadi. Qaytadan tasdiqlang:');
         return;
       }
       
