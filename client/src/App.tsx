@@ -10,6 +10,7 @@ import TeacherDashboard from "@/pages/dashboard/TeacherDashboard";
 import StudentDashboard from "@/pages/dashboard/StudentDashboard";
 import ParentDashboard from "@/pages/dashboard/ParentDashboard";
 import CenterDashboard from "@/pages/dashboard/CenterDashboard";
+import TeacherProfile from "@/pages/teacher/TeacherProfile";
 import LessonsPage from "@/pages/teacher/Lessons";
 import TestsPage from "@/pages/teacher/Tests";
 import StudentsPage from "@/pages/teacher/Students";
@@ -47,6 +48,11 @@ function Router() {
       </Route>
       
       {/* Teacher routes */}
+      <Route path="/teacher/profile">
+        <ProtectedRoute allowedRoles={["teacher"]}>
+          <TeacherProfile />
+        </ProtectedRoute>
+      </Route>
       <Route path="/teacher/lessons">
         <ProtectedRoute allowedRoles={["teacher"]}>
           <LessonsPage />
