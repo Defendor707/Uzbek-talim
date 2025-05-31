@@ -13,10 +13,7 @@ import CenterDashboard from "@/pages/dashboard/CenterDashboard";
 import LessonsPage from "@/pages/teacher/Lessons";
 import TestsPage from "@/pages/teacher/Tests";
 import StudentsPage from "@/pages/teacher/Students";
-import StudentLessonsPage from "@/pages/student/Lessons";
 import StudentTestsPage from "@/pages/student/Tests";
-import StudentResultsPage from "@/pages/student/Results";
-import ProfilePage from "@/pages/profile/ProfilePage";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function Router() {
@@ -67,26 +64,9 @@ function Router() {
       </Route>
       
       {/* Student routes */}
-      <Route path="/student/lessons">
-        <ProtectedRoute allowedRoles={["student"]}>
-          <StudentLessonsPage />
-        </ProtectedRoute>
-      </Route>
       <Route path="/student/tests">
         <ProtectedRoute allowedRoles={["student"]}>
           <StudentTestsPage />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/student/results">
-        <ProtectedRoute allowedRoles={["student"]}>
-          <StudentResultsPage />
-        </ProtectedRoute>
-      </Route>
-      
-      {/* Profile route - accessible by any authenticated user */}
-      <Route path="/profile">
-        <ProtectedRoute allowedRoles={["teacher", "student", "parent", "center"]}>
-          <ProfilePage />
         </ProtectedRoute>
       </Route>
       
