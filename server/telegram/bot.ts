@@ -251,7 +251,7 @@ bot.hears(['👨‍🏫 O\'qituvchi', '👨‍🎓 O\'quvchi', '👨‍👩‍�
   }
 });
 
-// Orqaga tugmasi
+// Back button handler
 bot.hears('🔙 Orqaga', async (ctx) => {
   // Check if user is logged in - return to their dashboard
   if (ctx.session.userId && ctx.session.role) {
@@ -292,23 +292,24 @@ bot.start(async (ctx) => {
   );
 });
 
-// Tugmalar bo'yicha handler - Yordam
-bot.hears('ℹ️ Yordam', async (ctx) => {
-  let helpText = '📋 *O\'zbek Ta\'lim platformasi*\n\n' +
-    '🔹 Tugmalar orqali barcha funksiyalardan foydalaning\n' +
-    '🔹 Profil ma\'lumotlaringizni to\'ldiring\n' +
-    '🔹 Darslar va testlar bilan ishlang\n\n';
+// Help command
+bot.help(async (ctx) => {
+  let helpText = 'O\'zbek Ta\'lim platformasi buyruqlari:\n\n' +
+    '/start - Botni qayta ishga tushirish\n' +
+    '/login - Tizimga kirish\n' +
+    '/register - Ro\'yxatdan o\'tish\n' +
+    '/profile - Profilingizni ko\'rish\n' +
+    '/lessons - Darslar ro\'yxati\n' +
+    '/tests - Testlar ro\'yxati\n' +
+    '/logout - Tizimdan chiqish\n\n';
   
+  // Add teacher-specific commands if user is a teacher
   if (ctx.session.userId && ctx.session.role === 'teacher') {
-    helpText += '*O\'qituvchi imkoniyatlari:*\n' +
-      '✏️ Profil tahrirlash - Ma\'lumotlaringizni yangilang\n' +
-      '📚 Darslar - O\'z darslaringizni boshqaring\n' +
-      '📝 Testlar - Test yarating va natijalarni ko\'ring\n';
-  } else if (ctx.session.userId && ctx.session.role === 'student') {
-    helpText += '*O\'quvchi imkoniyatlari:*\n' +
-      '📚 Darslar - Mavjud darslarni ko\'ring\n' +
-      '📝 Testlar - Testlarda qatnashing\n' +
-      '📊 Natijalar - O\'z natijalaringizni kuzating\n';
+    helpText += '*O\'qituvchi uchun qo\'shimcha buyruqlar:*\n' +
+      '/profile_edit - Profil ma\'lumotlarini tahrirlash\n' +
+      '/specialty - Mutaxassislikni o\'zgartirish\n' +
+      '/bio - Haqida bo\'limini o\'zgartirish\n' +
+      '/experience - Tajribani o\'zgartirish';
   }
   
   await ctx.reply(helpText, { parse_mode: 'Markdown' });
@@ -319,67 +320,8 @@ bot.hears('🔑 Kirish', async (ctx) => {
   await startLogin(ctx);
 });
 
-// Tugmalar bo'yicha handler - Profil ko'rish
-bot.hears('👤 Profil', async (ctx) => {
-  if (!ctx.session.userId) {
-    await ctx.reply('❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring.');
-    return;
-  }
-  
-  try {
-    const user = await storage.getUser(ctx.session.userId);
-    if (!user) {
-      await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
-      return;
-    }
-    
-    let profileDetails = '';
-    
-    if (user.role === 'teacher') {
-      const teacherProfile = await storage.getTeacherProfile(user.id);
-      if (teacherProfile) {
-        profileDetails = `🔬 Mutaxassislik: ${teacherProfile.specialty || 'Kiritilmagan'}\n`;
-        if (teacherProfile.experience) {
-          profileDetails += `⏱️ Tajriba: ${teacherProfile.experience} yil\n`;
-        }
-        if (teacherProfile.bio) {
-          profileDetails += `📝 Haqida: ${teacherProfile.bio}\n`;
-        }
-        if (teacherProfile.centerId) {
-          profileDetails += `🏢 O'quv markazi ID: ${teacherProfile.centerId}\n`;
-        }
-      } else {
-        profileDetails = `❗ O'qituvchi profili yaratilmagan.\n\n` +
-                        `📝 "✏️ Profil tahrirlash" tugmasini bosing.\n`;
-      }
-    } else if (user.role === 'student') {
-      const studentProfile = await storage.getStudentProfile(user.id);
-      if (studentProfile) {
-        profileDetails = `🎓 Sinf: ${studentProfile.grade}\n` +
-                         `🏫 Sinf: ${studentProfile.classroom}\n`;
-        if (studentProfile.parentId) {
-          profileDetails += `👨‍👩‍👧‍👦 Ota-ona ID: ${studentProfile.parentId}\n`;
-        }
-        if (studentProfile.centerId) {
-          profileDetails += `🏢 O'quv markazi ID: ${studentProfile.centerId}\n`;
-        }
-      }
-    }
-    
-    await ctx.reply(
-      `👤 *Profil ma'lumotlari*\n\n` +
-      `👤 Ism: ${user.fullName}\n` +
-      `📧 Email: ${user.email}\n` +
-      `🔑 Foydalanuvchi nomi: ${user.username}\n` +
-      `🧩 Rol: ${getRoleNameInUzbek(user.role)}\n` +
-      `📅 Ro'yxatdan o'tgan sana: ${new Date(user.createdAt).toLocaleDateString('uz-UZ')}\n\n` +
-      profileDetails,
-      { parse_mode: 'Markdown' }
-    );
-  } catch (error) {
-    console.error('Error fetching profile:', error);
-    await ctx.reply('❌ Profil ma\'lumotlarini olishda xatolik yuz berdi.');
-  }
+bot.command('login', async (ctx) => {
+  await startLogin(ctx);
 });
 
 async function startLogin(ctx: BotContext) {
@@ -416,124 +358,16 @@ async function startRegistration(ctx: BotContext) {
   );
 }
 
-// Tugmalar bo'yicha handler - Profil tahrirlash  
-bot.hears('✏️ Profil tahrirlash', async (ctx) => {
+// Profile command
+bot.command('profile', async (ctx) => {
   if (!ctx.session.userId) {
-    await ctx.reply('❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring.');
-    return;
-  }
-
-  try {
-    const user = await storage.getUser(ctx.session.userId);
-    if (!user) {
-      await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
-      return;
-    }
-
-    if (user.role !== 'teacher') {
-      await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun mavjud.');
-      return;
-    }
-
-    // Get existing profile
-    const existingProfile = await storage.getTeacherProfile(user.id);
-    
-    let message = '📝 *Profil tahrirlash*\n\n';
-    message += 'Quyidagi tugmalardan birini tanlang:\n\n';
-    
-    if (existingProfile) {
-      message += '*Joriy ma\'lumotlar:*\n';
-      message += `🔬 Mutaxassislik: ${existingProfile.specialty || 'Kiritilmagan'}\n`;
-      message += `⏱️ Tajriba: ${existingProfile.experience || 0} yil\n`;
-      message += `📝 Haqida: ${existingProfile.bio || 'Kiritilmagan'}`;
-    } else {
-      message += '❌ Profil ma\'lumotlari hali kiritilmagan.';
-    }
-
-    await ctx.reply(message, { 
-      parse_mode: 'Markdown',
-      reply_markup: {
-        keyboard: [
-          ['🔬 Mutaxassislik', '⏱️ Tajriba'],
-          ['📝 Haqida', '🔙 Orqaga']
-        ],
-        resize_keyboard: true
-      }
-    });
-  } catch (error) {
-    console.error('Error in profile_edit:', error);
-    await ctx.reply('❌ Profil tahrirlashda xatolik yuz berdi.');
-  }
-});
-
-// Profile field edit handlers
-bot.hears('🔬 Mutaxassislik', async (ctx) => {
-  if (!ctx.session.userId) {
-    await ctx.reply('❌ Siz tizimga kirmagansiz.');
-    return;
-  }
-
-  const user = await storage.getUser(ctx.session.userId);
-  if (!user || user.role !== 'teacher') {
-    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun mavjud.');
-    return;
-  }
-
-  ctx.session.editingField = 'specialty';
-  await ctx.reply(
-    '🔬 *Mutaxassislik o\'zgartirish*\n\n' +
-    'Mutaxassisligingizni kiriting (2-20 harf):\n' +
-    'Masalan: Matematika, Fizika, Kimyo...',
-    { parse_mode: 'Markdown' }
-  );
-});
-
-bot.hears('⏱️ Tajriba', async (ctx) => {
-  if (!ctx.session.userId) {
-    await ctx.reply('❌ Siz tizimga kirmagansiz.');
-    return;
-  }
-
-  const user = await storage.getUser(ctx.session.userId);
-  if (!user || user.role !== 'teacher') {
-    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun mavjud.');
-    return;
-  }
-
-  ctx.session.editingField = 'experience';
-  await ctx.reply(
-    '⏱️ *Tajriba o\'zgartirish*\n\n' +
-    'Ish tajribangizni yillarda kiriting (faqat raqam):\n' +
-    'Masalan: 5, 10, 15...',
-    { parse_mode: 'Markdown' }
-  );
-});
-
-bot.hears('📝 Haqida', async (ctx) => {
-  if (!ctx.session.userId) {
-    await ctx.reply('❌ Siz tizimga kirmagansiz.');
-    return;
-  }
-
-  const user = await storage.getUser(ctx.session.userId);
-  if (!user || user.role !== 'teacher') {
-    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun mavjud.');
-    return;
-  }
-
-  ctx.session.editingField = 'bio';
-  await ctx.reply(
-    '📝 *Haqida bo\'limi o\'zgartirish*\n\n' +
-    'O\'zingiz haqida qisqacha ma\'lumot kiriting (maksimal 200 harf):\n' +
-    'Masalan: Tajribali matematika o\'qituvchisi...',
-    { parse_mode: 'Markdown' }
-  );
-});
-
-// Darslar tugmasi
-bot.hears('📚 Darslar', async (ctx) => {
-  if (!ctx.session.userId) {
-    await ctx.reply('❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring.');
+    await ctx.reply(
+      '❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring:',
+      Markup.keyboard([
+        ['🔑 Kirish', '📝 Ro\'yxatdan o\'tish'],
+        ['ℹ️ Ma\'lumot', '📊 Statistika']
+      ]).resize()
+    );
     return;
   }
   
@@ -961,72 +795,17 @@ bot.on('text', async (ctx, next) => {
   }
 });
 
-// Chiqish tugmasi
-bot.hears('🚪 Chiqish', async (ctx) => {
+// Logout command
+bot.command('logout', async (ctx) => {
   ctx.session = {};
   await ctx.reply(
     '✅ Siz tizimdan muvaffaqiyatli chiqdingiz.\n\n' +
     'Iltimos, quyidagi amallardan birini tanlang:',
-    {
-      reply_markup: {
-        keyboard: [
-          ['🔑 Kirish', '📝 Ro\'yxatdan o\'tish'],
-          ['ℹ️ Yordam']
-        ],
-        resize_keyboard: true
-      }
-    }
+    Markup.keyboard([
+      ['🔑 Kirish', '📝 Ro\'yxatdan o\'tish'],
+      ['ℹ️ Ma\'lumot', '📊 Statistika']
+    ]).resize()
   );
-});
-
-// Testlar tugmasi
-bot.hears('📝 Testlar', async (ctx) => {
-  if (!ctx.session.userId) {
-    await ctx.reply('❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring.');
-    return;
-  }
-  
-  try {
-    const user = await storage.getUser(ctx.session.userId);
-    if (!user) {
-      await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
-      return;
-    }
-    
-    let tests;
-    if (user.role === 'teacher') {
-      tests = await storage.getTestsByTeacherId(user.id);
-    } else if (user.role === 'student') {
-      const profile = await storage.getStudentProfile(user.id);
-      if (!profile) {
-        await ctx.reply('❌ O\'quvchi profili topilmadi.');
-        return;
-      }
-      tests = await storage.getActiveTestsForStudent(profile.grade, profile.classroom);
-    } else {
-      await ctx.reply('❌ Sizning rolingiz testlarni ko\'rishga ruxsat bermaydi.');
-      return;
-    }
-    
-    if (!tests || tests.length === 0) {
-      await ctx.reply('ℹ️ Hozircha testlar mavjud emas.');
-      return;
-    }
-    
-    for (const test of tests.slice(0, 3)) {
-      await ctx.reply(
-        `📝 *${test.title}*\n\n` +
-        `📋 *Turi*: ${test.type}\n` +
-        `🎓 *Sinf*: ${test.grade}\n` +
-        `⏰ *Holati*: ${getTestStatusInUzbek(test.status)}\n` +
-        `📅 *Yaratilgan sana*: ${new Date(test.createdAt).toLocaleDateString('uz-UZ')}`,
-        { parse_mode: 'Markdown' }
-      );
-    }
-  } catch (error) {
-    console.error('Error fetching tests:', error);
-    await ctx.reply('❌ Testlarni olishda xatolik yuz berdi.');
-  }
 });
 
 // Information command
@@ -1087,34 +866,32 @@ bot.catch((err, ctx) => {
 function getKeyboardByRole(role: string) {
   if (role === 'teacher') {
     return [
-      ['👤 Profil', '✏️ Profil tahrirlash'],
-      ['📚 Darslar', '📝 Testlar'],
-      ['ℹ️ Yordam', '🚪 Chiqish']
+      ['👤 Profil', '📚 Darslik'],
+      ['📝 Testlar', '📊 Statistika'],
+      ['⚡ Boshqalar']
     ];
   } else if (role === 'student') {
     return [
-      ['👤 Profil', '📝 Testlar'],
-      ['📚 Darslar', '📊 Natijalar'],
-      ['ℹ️ Yordam', '🚪 Chiqish']
+      ['👤 Profil', '📝 Test ishlash'],
+      ['📚 Darsliklarim', '📊 Natijalarim'],
+      ['⚡ Boshqalar']
     ];
   } else if (role === 'parent') {
     return [
-      ['👤 Profil', '👶 Farzandlar'],
-      ['📊 Natijalar', 'ℹ️ Yordam'],
-      ['🚪 Chiqish']
+      ['👶 Farzandim', '📊 Statistika'],
+      ['💳 To\'lovlar', '⚡ Boshqalar']
     ];
   } else if (role === 'center') {
     return [
-      ['👤 Profil', '👨‍🏫 O\'qituvchilar'],
-      ['👨‍🎓 O\'quvchilar', '📊 Hisobotlar'],
-      ['ℹ️ Yordam', '🚪 Chiqish']
+      ['👨‍🏫 O\'qituvchilar', '👨‍🎓 O\'quvchilar'],
+      ['📊 Hisobotlar', '⚡ Boshqalar']
     ];
   }
   
   // Default keyboard
   return [
     ['👤 Profil', '📚 Darslar'],
-    ['📝 Testlar', 'ℹ️ Yordam']
+    ['📝 Testlar', '⚡ Boshqalar']
   ];
 }
 
