@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,8 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Link } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -32,7 +30,6 @@ type TeacherProfileFormData = z.infer<typeof teacherProfileSchema>;
 const TeacherProfile: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isEditing, setIsEditing] = useState(false);
 
   // Fetch teacher profile
   const { data: profile, isLoading } = useQuery<any>({
@@ -51,16 +48,16 @@ const TeacherProfile: React.FC = () => {
 
   // Create profile mutation
   const createProfileMutation = useMutation({
-    mutationFn: async (data: TeacherProfileFormData) => {
-      const response = await apiRequest('POST', '/api/profile/teacher', data);
-      return await response.json();
-    },
+    mutationFn: (data: TeacherProfileFormData) => 
+      apiRequest('/api/profile/teacher', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profile/teacher'] });
-      setIsEditing(false);
       toast({
-        title: 'Muvaffaqiyatli',
-        description: 'Profil yaratildi',
+        title: 'Muvaffaqiyat',
+        description: 'Profil muvaffaqiyatli yaratildi',
       });
     },
     onError: (error: any) => {
@@ -74,16 +71,16 @@ const TeacherProfile: React.FC = () => {
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
-    mutationFn: async (data: TeacherProfileFormData) => {
-      const response = await apiRequest('PUT', '/api/profile/teacher', data);
-      return await response.json();
-    },
+    mutationFn: (data: TeacherProfileFormData) => 
+      apiRequest('/api/profile/teacher', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profile/teacher'] });
-      setIsEditing(false);
       toast({
-        title: 'Muvaffaqiyatli',
-        description: 'Profil yangilandi',
+        title: 'Muvaffaqiyat',
+        description: 'Profil muvaffaqiyatli yangilandi',
       });
     },
     onError: (error: any) => {
@@ -147,159 +144,80 @@ const TeacherProfile: React.FC = () => {
         {/* Profile Card */}
         <Card className="mb-8">
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Profil Ma'lumotlari</CardTitle>
-              {!isEditing && (
-                <Button onClick={() => setIsEditing(true)}>
-                  Tahrirlash
-                </Button>
-              )}
-            </div>
+            <CardTitle>Profil Ma'lumotlari</CardTitle>
           </CardHeader>
           <CardContent>
-            {isEditing ? (
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                
-                {/* Basic Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="fullName">To'liq ism</Label>
-                    <Input
-                      id="fullName"
-                      value={user?.fullName || ''}
-                      disabled
-                      className="bg-gray-50"
-                    />
-                    <p className="text-sm text-gray-500 mt-1">Bu ma'lumot foydalanuvchi sozlamalarida o'zgartiriladi</p>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="specialty">Mutaxassislik *</Label>
-                    <Input
-                      id="specialty"
-                      {...form.register('specialty')}
-                      placeholder="Masalan: Matematika, Fizika, IT"
-                      maxLength={20}
-                    />
-                    {form.formState.errors.specialty && (
-                      <p className="text-red-500 text-sm mt-1">{form.formState.errors.specialty.message}</p>
-                    )}
-                    <p className="text-sm text-gray-500 mt-1">Maksimal 20 harf</p>
-                  </div>
-                </div>
-
-                {/* Experience */}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="experience">Tajriba (yillarda)</Label>
+                  <Label htmlFor="fullName">To'liq ism</Label>
                   <Input
-                    id="experience"
-                    type="number"
-                    {...form.register('experience', { valueAsNumber: true })}
-                    placeholder="0"
-                    min="0"
+                    id="fullName"
+                    value={user?.fullName || ''}
+                    disabled
+                    className="bg-gray-50"
                   />
-                  {form.formState.errors.experience && (
-                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.experience.message}</p>
+                  <p className="text-sm text-gray-500 mt-1">Bu ma'lumot foydalanuvchi sozlamalarida o'zgartiriladi</p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="specialty">Mutaxassislik *</Label>
+                  <Input
+                    id="specialty"
+                    {...form.register('specialty')}
+                    placeholder="Masalan: Matematika, Fizika, IT"
+                    maxLength={20}
+                  />
+                  {form.formState.errors.specialty && (
+                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.specialty.message}</p>
                   )}
-                </div>
-
-
-
-                {/* Bio */}
-                <div>
-                  <Label htmlFor="bio">Haqida</Label>
-                  <Textarea
-                    id="bio"
-                    {...form.register('bio')}
-                    placeholder="O'zingiz haqingizda, erishgan yutuqlaringiz, tajribangiz va boshqa ma'lumotlar..."
-                    maxLength={200}
-                    rows={4}
-                  />
-                  <div className="flex justify-between mt-1">
-                    {form.formState.errors.bio && (
-                      <p className="text-red-500 text-sm">{form.formState.errors.bio.message}</p>
-                    )}
-                    <p className="text-sm text-gray-500 ml-auto">
-                      {form.watch('bio')?.length || 0}/200
-                    </p>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex space-x-4">
-                  <Button 
-                    type="submit" 
-                    disabled={createProfileMutation.isPending || updateProfileMutation.isPending}
-                  >
-                    {createProfileMutation.isPending || updateProfileMutation.isPending 
-                      ? 'Saqlanmoqda...' 
-                      : 'Saqlash'
-                    }
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsEditing(false)}
-                  >
-                    Bekor qilish
-                  </Button>
-                </div>
-              </form>
-            ) : profile ? (
-              <div className="space-y-6">
-                {/* Display Profile Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">To'liq ism</h3>
-                    <p className="text-gray-600">{user?.fullName}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Mutaxassislik</h3>
-                    <p className="text-gray-600">{profile.specialty || 'Kiritilmagan'}</p>
-                  </div>
-                </div>
-
-                {profile.experience && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Tajriba</h3>
-                    <p className="text-gray-600">{profile.experience} yil</p>
-                  </div>
-                )}
-
-                {profile.bio && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Haqida</h3>
-                    <p className="text-gray-600 leading-relaxed">{profile.bio}</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Display Profile Info - Empty State */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">To'liq ism</h3>
-                    <p className="text-gray-600">{user?.fullName}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Mutaxassislik</h3>
-                    <p className="text-gray-500">Kiritilmagan</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Tajriba</h3>
-                  <p className="text-gray-500">Kiritilmagan</p>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Haqida</h3>
-                  <p className="text-gray-500">Kiritilmagan</p>
+                  <p className="text-sm text-gray-500 mt-1">Maksimal 20 harf</p>
                 </div>
               </div>
-            )}
+
+              {/* Experience */}
+              <div>
+                <Label htmlFor="experience">Tajriba (yillarda)</Label>
+                <Input
+                  id="experience"
+                  type="number"
+                  {...form.register('experience', { valueAsNumber: true })}
+                  placeholder="0"
+                  min="0"
+                />
+                {form.formState.errors.experience && (
+                  <p className="text-red-500 text-sm mt-1">{form.formState.errors.experience.message}</p>
+                )}
+              </div>
+
+              {/* Bio */}
+              <div>
+                <Label htmlFor="bio">Haqida</Label>
+                <Textarea
+                  id="bio"
+                  {...form.register('bio')}
+                  placeholder="O'zingiz haqingizda qisqacha ma'lumot..."
+                  rows={4}
+                  maxLength={200}
+                />
+                {form.formState.errors.bio && (
+                  <p className="text-red-500 text-sm mt-1">{form.formState.errors.bio.message}</p>
+                )}
+                <p className="text-sm text-gray-500 mt-1">Maksimal 200 harf</p>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex gap-3">
+                <Button
+                  type="submit"
+                  disabled={createProfileMutation.isPending || updateProfileMutation.isPending}
+                >
+                  {createProfileMutation.isPending || updateProfileMutation.isPending ? 'Saqlanmoqda...' : 'Saqlash'}
+                </Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       </div>
