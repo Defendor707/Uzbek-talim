@@ -294,16 +294,25 @@ bot.start(async (ctx) => {
 
 // Help command
 bot.help(async (ctx) => {
-  await ctx.reply(
-    'O\'zbek Ta\'lim platformasi buyruqlari:\n\n' +
+  let helpText = 'O\'zbek Ta\'lim platformasi buyruqlari:\n\n' +
     '/start - Botni qayta ishga tushirish\n' +
     '/login - Tizimga kirish\n' +
     '/register - Ro\'yxatdan o\'tish\n' +
     '/profile - Profilingizni ko\'rish\n' +
     '/lessons - Darslar ro\'yxati\n' +
     '/tests - Testlar ro\'yxati\n' +
-    '/logout - Tizimdan chiqish'
-  );
+    '/logout - Tizimdan chiqish\n\n';
+  
+  // Add teacher-specific commands if user is a teacher
+  if (ctx.session.userId && ctx.session.role === 'teacher') {
+    helpText += '*O\'qituvchi uchun qo\'shimcha buyruqlar:*\n' +
+      '/profile_edit - Profil ma\'lumotlarini tahrirlash\n' +
+      '/specialty - Mutaxassislikni o\'zgartirish\n' +
+      '/bio - Haqida bo\'limini o\'zgartirish\n' +
+      '/experience - Tajribani o\'zgartirish';
+  }
+  
+  await ctx.reply(helpText, { parse_mode: 'Markdown' });
 });
 
 // Login handlers
@@ -385,7 +394,12 @@ bot.command('profile', async (ctx) => {
           profileDetails += `🏢 O'quv markazi ID: ${teacherProfile.centerId}\n`;
         }
       } else {
-        profileDetails = `❌ Profil ma'lumotlari to'ldirilmagan. /profile_edit buyrug'i bilan to'ldiring.\n`;
+        profileDetails = `❗ O'qituvchi profili yaratilmagan.\n\n` +
+                        `📝 Profilingizni to'ldirish uchun quyidagi buyruqlardan foydalaning:\n` +
+                        `/profile_edit - Profil tahrirlash menusi\n` +
+                        `/specialty - Mutaxassislikni o'rnatish\n` +
+                        `/bio - Haqida bo'limini yozish\n` +
+                        `/experience - Tajribani kiritish\n`;
       }
     } else if (user.role === 'student') {
       const studentProfile = await storage.getStudentProfile(user.id);
