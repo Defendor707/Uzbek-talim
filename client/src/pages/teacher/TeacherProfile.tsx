@@ -149,7 +149,7 @@ const TeacherProfile: React.FC = () => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Profil Ma'lumotlari</CardTitle>
-              {profile && !isEditing && (
+              {!isEditing && (
                 <Button onClick={() => setIsEditing(true)}>
                   Tahrirlash
                 </Button>

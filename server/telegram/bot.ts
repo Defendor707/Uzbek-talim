@@ -756,10 +756,10 @@ bot.hears('👤 Profil', async (ctx) => {
       } else {
         profileDetails = `❗ O'qituvchi profili yaratilmagan.\n\n` +
                         `📝 Profilingizni to'ldirish uchun quyidagi buyruqlardan foydalaning:\n` +
-                        `/profile_edit - Profil tahrirlash menusi\n` +
-                        `/specialty - Mutaxassislikni o'rnatish\n` +
-                        `/bio - Haqida bo'limini yozish\n` +
-                        `/experience - Tajribani kiritish\n`;
+                        `profile_edit - Profil tahrirlash menusi\n` +
+                        `specialty - Mutaxassislikni o'rnatish\n` +
+                        `bio - Haqida bo'limini yozish\n` +
+                        `experience - Tajribani kiritish`;
       }
     } else if (user.role === 'student') {
       const studentProfile = await storage.getStudentProfile(user.id);
