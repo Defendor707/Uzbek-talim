@@ -16,9 +16,9 @@ import useAuth from '@/hooks/useAuth';
 // Teacher Profile Schema
 const teacherProfileSchema = z.object({
   specialty: z.string()
-    .min(2, 'Mutaxassislik kamida 2 ta harfdan iborat bo\'lishi kerak')
     .max(20, 'Mutaxassislik 20 ta harfdan oshmasligi kerak')
-    .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]+$/, 'Mutaxassislikda faqat harflar bo\'lishi mumkin'),
+    .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]*$/, 'Mutaxassislikda faqat harflar bo\'lishi mumkin')
+    .optional(),
   bio: z.string()
     .max(200, 'Haqida bo\'limi 200 ta harfdan oshmasligi kerak')
     .optional(),
@@ -49,10 +49,7 @@ const TeacherProfile: React.FC = () => {
   // Create profile mutation
   const createProfileMutation = useMutation({
     mutationFn: (data: TeacherProfileFormData) => 
-      apiRequest('/api/profile/teacher', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      apiRequest('/api/profile/teacher', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profile/teacher'] });
       toast({
@@ -72,10 +69,7 @@ const TeacherProfile: React.FC = () => {
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: (data: TeacherProfileFormData) => 
-      apiRequest('/api/profile/teacher', {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+      apiRequest('/api/profile/teacher', 'PUT', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profile/teacher'] });
       toast({
@@ -163,7 +157,7 @@ const TeacherProfile: React.FC = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="specialty">Mutaxassislik *</Label>
+                  <Label htmlFor="specialty">Mutaxassislik</Label>
                   <Input
                     id="specialty"
                     {...form.register('specialty')}
@@ -173,7 +167,7 @@ const TeacherProfile: React.FC = () => {
                   {form.formState.errors.specialty && (
                     <p className="text-red-500 text-sm mt-1">{form.formState.errors.specialty.message}</p>
                   )}
-                  <p className="text-sm text-gray-500 mt-1">Maksimal 20 harf</p>
+                  <p className="text-sm text-gray-500 mt-1">Ixtiyoriy. Maksimal 20 harf</p>
                 </div>
               </div>
 
