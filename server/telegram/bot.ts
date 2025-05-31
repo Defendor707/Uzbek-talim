@@ -669,6 +669,28 @@ bot.hears('✏️ Ismni o\'zgartirish', async (ctx) => {
   );
 });
 
+bot.hears('📞 Telefon raqam', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz.');
+    return;
+  }
+
+  const user = await storage.getUser(ctx.session.userId);
+  if (!user || user.role !== 'teacher') {
+    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun mavjud.');
+    return;
+  }
+
+  const profile = await storage.getTeacherProfile(user.id);
+  ctx.session.editingField = 'phoneNumber';
+  await ctx.reply(
+    `📞 Telefon raqam o'zgartirish\n\n` +
+    `Joriy telefon: ${profile?.phoneNumber || 'Kiritilmagan'}\n\n` +
+    `Yangi telefon raqamingizni kiriting (+998901234567):`,
+    Markup.keyboard([['🔙 Orqaga']]).resize()
+  );
+});
+
 bot.hears('🔬 Mutaxassislik', async (ctx) => {
   if (!ctx.session.userId) {
     await ctx.reply('❌ Siz tizimga kirmagansiz.');
@@ -766,6 +788,10 @@ bot.on('text', async (ctx, next) => {
         if (value.length < 2 || value.length > 50) {
           errorMessage = 'Ism-familya 2-50 harf orasida bo\'lishi kerak.';
         }
+      } else if (field === 'phoneNumber') {
+        if (value.length > 0 && !/^[\+]?[0-9\s\-\(\)]{9,15}$/.test(value)) {
+          errorMessage = 'Telefon raqam noto\'g\'ri formatda. Masalan: +998901234567';
+        }
       } else if (field === 'specialty') {
         if (value.length > 20) {
           errorMessage = 'Mutaxassislik 20 harfdan oshmasligi kerak.';
@@ -805,10 +831,11 @@ bot.on('text', async (ctx, next) => {
           await storage.updateTeacherProfile(user.id, profileData);
         } else {
           // Create new profile with default values
+          profileData.phoneNumber = field === 'phoneNumber' ? validatedValue : undefined;
           profileData.specialty = field === 'specialty' ? validatedValue : undefined;
           profileData.bio = field === 'bio' ? validatedValue : undefined;
           profileData.experience = field === 'experience' ? validatedValue : undefined;
-          profileData.subjects = ['Umumiy']; // Default subject
+          profileData.subjects = field === 'specialty' ? [validatedValue] : undefined;
           
           await storage.createTeacherProfile(profileData);
         }
@@ -817,8 +844,16 @@ bot.on('text', async (ctx, next) => {
       // Clear editing state
       delete ctx.session.editingField;
 
+      const fieldNames = {
+        fullName: 'Ism-familya',
+        phoneNumber: 'Telefon raqam',
+        specialty: 'Mutaxassislik',
+        bio: 'Haqida bo\'limi',
+        experience: 'Tajriba'
+      };
+
       await ctx.reply(
-        `✅ ${field === 'fullName' ? 'Ism-familya' : field === 'specialty' ? 'Mutaxassislik' : field === 'bio' ? 'Haqida bo\'limi' : 'Tajriba'} muvaffaqiyatli yangilandi!`,
+        `✅ ${fieldNames[field as keyof typeof fieldNames]} muvaffaqiyatli yangilandi!`,
         Markup.keyboard(getKeyboardByRole(user.role)).resize()
       );
 
@@ -851,7 +886,12 @@ bot.hears('👤 Profil', async (ctx) => {
     if (user.role === 'teacher') {
       const teacherProfile = await storage.getTeacherProfile(user.id);
       if (teacherProfile) {
-        profileDetails = `🔬 Mutaxassislik: ${teacherProfile.specialty || 'Kiritilmagan'}\n`;
+        if (teacherProfile.phoneNumber) {
+          profileDetails += `📞 Telefon: ${teacherProfile.phoneNumber}\n`;
+        }
+        if (teacherProfile.specialty) {
+          profileDetails += `🔬 Mutaxassislik: ${teacherProfile.specialty}\n`;
+        }
         if (teacherProfile.experience) {
           profileDetails += `⏱️ Tajriba: ${teacherProfile.experience} yil\n`;
         }
@@ -861,13 +901,12 @@ bot.hears('👤 Profil', async (ctx) => {
         if (teacherProfile.centerId) {
           profileDetails += `🏢 O'quv markazi ID: ${teacherProfile.centerId}\n`;
         }
+        
+        if (!profileDetails) {
+          profileDetails = `❗ Profil ma'lumotlari to'ldirilmagan.\n`;
+        }
       } else {
-        profileDetails = `❗ O'qituvchi profili yaratilmagan.\n\n` +
-                        `📝 Profilingizni to'ldirish uchun quyidagi buyruqlardan foydalaning:\n` +
-                        `profile_edit - Profil tahrirlash menusi\n` +
-                        `specialty - Mutaxassislikni o'rnatish\n` +
-                        `bio - Haqida bo'limini yozish\n` +
-                        `experience - Tajribani kiritish`;
+        profileDetails = `❗ O'qituvchi profili yaratilmagan.\n`;
       }
     } else if (user.role === 'student') {
       const studentProfile = await storage.getStudentProfile(user.id);
@@ -884,15 +923,14 @@ bot.hears('👤 Profil', async (ctx) => {
     }
     
     const keyboard = user.role === 'teacher' ? [
-      ['✏️ Ismni o\'zgartirish', '🔬 Mutaxassislik'],
-      ['📝 Haqida', '⏱️ Tajriba'],
-      ['🔙 Orqaga']
+      ['✏️ Ismni o\'zgartirish', '📞 Telefon raqam'],
+      ['🔬 Mutaxassislik', '⏱️ Tajriba'],
+      ['📝 Haqida', '🔙 Orqaga']
     ] : [['🔙 Orqaga']];
 
     await ctx.reply(
       `👤 Profil ma'lumotlari\n\n` +
       `👤 Ism: ${user.fullName}\n` +
-      `📧 Email: ${user.email}\n` +
       `🔑 Foydalanuvchi nomi: ${user.username}\n` +
       `🧩 Rol: ${getRoleNameInUzbek(user.role)}\n` +
       `📅 Ro'yxatdan o'tgan sana: ${new Date(user.createdAt).toLocaleDateString('uz-UZ')}\n\n` +
