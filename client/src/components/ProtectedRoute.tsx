@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation } from 'wouter';
 import useAuth from '@/hooks/useAuth';
 
@@ -11,6 +11,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   const { user, isLoadingUser } = useAuth();
   const [, setLocation] = useLocation();
 
+  useEffect(() => {
+    if (!isLoadingUser && !user) {
+      setLocation('/login');
+    } else if (!isLoadingUser && user && !allowedRoles.includes(user.role)) {
+      setLocation('/login');
+    }
+  }, [user, isLoadingUser, allowedRoles, setLocation]);
+
   if (isLoadingUser) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -19,13 +27,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
     );
   }
 
-  if (!user) {
-    setLocation('/login');
-    return null;
-  }
-
-  if (!allowedRoles.includes(user.role)) {
-    setLocation('/login');
+  if (!user || !allowedRoles.includes(user.role)) {
     return null;
   }
 
