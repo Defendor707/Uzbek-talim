@@ -157,14 +157,7 @@ const TeacherProfile: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {!profile && !isEditing ? (
-              <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">Profilingiz hali yaratilmagan</p>
-                <Button onClick={() => setIsEditing(true)}>
-                  Profil Yaratish
-                </Button>
-              </div>
-            ) : isEditing ? (
+            {isEditing ? (
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 
                 {/* Basic Info */}
@@ -240,7 +233,7 @@ const TeacherProfile: React.FC = () => {
                   >
                     {createProfileMutation.isPending || updateProfileMutation.isPending 
                       ? 'Saqlanmoqda...' 
-                      : profile ? 'Yangilash' : 'Yaratish'
+                      : 'Saqlash'
                     }
                   </Button>
                   <Button 
@@ -252,7 +245,7 @@ const TeacherProfile: React.FC = () => {
                   </Button>
                 </div>
               </form>
-            ) : (
+            ) : profile ? (
               <div className="space-y-6">
                 {/* Display Profile Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -263,7 +256,7 @@ const TeacherProfile: React.FC = () => {
                   
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Mutaxassislik</h3>
-                    <p className="text-gray-600">{profile.specialty}</p>
+                    <p className="text-gray-600">{profile.specialty || 'Kiritilmagan'}</p>
                   </div>
                 </div>
 
@@ -274,14 +267,37 @@ const TeacherProfile: React.FC = () => {
                   </div>
                 )}
 
-
-
                 {profile.bio && (
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Haqida</h3>
                     <p className="text-gray-600 leading-relaxed">{profile.bio}</p>
                   </div>
                 )}
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Display Profile Info - Empty State */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">To'liq ism</h3>
+                    <p className="text-gray-600">{user?.fullName}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Mutaxassislik</h3>
+                    <p className="text-gray-500">Kiritilmagan</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Tajriba</h3>
+                  <p className="text-gray-500">Kiritilmagan</p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Haqida</h3>
+                  <p className="text-gray-500">Kiritilmagan</p>
+                </div>
               </div>
             )}
           </CardContent>
