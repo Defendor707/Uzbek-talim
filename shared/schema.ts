@@ -196,7 +196,6 @@ export const insertTeacherProfileSchema = createInsertSchema(teacherProfiles)
     bio: z.string()
       .max(200, 'Haqida bo\'limi 200 ta harfdan oshmasligi kerak')
       .optional(),
-    subjects: z.array(z.string()).min(1, 'Kamida bitta fan tanlash kerak'),
     experience: z.number().min(0, 'Tajriba manfiy bo\'lishi mumkin emas').optional(),
   });
 
