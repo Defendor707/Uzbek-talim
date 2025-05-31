@@ -21,7 +21,6 @@ const teacherProfileSchema = z.object({
     .min(2, 'Mutaxassislik kamida 2 ta harfdan iborat bo\'lishi kerak')
     .max(20, 'Mutaxassislik 20 ta harfdan oshmasligi kerak')
     .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]+$/, 'Mutaxassislikda faqat harflar bo\'lishi mumkin'),
-  subjects: z.array(z.string()).min(1, 'Kamida bitta fan tanlash kerak'),
   bio: z.string()
     .max(200, 'Haqida bo\'limi 200 ta harfdan oshmasligi kerak')
     .optional(),
@@ -30,30 +29,9 @@ const teacherProfileSchema = z.object({
 
 type TeacherProfileFormData = z.infer<typeof teacherProfileSchema>;
 
-// Available subjects list
-const availableSubjects = [
-  'Matematika',
-  'Ona tili',
-  'Fizika',
-  'Kimyo',
-  'Biologiya',
-  'Tarix',
-  'Geografiya',
-  'Ingliz tili',
-  'Informatika',
-  'Kiber xavfsizlik',
-  'Kulolchilik',
-  'Bog\'bonlik',
-  'Shaxmat',
-  'Sport',
-  'San\'at',
-  'Musiqa'
-];
-
 const TeacherProfile: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false);
 
   // Fetch teacher profile
@@ -66,7 +44,6 @@ const TeacherProfile: React.FC = () => {
     resolver: zodResolver(teacherProfileSchema),
     defaultValues: {
       specialty: profile?.specialty || '',
-      subjects: profile?.subjects || [],
       bio: profile?.bio || '',
       experience: profile?.experience || 0,
     },
@@ -119,39 +96,18 @@ const TeacherProfile: React.FC = () => {
   });
 
   const onSubmit = (data: TeacherProfileFormData) => {
-    const formData = {
-      ...data,
-      subjects: selectedSubjects,
-    };
-
     if (profile) {
-      updateProfileMutation.mutate(formData);
+      updateProfileMutation.mutate(data);
     } else {
-      createProfileMutation.mutate(formData);
+      createProfileMutation.mutate(data);
     }
   };
-
-  const toggleSubject = (subject: string) => {
-    setSelectedSubjects(prev => 
-      prev.includes(subject) 
-        ? prev.filter(s => s !== subject)
-        : [...prev, subject]
-    );
-  };
-
-  // Initialize subjects when profile loads
-  React.useEffect(() => {
-    if (profile?.subjects) {
-      setSelectedSubjects(profile.subjects);
-    }
-  }, [profile]);
 
   // Initialize form when profile loads
   React.useEffect(() => {
     if (profile) {
       form.reset({
         specialty: profile.specialty || '',
-        subjects: profile.subjects || [],
         bio: profile.bio || '',
         experience: profile.experience || 0,
       });
@@ -254,28 +210,7 @@ const TeacherProfile: React.FC = () => {
                   )}
                 </div>
 
-                {/* Subjects */}
-                <div>
-                  <Label>Fanlar *</Label>
-                  <p className="text-sm text-gray-500 mb-3">O'qitadigan fanlaringizni tanlang</p>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                    {availableSubjects.map((subject) => (
-                      <Button
-                        key={subject}
-                        type="button"
-                        variant={selectedSubjects.includes(subject) ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => toggleSubject(subject)}
-                        className="justify-start"
-                      >
-                        {subject}
-                      </Button>
-                    ))}
-                  </div>
-                  {selectedSubjects.length === 0 && (
-                    <p className="text-red-500 text-sm mt-2">Kamida bitta fan tanlash kerak</p>
-                  )}
-                </div>
+
 
                 {/* Bio */}
                 <div>
@@ -339,16 +274,7 @@ const TeacherProfile: React.FC = () => {
                   </div>
                 )}
 
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Fanlar</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.subjects?.map((subject: string) => (
-                      <Badge key={subject} variant="secondary">
-                        {subject}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
+
 
                 {profile.bio && (
                   <div>
