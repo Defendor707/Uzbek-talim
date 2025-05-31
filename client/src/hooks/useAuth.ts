@@ -31,7 +31,7 @@ export type RegisterData = {
 
 const useAuth = () => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-  const [, navigate] = useLocation();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   // Query to fetch current user data
@@ -57,13 +57,13 @@ const useAuth = () => {
       // Redirect based on user role
       setTimeout(() => {
         if (data.user.role === 'teacher') {
-          navigate('/dashboard/teacher');
+          setLocation('/dashboard/teacher');
         } else if (data.user.role === 'student') {
-          navigate('/dashboard/student');
+          setLocation('/dashboard/student');
         } else if (data.user.role === 'parent') {
-          navigate('/dashboard/parent');
+          setLocation('/dashboard/parent');
         } else if (data.user.role === 'center') {
-          navigate('/dashboard/center');
+          setLocation('/dashboard/center');
         }
       }, 100);
       
@@ -98,13 +98,13 @@ const useAuth = () => {
       // Redirect based on user role
       setTimeout(() => {
         if (data.user.role === 'teacher') {
-          navigate('/dashboard/teacher');
+          setLocation('/dashboard/teacher');
         } else if (data.user.role === 'student') {
-          navigate('/dashboard/student');
+          setLocation('/dashboard/student');
         } else if (data.user.role === 'parent') {
-          navigate('/dashboard/parent');
+          setLocation('/dashboard/parent');
         } else if (data.user.role === 'center') {
-          navigate('/dashboard/center');
+          setLocation('/dashboard/center');
         }
       }, 100);
       
@@ -128,7 +128,7 @@ const useAuth = () => {
     localStorage.removeItem('token');
     setToken(null);
     queryClient.clear();
-    navigate('/login');
+    setLocation('/login');
     
     toast({
       title: 'Chiqish',

@@ -158,8 +158,15 @@ bot.on('text', async (ctx, next) => {
     if (ctx.session.registrationStep === 'password') {
       if (!ctx.session.registrationData) ctx.session.registrationData = {};
       
+      // Password validation
       if (messageText.length < 6) {
         await ctx.reply('❌ Parol kamida 6 ta belgidan iborat bo\'lishi kerak. Qaytadan kiriting:');
+        return;
+      }
+      
+      // Check password strength (at least one letter or number)
+      if (!/[a-zA-Z]/.test(messageText) && !/\d/.test(messageText)) {
+        await ctx.reply('❌ Parol kamida bitta harf yoki raqam bo\'lishi kerak. Qaytadan kiriting:');
         return;
       }
       
