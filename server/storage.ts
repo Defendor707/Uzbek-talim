@@ -17,6 +17,7 @@ export interface IStorage {
   getStudentProfile(userId: number): Promise<schema.StudentProfile | undefined>;
   createTeacherProfile(profile: schema.InsertTeacherProfile): Promise<schema.TeacherProfile>;
   getTeacherProfile(userId: number): Promise<schema.TeacherProfile | undefined>;
+  updateTeacherProfile(userId: number, profileData: Partial<schema.InsertTeacherProfile>): Promise<schema.TeacherProfile | undefined>;
   createCenterProfile(profile: schema.InsertCenterProfile): Promise<schema.CenterProfile>;
   getCenterProfile(userId: number): Promise<schema.CenterProfile | undefined>;
   
@@ -121,6 +122,16 @@ export class DatabaseStorage implements IStorage {
   async getTeacherProfile(userId: number): Promise<schema.TeacherProfile | undefined> {
     const [profile] = await db.select().from(schema.teacherProfiles).where(eq(schema.teacherProfiles.userId, userId));
     return profile;
+  }
+
+  async updateTeacherProfile(userId: number, profileData: Partial<schema.InsertTeacherProfile>): Promise<schema.TeacherProfile | undefined> {
+    const [updatedProfile] = await db
+      .update(schema.teacherProfiles)
+      .set({ ...profileData, updatedAt: new Date() })
+      .where(eq(schema.teacherProfiles.userId, userId))
+      .returning();
+    
+    return updatedProfile;
   }
   
   async createCenterProfile(profile: schema.InsertCenterProfile): Promise<schema.CenterProfile> {

@@ -770,6 +770,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Teacher Profile Routes
+  app.get("/api/profile/teacher", authenticate, authorize(["teacher"]), async (req, res) => {
+    try {
+      const profile = await storage.getTeacherProfile(req.user!.userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Teacher profile not found" });
+      }
+      return res.status(200).json(profile);
+    } catch (error) {
+      console.error("Error fetching teacher profile:", error);
+      return res.status(500).json({ message: "Failed to fetch teacher profile" });
+    }
+  });
+
+  app.post("/api/profile/teacher", authenticate, authorize(["teacher"]), async (req, res) => {
+    try {
+      const profileData = schema.insertTeacherProfileSchema.parse({
+        ...req.body,
+        userId: req.user!.userId,
+      });
+
+      const newProfile = await storage.createTeacherProfile(profileData);
+      
+      // Notify bot users and sync with website
+      await botNotificationService.notifyProfileUpdated(req.user!.userId, 'teacher');
+      await syncService.notifyProfileUpdate(req.user!.userId, newProfile, 'teacher');
+      
+      return res.status(201).json(newProfile);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: fromZodError(error).details,
+        });
+      }
+      console.error("Error creating teacher profile:", error);
+      return res.status(500).json({ message: "Failed to create teacher profile" });
+    }
+  });
+
+  app.put("/api/profile/teacher", authenticate, authorize(["teacher"]), async (req, res) => {
+    try {
+      // Check if profile exists
+      const existingProfile = await storage.getTeacherProfile(req.user!.userId);
+      if (!existingProfile) {
+        return res.status(404).json({ message: "Teacher profile not found" });
+      }
+
+      const profileData = schema.insertTeacherProfileSchema.partial().parse(req.body);
+      
+      // Update profile through storage (we'll need to add this method)
+      const updatedProfile = await storage.updateTeacherProfile(req.user!.userId, profileData);
+      
+      // Notify bot users and sync with website
+      await botNotificationService.notifyProfileUpdated(req.user!.userId, 'teacher');
+      await syncService.notifyProfileUpdate(req.user!.userId, updatedProfile, 'teacher');
+      
+      return res.status(200).json(updatedProfile);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: fromZodError(error).details,
+        });
+      }
+      console.error("Error updating teacher profile:", error);
+      return res.status(500).json({ message: "Failed to update teacher profile" });
+    }
+  });
+
   // Sync status endpoint
   app.get("/api/sync/status", authenticate, async (req, res) => {
     try {

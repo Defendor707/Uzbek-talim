@@ -48,12 +48,15 @@ export const studentProfiles = pgTable("student_profiles", {
 export const teacherProfiles = pgTable("teacher_profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  subjects: text("subjects").array().notNull(),
-  age: integer("age"),
-  experience: integer("experience"), // in years
+  profileImage: text("profile_image"),
+  specialty: text("specialty").notNull(), // Muhandislik (max 20 characters)
+  subjects: text("subjects").array().notNull(), // Fanlar
+  bio: text("bio"), // Haqida (max 200 characters)
+  experience: integer("experience"), // Tajriba yillarda
   certificates: text("certificates").array(),
-  bio: text("bio"),
   centerId: integer("center_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Center profile info
@@ -184,7 +187,18 @@ export const insertStudentProfileSchema = createInsertSchema(studentProfiles)
 
 // Schema for inserting teacher profiles
 export const insertTeacherProfileSchema = createInsertSchema(teacherProfiles)
-  .omit({ id: true });
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    specialty: z.string()
+      .min(2, 'Mutaxassislik kamida 2 ta harfdan iborat bo\'lishi kerak')
+      .max(20, 'Mutaxassislik 20 ta harfdan oshmasligi kerak')
+      .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]+$/, 'Mutaxassislikda faqat harflar bo\'lishi mumkin'),
+    bio: z.string()
+      .max(200, 'Haqida bo\'limi 200 ta harfdan oshmasligi kerak')
+      .optional(),
+    subjects: z.array(z.string()).min(1, 'Kamida bitta fan tanlash kerak'),
+    experience: z.number().min(0, 'Tajriba manfiy bo\'lishi mumkin emas').optional(),
+  });
 
 // Schema for inserting center profiles
 export const insertCenterProfileSchema = createInsertSchema(centerProfiles)
