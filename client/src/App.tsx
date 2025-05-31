@@ -17,7 +17,7 @@ import StudentLessonsPage from "@/pages/student/Lessons";
 import StudentTestsPage from "@/pages/student/Tests";
 import StudentResultsPage from "@/pages/student/Results";
 import ProfilePage from "@/pages/profile/ProfilePage";
-import ProtectedRoute from "@/components/shared/ProtectedRoute";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 function Router() {
   return (
