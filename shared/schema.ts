@@ -49,8 +49,9 @@ export const teacherProfiles = pgTable("teacher_profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   profileImage: text("profile_image"),
-  specialty: text("specialty").notNull(), // Muhandislik (max 20 characters)
-  subjects: text("subjects").array().notNull(), // Fanlar
+  phoneNumber: text("phone_number"), // Telefon raqam
+  specialty: text("specialty"), // Mutaxassislik (max 20 characters)
+  subjects: text("subjects").array(), // Fanlar
   bio: text("bio"), // Haqida (max 200 characters)
   experience: integer("experience"), // Tajriba yillarda
   certificates: text("certificates").array(),

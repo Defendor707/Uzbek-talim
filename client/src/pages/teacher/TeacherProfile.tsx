@@ -18,6 +18,9 @@ const teacherProfileSchema = z.object({
   fullName: z.string()
     .min(2, 'Ism-familya kamida 2 ta harfdan iborat bo\'lishi kerak')
     .max(50, 'Ism-familya 50 ta harfdan oshmasligi kerak'),
+  phoneNumber: z.string()
+    .regex(/^[\+]?[0-9\s\-\(\)]{9,15}$/, 'Telefon raqam noto\'g\'ri formatda')
+    .optional(),
   specialty: z.string()
     .max(20, 'Mutaxassislik 20 ta harfdan oshmasligi kerak')
     .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]*$/, 'Mutaxassislikda faqat harflar bo\'lishi mumkin')
@@ -44,6 +47,7 @@ const TeacherProfile: React.FC = () => {
     resolver: zodResolver(teacherProfileSchema),
     defaultValues: {
       fullName: user?.fullName || '',
+      phoneNumber: profile?.phoneNumber || '',
       specialty: profile?.specialty || '',
       bio: profile?.bio || '',
       experience: profile?.experience || 0,
@@ -102,6 +106,7 @@ const TeacherProfile: React.FC = () => {
   React.useEffect(() => {
     form.reset({
       fullName: user?.fullName || '',
+      phoneNumber: profile?.phoneNumber || '',
       specialty: profile?.specialty || '',
       bio: profile?.bio || '',
       experience: profile?.experience || 0,
@@ -163,6 +168,22 @@ const TeacherProfile: React.FC = () => {
                 </div>
                 
                 <div>
+                  <Label htmlFor="phoneNumber">Telefon raqam</Label>
+                  <Input
+                    id="phoneNumber"
+                    {...form.register('phoneNumber')}
+                    placeholder="+998 90 123 45 67"
+                    type="tel"
+                  />
+                  {form.formState.errors.phoneNumber && (
+                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.phoneNumber.message}</p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">Ixtiyoriy</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
                   <Label htmlFor="specialty">Mutaxassislik</Label>
                   <Input
                     id="specialty"
@@ -175,21 +196,21 @@ const TeacherProfile: React.FC = () => {
                   )}
                   <p className="text-sm text-gray-500 mt-1">Ixtiyoriy. Maksimal 20 harf</p>
                 </div>
-              </div>
-
-              {/* Experience */}
-              <div>
-                <Label htmlFor="experience">Tajriba (yillarda)</Label>
-                <Input
-                  id="experience"
-                  type="number"
-                  {...form.register('experience', { valueAsNumber: true })}
-                  placeholder="0"
-                  min="0"
-                />
-                {form.formState.errors.experience && (
-                  <p className="text-red-500 text-sm mt-1">{form.formState.errors.experience.message}</p>
-                )}
+                
+                <div>
+                  <Label htmlFor="experience">Tajriba (yillarda)</Label>
+                  <Input
+                    id="experience"
+                    type="number"
+                    {...form.register('experience', { valueAsNumber: true })}
+                    placeholder="0"
+                    min="0"
+                  />
+                  {form.formState.errors.experience && (
+                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.experience.message}</p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">Ixtiyoriy</p>
+                </div>
               </div>
 
               {/* Bio */}
