@@ -647,11 +647,109 @@ bot.command('experience', async (ctx) => {
   );
 });
 
+// Profile editing button handlers
+bot.hears('✏️ Ismni o\'zgartirish', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz.');
+    return;
+  }
+
+  const user = await storage.getUser(ctx.session.userId);
+  if (!user || user.role !== 'teacher') {
+    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun mavjud.');
+    return;
+  }
+
+  ctx.session.editingField = 'fullName';
+  await ctx.reply(
+    `📝 Ismni o'zgartirish\n\n` +
+    `Joriy ism: ${user.fullName}\n\n` +
+    `Yangi ism va familyangizni kiriting:`,
+    Markup.keyboard([['🔙 Orqaga']]).resize()
+  );
+});
+
+bot.hears('🔬 Mutaxassislik', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz.');
+    return;
+  }
+
+  const user = await storage.getUser(ctx.session.userId);
+  if (!user || user.role !== 'teacher') {
+    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun mavjud.');
+    return;
+  }
+
+  const profile = await storage.getTeacherProfile(user.id);
+  ctx.session.editingField = 'specialty';
+  await ctx.reply(
+    `🔬 Mutaxassislik o'zgartirish\n\n` +
+    `Joriy mutaxassislik: ${profile?.specialty || 'Kiritilmagan'}\n\n` +
+    `Yangi mutaxassislikni kiriting (maksimal 20 harf):`,
+    Markup.keyboard([['🔙 Orqaga']]).resize()
+  );
+});
+
+bot.hears('📝 Haqida', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz.');
+    return;
+  }
+
+  const user = await storage.getUser(ctx.session.userId);
+  if (!user || user.role !== 'teacher') {
+    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun mavjud.');
+    return;
+  }
+
+  const profile = await storage.getTeacherProfile(user.id);
+  ctx.session.editingField = 'bio';
+  await ctx.reply(
+    `📝 Haqida o'zgartirish\n\n` +
+    `Joriy ma'lumot: ${profile?.bio || 'Kiritilmagan'}\n\n` +
+    `O'zingiz haqingizda ma'lumot kiriting (maksimal 200 harf):`,
+    Markup.keyboard([['🔙 Orqaga']]).resize()
+  );
+});
+
+bot.hears('⏱️ Tajriba', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz.');
+    return;
+  }
+
+  const user = await storage.getUser(ctx.session.userId);
+  if (!user || user.role !== 'teacher') {
+    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun mavjud.');
+    return;
+  }
+
+  const profile = await storage.getTeacherProfile(user.id);
+  ctx.session.editingField = 'experience';
+  await ctx.reply(
+    `⏱️ Tajriba o'zgartirish\n\n` +
+    `Joriy tajriba: ${profile?.experience || 0} yil\n\n` +
+    `Ish tajribangizni yillarda kiriting (faqat raqam):`,
+    Markup.keyboard([['🔙 Orqaga']]).resize()
+  );
+});
+
 // Handle profile field editing
 bot.on('text', async (ctx, next) => {
   if (ctx.session.editingField && ctx.session.userId) {
     const field = ctx.session.editingField;
     const value = ctx.message.text;
+
+    // Check for back button
+    if (value === '🔙 Orqaga') {
+      delete ctx.session.editingField;
+      await ctx.reply(
+        'Tahrirlash bekor qilindi.',
+        Markup.keyboard(getKeyboardByRole(ctx.session.role || 'teacher')).resize()
+      );
+      return;
+    }
 
     try {
       const user = await storage.getUser(ctx.session.userId);
@@ -664,10 +762,14 @@ bot.on('text', async (ctx, next) => {
       let validatedValue: any = value;
       let errorMessage = '';
 
-      if (field === 'specialty') {
-        if (value.length < 2 || value.length > 20) {
-          errorMessage = 'Mutaxassislik 2-20 harf orasida bo\'lishi kerak.';
-        } else if (!/^[a-zA-ZўқғҳҚҒҲЎ\s]+$/.test(value)) {
+      if (field === 'fullName') {
+        if (value.length < 2 || value.length > 50) {
+          errorMessage = 'Ism-familya 2-50 harf orasida bo\'lishi kerak.';
+        }
+      } else if (field === 'specialty') {
+        if (value.length > 20) {
+          errorMessage = 'Mutaxassislik 20 harfdan oshmasligi kerak.';
+        } else if (value.length > 0 && !/^[a-zA-ZўқғҳҚҒҲЎ\s]+$/.test(value)) {
           errorMessage = 'Mutaxassislikda faqat harflar bo\'lishi mumkin.';
         }
       } else if (field === 'bio') {
@@ -689,29 +791,35 @@ bot.on('text', async (ctx, next) => {
       }
 
       // Save to database
-      let profile = await storage.getTeacherProfile(user.id);
-      const profileData: any = { userId: user.id };
-
-      if (profile) {
-        // Update existing profile
-        profileData[field] = validatedValue;
-        profile = await storage.updateTeacherProfile(user.id, profileData);
+      if (field === 'fullName') {
+        // Update user's full name
+        await storage.updateUser(user.id, { fullName: validatedValue });
       } else {
-        // Create new profile with default values
-        profileData.specialty = field === 'specialty' ? validatedValue : 'O\'qituvchi';
-        profileData.bio = field === 'bio' ? validatedValue : undefined;
-        profileData.experience = field === 'experience' ? validatedValue : undefined;
-        profileData.subjects = ['Umumiy']; // Default subject
-        
-        profile = await storage.createTeacherProfile(profileData);
+        // Update teacher profile
+        let profile = await storage.getTeacherProfile(user.id);
+        const profileData: any = { userId: user.id };
+
+        if (profile) {
+          // Update existing profile
+          profileData[field] = validatedValue;
+          await storage.updateTeacherProfile(user.id, profileData);
+        } else {
+          // Create new profile with default values
+          profileData.specialty = field === 'specialty' ? validatedValue : undefined;
+          profileData.bio = field === 'bio' ? validatedValue : undefined;
+          profileData.experience = field === 'experience' ? validatedValue : undefined;
+          profileData.subjects = ['Umumiy']; // Default subject
+          
+          await storage.createTeacherProfile(profileData);
+        }
       }
 
       // Clear editing state
       delete ctx.session.editingField;
 
       await ctx.reply(
-        `✅ ${field === 'specialty' ? 'Mutaxassislik' : field === 'bio' ? 'Haqida bo\'limi' : 'Tajriba'} muvaffaqiyatli yangilandi!\n\n` +
-        'Boshqa ma\'lumotlarni o\'zgartirish uchun /profile_edit buyrug\'ini ishlating.'
+        `✅ ${field === 'fullName' ? 'Ism-familya' : field === 'specialty' ? 'Mutaxassislik' : field === 'bio' ? 'Haqida bo\'limi' : 'Tajriba'} muvaffaqiyatli yangilandi!`,
+        Markup.keyboard(getKeyboardByRole(user.role)).resize()
       );
 
     } catch (error) {
@@ -775,15 +883,21 @@ bot.hears('👤 Profil', async (ctx) => {
       }
     }
     
+    const keyboard = user.role === 'teacher' ? [
+      ['✏️ Ismni o\'zgartirish', '🔬 Mutaxassislik'],
+      ['📝 Haqida', '⏱️ Tajriba'],
+      ['🔙 Orqaga']
+    ] : [['🔙 Orqaga']];
+
     await ctx.reply(
-      `👤 *Profil ma'lumotlari*\n\n` +
+      `👤 Profil ma'lumotlari\n\n` +
       `👤 Ism: ${user.fullName}\n` +
       `📧 Email: ${user.email}\n` +
       `🔑 Foydalanuvchi nomi: ${user.username}\n` +
       `🧩 Rol: ${getRoleNameInUzbek(user.role)}\n` +
       `📅 Ro'yxatdan o'tgan sana: ${new Date(user.createdAt).toLocaleDateString('uz-UZ')}\n\n` +
       profileDetails,
-      { parse_mode: 'Markdown' }
+      Markup.keyboard(keyboard).resize()
     );
   } catch (error) {
     console.error('Error fetching profile:', error);
