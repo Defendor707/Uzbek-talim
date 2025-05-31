@@ -15,6 +15,9 @@ import useAuth from '@/hooks/useAuth';
 
 // Teacher Profile Schema
 const teacherProfileSchema = z.object({
+  fullName: z.string()
+    .min(2, 'Ism-familya kamida 2 ta harfdan iborat bo\'lishi kerak')
+    .max(50, 'Ism-familya 50 ta harfdan oshmasligi kerak'),
   specialty: z.string()
     .max(20, 'Mutaxassislik 20 ta harfdan oshmasligi kerak')
     .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]*$/, 'Mutaxassislikda faqat harflar bo\'lishi mumkin')
@@ -40,6 +43,7 @@ const TeacherProfile: React.FC = () => {
   const form = useForm<TeacherProfileFormData>({
     resolver: zodResolver(teacherProfileSchema),
     defaultValues: {
+      fullName: user?.fullName || '',
       specialty: profile?.specialty || '',
       bio: profile?.bio || '',
       experience: profile?.experience || 0,
@@ -94,16 +98,15 @@ const TeacherProfile: React.FC = () => {
     }
   };
 
-  // Initialize form when profile loads
+  // Initialize form when profile or user loads
   React.useEffect(() => {
-    if (profile) {
-      form.reset({
-        specialty: profile.specialty || '',
-        bio: profile.bio || '',
-        experience: profile.experience || 0,
-      });
-    }
-  }, [profile, form]);
+    form.reset({
+      fullName: user?.fullName || '',
+      specialty: profile?.specialty || '',
+      bio: profile?.bio || '',
+      experience: profile?.experience || 0,
+    });
+  }, [profile, user, form]);
 
   if (isLoading) {
     return (
@@ -146,14 +149,17 @@ const TeacherProfile: React.FC = () => {
               {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="fullName">To'liq ism</Label>
+                  <Label htmlFor="fullName">To'liq ism *</Label>
                   <Input
                     id="fullName"
-                    value={user?.fullName || ''}
-                    disabled
-                    className="bg-gray-50"
+                    {...form.register('fullName')}
+                    placeholder="Ism va familyangizni kiriting"
+                    maxLength={50}
                   />
-                  <p className="text-sm text-gray-500 mt-1">Bu ma'lumot foydalanuvchi sozlamalarida o'zgartiriladi</p>
+                  {form.formState.errors.fullName && (
+                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.fullName.message}</p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">Majburiy maydon</p>
                 </div>
                 
                 <div>
