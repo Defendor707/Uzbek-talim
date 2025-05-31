@@ -1,428 +1,173 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { queryClient } from '@/lib/queryClient';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
-import TestList, { Test } from '@/components/teacher/TestList';
-import TestForm from '@/components/teacher/TestForm';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-
-// Question type interface
-interface Question {
-  id?: number;
-  testId: number;
-  questionText: string;
-  questionType: string;
-  options?: any;
-  correctAnswer: any;
-  points: number;
-  order: number;
-}
+import useAuth from '@/hooks/useAuth';
 
 const TestsPage: React.FC = () => {
-  const { toast } = useToast();
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingTest, setEditingTest] = useState<Test | null>(null);
-  const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
-  const [currentTestId, setCurrentTestId] = useState<number | null>(null);
-  const [currentQuestion, setCurrentQuestion] = useState<Partial<Question> | null>(null);
+  const { user, logout } = useAuth();
   
   // Fetch tests
-  const { data: tests, isLoading, error } = useQuery<Test[]>({
+  const { data: tests } = useQuery<any[]>({
     queryKey: ['/api/tests'],
   });
-  
-  // Fetch questions for current test
-  const { data: questions, refetch: refetchQuestions } = useQuery<Question[]>({
-    queryKey: [`/api/tests/${currentTestId}/questions`],
-    enabled: !!currentTestId,
-  });
-  
-  // Create test mutation
-  const { mutate: createTest, isPending: isCreating } = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await apiRequest('POST', '/api/tests', data);
-      return await response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Muvaffaqiyatli',
-        description: 'Test muvaffaqiyatli yaratildi',
-        variant: 'default',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
-      setIsFormOpen(false);
-      setEditingTest(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Xatolik',
-        description: error.message || 'Testni yaratishda xatolik yuz berdi',
-        variant: 'destructive',
-      });
-    },
-  });
-  
-  // Update test mutation
-  const { mutate: updateTest, isPending: isUpdating } = useMutation({
-    mutationFn: async (data: { id: number; testData: any }) => {
-      const response = await apiRequest('PUT', `/api/tests/${data.id}`, data.testData);
-      return await response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Muvaffaqiyatli',
-        description: 'Test muvaffaqiyatli yangilandi',
-        variant: 'default',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
-      setIsFormOpen(false);
-      setEditingTest(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Xatolik',
-        description: error.message || 'Testni yangilashda xatolik yuz berdi',
-        variant: 'destructive',
-      });
-    },
-  });
-  
-  // Delete test mutation
-  const { mutate: deleteTest } = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiRequest('DELETE', `/api/tests/${id}`, null);
-      return response;
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Muvaffaqiyatli',
-        description: 'Test muvaffaqiyatli o\'chirildi',
-        variant: 'default',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Xatolik',
-        description: error.message || 'Testni o\'chirishda xatolik yuz berdi',
-        variant: 'destructive',
-      });
-    },
-  });
-  
-  // Create question mutation
-  const { mutate: createQuestion, isPending: isCreatingQuestion } = useMutation({
-    mutationFn: async (data: any) => {
-      if (!currentTestId) return null;
-      const response = await apiRequest('POST', `/api/tests/${currentTestId}/questions`, data);
-      return await response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Muvaffaqiyatli',
-        description: 'Savol muvaffaqiyatli qo\'shildi',
-        variant: 'default',
-      });
-      if (currentTestId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/tests/${currentTestId}/questions`] });
-      }
-      setIsQuestionDialogOpen(false);
-      setCurrentQuestion(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Xatolik',
-        description: error.message || 'Savolni qo\'shishda xatolik yuz berdi',
-        variant: 'destructive',
-      });
-    },
-  });
-  
-  const handleAddTest = () => {
-    setEditingTest(null);
-    setIsFormOpen(true);
-  };
-  
-  const handleEditTest = (test: Test) => {
-    setEditingTest(test);
-    setIsFormOpen(true);
-  };
-  
-  const handleDeleteTest = (id: number) => {
-    deleteTest(id);
-  };
-  
-  const handleManageQuestions = (testId: number) => {
-    setCurrentTestId(testId);
-    // Open questions management modal or navigate to questions page
-    toast({
-      title: 'Savollar',
-      description: 'Savollarni boshqarish sahifasi ochilmoqda',
-    });
-    // For now, let's open a simple question dialog
-    setIsQuestionDialogOpen(true);
-  };
-  
-  const handleSubmitForm = (data: any) => {
-    if (editingTest) {
-      updateTest({ id: editingTest.id, testData: data });
-    } else {
-      createTest(data);
-    }
-  };
-  
-  const handleCloseForm = () => {
-    setIsFormOpen(false);
-    setEditingTest(null);
-  };
-  
-  const handleAddQuestion = () => {
-    if (!currentTestId) return;
-    
-    // Determine next question order
-    const nextOrder = questions ? questions.length + 1 : 1;
-    
-    // Initialize new question
-    setCurrentQuestion({
-      testId: currentTestId,
-      questionText: '',
-      questionType: 'multiple_choice',
-      options: [
-        { label: 'Variant A', value: 'A' },
-        { label: 'Variant B', value: 'B' },
-        { label: 'Variant C', value: 'C' },
-        { label: 'Variant D', value: 'D' }
-      ],
-      correctAnswer: 'A',
-      points: 1,
-      order: nextOrder
-    });
-  };
-  
-  const handleSubmitQuestion = () => {
-    if (!currentQuestion) return;
-    
-    createQuestion(currentQuestion);
-  };
-  
+
   return (
-    <DashboardLayout title="Testlar">
-      <div className="mb-6">
-        <TestList
-          onAdd={handleAddTest}
-          onEdit={handleEditTest}
-          onDelete={handleDeleteTest}
-          onManageQuestions={handleManageQuestions}
-        />
-      </div>
-      
-      {isFormOpen && (
-        <TestForm
-          isOpen={isFormOpen}
-          onClose={handleCloseForm}
-          onSubmit={handleSubmitForm}
-          initialData={editingTest || undefined}
-          isSubmitting={isCreating || isUpdating}
-        />
-      )}
-      
-      {/* Simple Question Management Dialog */}
-      {isQuestionDialogOpen && (
-        <Dialog open={isQuestionDialogOpen} onOpenChange={setIsQuestionDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-heading font-bold text-neutral-dark">
-                Testga savollar qo'shish
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="py-4">
-              {/* Question List */}
-              {questions && questions.length > 0 ? (
-                <div className="mb-4 space-y-2">
-                  <h3 className="text-sm font-medium text-neutral-dark">Mavjud savollar:</h3>
-                  {questions.map((q, index) => (
-                    <div key={q.id} className="p-3 border rounded-md">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <span className="font-medium">{q.order}. </span>
-                          <span>{q.questionText}</span>
-                        </div>
-                        <span className="text-xs bg-neutral-100 px-2 py-1 rounded">
-                          {q.questionType === 'multiple_choice' ? 'Test' : 
-                           q.questionType === 'true_false' ? 'To\'g\'ri/Noto\'g\'ri' : 
-                           q.questionType === 'matching' ? 'Moslashtirish' :
-                           q.questionType === 'short_answer' ? 'Qisqa javob' : 'Esse'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center p-6 bg-neutral-50 rounded-md mb-4">
-                  <p className="text-neutral-medium">Bu testda hali savollar yo'q</p>
-                </div>
-              )}
-              
-              {/* Add Question Button */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Testlar</h1>
+              <p className="text-gray-600">Testlarni boshqaring va yarating</p>
+            </div>
+            <div className="flex gap-3">
+              <Link href="/dashboard/teacher">
+                <Button variant="outline">
+                  Bosh sahifa
+                </Button>
+              </Link>
               <Button 
-                onClick={handleAddQuestion}
-                className="w-full bg-primary hover:bg-primary-dark text-white"
+                variant="outline" 
+                onClick={logout}
+                className="text-red-600 border-red-600 hover:bg-red-50"
               >
-                <span className="material-icons mr-2">add</span>
-                Yangi savol qo'shish
+                Chiqish
               </Button>
-              
-              {/* New Question Form */}
-              {currentQuestion && (
-                <div className="mt-4 p-4 border rounded-md">
-                  <h3 className="text-md font-medium text-neutral-dark mb-3">Yangi savol:</h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Savol matni</Label>
-                      <Textarea 
-                        value={currentQuestion.questionText}
-                        onChange={(e) => setCurrentQuestion({...currentQuestion, questionText: e.target.value})}
-                        placeholder="Savolni kiriting..."
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Savol turi</Label>
-                      <Select
-                        value={currentQuestion.questionType}
-                        onValueChange={(value) => setCurrentQuestion({...currentQuestion, questionType: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Savol turini tanlang" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="multiple_choice">Test (bir javobli)</SelectItem>
-                          <SelectItem value="true_false">To'g'ri/Noto'g'ri</SelectItem>
-                          <SelectItem value="matching">Moslashtirish</SelectItem>
-                          <SelectItem value="short_answer">Qisqa javob</SelectItem>
-                          <SelectItem value="essay">Esse</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    {currentQuestion.questionType === 'multiple_choice' && (
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Actions */}
+        <div className="mb-8">
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Yangi test yaratish
+          </Button>
+        </div>
+
+        {/* Tests List */}
+        <div className="bg-white rounded-lg shadow-sm border">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold mb-4">Mening testlarim</h2>
+            
+            {tests && tests.length > 0 ? (
+              <div className="space-y-4">
+                {tests.map((test) => (
+                  <div key={test.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                    <div className="flex justify-between items-start">
                       <div>
-                        <Label>Variantlar</Label>
-                        <div className="space-y-2">
-                          {currentQuestion.options?.map((option: any, index: number) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <Input 
-                                value={option.label}
-                                onChange={(e) => {
-                                  const newOptions = [...(currentQuestion.options || [])];
-                                  newOptions[index].label = e.target.value;
-                                  setCurrentQuestion({...currentQuestion, options: newOptions});
-                                }}
-                                placeholder={`Variant ${option.value}`}
-                              />
-                              <Select
-                                value={currentQuestion.correctAnswer === option.value ? 'true' : 'false'}
-                                onValueChange={(value) => {
-                                  if (value === 'true') {
-                                    setCurrentQuestion({...currentQuestion, correctAnswer: option.value});
-                                  }
-                                }}
-                              >
-                                <SelectTrigger className="w-24">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="true">To'g'ri</SelectItem>
-                                  <SelectItem value="false">Noto'g'ri</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          ))}
+                        <h3 className="font-medium text-gray-900">{test.title}</h3>
+                        {test.description && (
+                          <p className="text-gray-600 text-sm mt-1">{test.description}</p>
+                        )}
+                        <div className="flex gap-4 mt-2 text-sm text-gray-500">
+                          <span>Sinf: {test.grade}</span>
+                          <span>Savollar: {test.totalQuestions || 0}</span>
+                          <span>Vaqt: {test.duration || 0} daqiqa</span>
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            test.status === 'active' ? 'bg-green-100 text-green-800' :
+                            test.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {test.status === 'active' ? 'Faol' :
+                             test.status === 'draft' ? 'Qoralama' : 'Tugallangan'}
+                          </span>
                         </div>
                       </div>
-                    )}
-                    
-                    {currentQuestion.questionType === 'true_false' && (
-                      <div>
-                        <Label>To'g'ri javob</Label>
-                        <Select
-                          value={currentQuestion.correctAnswer}
-                          onValueChange={(value) => setCurrentQuestion({...currentQuestion, correctAnswer: value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="true">To'g'ri</SelectItem>
-                            <SelectItem value="false">Noto'g'ri</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-red-600 hover:bg-red-50">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </Button>
                       </div>
-                    )}
-                    
-                    {currentQuestion.questionType === 'short_answer' && (
-                      <div>
-                        <Label>To'g'ri javob</Label>
-                        <Input 
-                          value={currentQuestion.correctAnswer}
-                          onChange={(e) => setCurrentQuestion({...currentQuestion, correctAnswer: e.target.value})}
-                          placeholder="To'g'ri javobni kiriting"
-                        />
-                      </div>
-                    )}
-                    
-                    <div>
-                      <Label>Ball</Label>
-                      <Input 
-                        type="number"
-                        value={currentQuestion.points}
-                        onChange={(e) => setCurrentQuestion({...currentQuestion, points: parseInt(e.target.value)})}
-                        min="1"
-                        placeholder="1"
-                      />
-                    </div>
-                    
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="outline"
-                        onClick={() => setCurrentQuestion(null)}
-                      >
-                        Bekor qilish
-                      </Button>
-                      <Button 
-                        onClick={handleSubmitQuestion}
-                        disabled={isCreatingQuestion || !currentQuestion.questionText}
-                        className="bg-primary hover:bg-primary-dark text-white"
-                      >
-                        {isCreatingQuestion ? 'Saqlanmoqda...' : 'Saqlash'}
-                      </Button>
                     </div>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Testlar topilmadi</h3>
+                <p className="text-gray-600 mb-4">Hozircha sizda test mavjud emas. Birinchi testingizni yarating.</p>
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Yangi test yaratish
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Jami testlar</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {tests?.length || 0}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                </svg>
+              </div>
             </div>
-            
-            <DialogFooter>
-              <Button 
-                onClick={() => setIsQuestionDialogOpen(false)}
-                className="bg-neutral-100 text-neutral-800 hover:bg-neutral-200"
-              >
-                Yopish
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-    </DashboardLayout>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Faol testlar</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {tests?.filter(t => t.status === 'active').length || 0}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Qoralama testlar</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {tests?.filter(t => t.status === 'draft').length || 0}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
