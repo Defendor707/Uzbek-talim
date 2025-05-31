@@ -795,6 +795,73 @@ bot.on('text', async (ctx, next) => {
   }
 });
 
+// Profile button handler
+bot.hears('👤 Profil', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring.');
+    return;
+  }
+  
+  try {
+    const user = await storage.getUser(ctx.session.userId);
+    if (!user) {
+      await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
+      return;
+    }
+    
+    let profileDetails = '';
+    
+    if (user.role === 'teacher') {
+      const teacherProfile = await storage.getTeacherProfile(user.id);
+      if (teacherProfile) {
+        profileDetails = `🔬 Mutaxassislik: ${teacherProfile.specialty || 'Kiritilmagan'}\n`;
+        if (teacherProfile.experience) {
+          profileDetails += `⏱️ Tajriba: ${teacherProfile.experience} yil\n`;
+        }
+        if (teacherProfile.bio) {
+          profileDetails += `📝 Haqida: ${teacherProfile.bio}\n`;
+        }
+        if (teacherProfile.centerId) {
+          profileDetails += `🏢 O'quv markazi ID: ${teacherProfile.centerId}\n`;
+        }
+      } else {
+        profileDetails = `❗ O'qituvchi profili yaratilmagan.\n\n` +
+                        `📝 Profilingizni to'ldirish uchun quyidagi buyruqlardan foydalaning:\n` +
+                        `/profile_edit - Profil tahrirlash menusi\n` +
+                        `/specialty - Mutaxassislikni o'rnatish\n` +
+                        `/bio - Haqida bo'limini yozish\n` +
+                        `/experience - Tajribani kiritish\n`;
+      }
+    } else if (user.role === 'student') {
+      const studentProfile = await storage.getStudentProfile(user.id);
+      if (studentProfile) {
+        profileDetails = `🎓 Sinf: ${studentProfile.grade}\n` +
+                         `🏫 Sinf: ${studentProfile.classroom}\n`;
+        if (studentProfile.parentId) {
+          profileDetails += `👨‍👩‍👧‍👦 Ota-ona ID: ${studentProfile.parentId}\n`;
+        }
+        if (studentProfile.centerId) {
+          profileDetails += `🏢 O'quv markazi ID: ${studentProfile.centerId}\n`;
+        }
+      }
+    }
+    
+    await ctx.reply(
+      `👤 *Profil ma'lumotlari*\n\n` +
+      `👤 Ism: ${user.fullName}\n` +
+      `📧 Email: ${user.email}\n` +
+      `🔑 Foydalanuvchi nomi: ${user.username}\n` +
+      `🧩 Rol: ${getRoleNameInUzbek(user.role)}\n` +
+      `📅 Ro'yxatdan o'tgan sana: ${new Date(user.createdAt).toLocaleDateString('uz-UZ')}\n\n` +
+      profileDetails,
+      { parse_mode: 'Markdown' }
+    );
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    await ctx.reply('❌ Profil ma\'lumotlarini olishda xatolik yuz berdi.');
+  }
+});
+
 // Logout command
 bot.command('logout', async (ctx) => {
   ctx.session = {};
