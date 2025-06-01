@@ -21,7 +21,6 @@ const teacherProfileSchema = z.object({
   phoneNumber: z.string().optional(),
   specialty: z.string()
     .max(20, 'Mutaxassislik 20 ta harfdan oshmasligi kerak')
-    .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]*$/, 'Mutaxassislikda faqat harflar bo\'lishi mumkin')
     .optional(),
   bio: z.string()
     .max(200, 'Haqida bo\'limi 200 ta harfdan oshmasligi kerak')
