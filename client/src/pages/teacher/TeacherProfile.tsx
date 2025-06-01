@@ -18,9 +18,7 @@ const teacherProfileSchema = z.object({
   fullName: z.string()
     .min(2, 'Ism-familya kamida 2 ta harfdan iborat bo\'lishi kerak')
     .max(50, 'Ism-familya 50 ta harfdan oshmasligi kerak'),
-  phoneNumber: z.string()
-    .regex(/^[\+]?[0-9\s\-\(\)]{9,15}$/, 'Telefon raqam noto\'g\'ri formatda')
-    .optional(),
+  phoneNumber: z.string().optional(),
   specialty: z.string()
     .max(20, 'Mutaxassislik 20 ta harfdan oshmasligi kerak')
     .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]*$/, 'Mutaxassislikda faqat harflar bo\'lishi mumkin')
@@ -57,7 +55,7 @@ const TeacherProfile: React.FC = () => {
   // Create profile mutation
   const createProfileMutation = useMutation({
     mutationFn: (data: TeacherProfileFormData) => 
-      apiRequest('/api/profile/teacher', 'POST', data),
+      apiRequest('POST', '/api/profile/teacher', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profile/teacher'] });
       toast({
@@ -77,7 +75,7 @@ const TeacherProfile: React.FC = () => {
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: (data: TeacherProfileFormData) => 
-      apiRequest('/api/profile/teacher', 'PUT', data),
+      apiRequest('PUT', '/api/profile/teacher', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profile/teacher'] });
       toast({
