@@ -96,13 +96,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
       role: values.role,
     };
     
-    register(registerData, {
-      onSuccess: () => {
-        if (onSuccess) {
-          onSuccess();
-        }
-      }
-    });
+    register(registerData);
   };
   
   return (
