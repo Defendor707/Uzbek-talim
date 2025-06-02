@@ -921,27 +921,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Parent Profile Routes
+  app.get("/api/profile/parent", authenticate, authorize(["parent"]), async (req, res) => {
+    try {
+      // For parent, we store phone number in user table since there's no separate parent profile table
+      const user = await storage.getUser(req.user!.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return user data as parent profile (phone number is stored in user table phone field)
+      return res.status(200).json({
+        fullName: user.fullName,
+        phoneNumber: user.phone || null,
+      });
+    } catch (error) {
+      console.error("Error fetching parent profile:", error);
+      return res.status(500).json({ message: "Failed to fetch parent profile" });
+    }
+  });
+
   app.post("/api/profile/parent", authenticate, authorize(["parent"]), async (req, res) => {
     try {
-      // Parent profile faqat fullName maydoniga ega
-      const profileData = {
-        userId: req.user!.userId,
-        fullName: req.body.fullName,
-      };
-
       // Validate fullName
-      if (!profileData.fullName || profileData.fullName.length < 2) {
+      if (!req.body.fullName || req.body.fullName.length < 2) {
         return res.status(400).json({ message: "To'liq ism kamida 2 ta harfdan iborat bo'lishi kerak" });
       }
 
-      // Update user fullName
-      const updatedUser = await storage.updateUser(req.user!.userId, { fullName: profileData.fullName });
+      // Update user with fullName and phone
+      const updateData: any = { fullName: req.body.fullName };
+      if (req.body.phoneNumber) {
+        updateData.phone = req.body.phoneNumber;
+      }
+
+      const updatedUser = await storage.updateUser(req.user!.userId, updateData);
       
       // Notify bot users and sync with website
       await botNotificationService.notifyProfileUpdated(req.user!.userId, 'parent');
       await syncService.notifyProfileUpdate(req.user!.userId, updatedUser, 'parent');
       
-      return res.status(201).json({ fullName: profileData.fullName });
+      return res.status(201).json({
+        fullName: updatedUser?.fullName,
+        phoneNumber: updatedUser?.phone || null,
+      });
     } catch (error) {
       console.error("Error creating parent profile:", error);
       return res.status(500).json({ message: "Failed to create parent profile" });
@@ -950,24 +971,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/profile/parent", authenticate, authorize(["parent"]), async (req, res) => {
     try {
-      // Parent profile faqat fullName maydoniga ega
-      const profileData = {
-        fullName: req.body.fullName,
-      };
-
       // Validate fullName
-      if (!profileData.fullName || profileData.fullName.length < 2) {
+      if (!req.body.fullName || req.body.fullName.length < 2) {
         return res.status(400).json({ message: "To'liq ism kamida 2 ta harfdan iborat bo'lishi kerak" });
       }
 
-      // Update user fullName
-      const updatedUser = await storage.updateUser(req.user!.userId, { fullName: profileData.fullName });
+      // Update user with fullName and phone
+      const updateData: any = { fullName: req.body.fullName };
+      if (req.body.phoneNumber !== undefined) {
+        updateData.phone = req.body.phoneNumber;
+      }
+
+      const updatedUser = await storage.updateUser(req.user!.userId, updateData);
       
       // Notify bot users and sync with website
       await botNotificationService.notifyProfileUpdated(req.user!.userId, 'parent');
       await syncService.notifyProfileUpdate(req.user!.userId, updatedUser, 'parent');
       
-      return res.status(200).json({ fullName: profileData.fullName });
+      return res.status(200).json({
+        fullName: updatedUser?.fullName,
+        phoneNumber: updatedUser?.phone || null,
+      });
     } catch (error) {
       console.error("Error updating parent profile:", error);
       return res.status(500).json({ message: "Failed to update parent profile" });

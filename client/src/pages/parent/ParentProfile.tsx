@@ -92,6 +92,7 @@ const ParentProfile: React.FC = () => {
   React.useEffect(() => {
     form.reset({
       fullName: user?.fullName || '',
+      phoneNumber: profile?.phoneNumber || '',
     });
   }, [profile, user, form]);
 
@@ -134,7 +135,7 @@ const ParentProfile: React.FC = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               
               {/* Basic Info */}
-              <div className="grid grid-cols-1 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="fullName">To'liq ism *</Label>
                   <Input
@@ -147,6 +148,20 @@ const ParentProfile: React.FC = () => {
                     <p className="text-red-500 text-sm mt-1">{form.formState.errors.fullName.message}</p>
                   )}
                   <p className="text-sm text-gray-500 mt-1">Majburiy maydon</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="phoneNumber">Telefon raqam</Label>
+                  <Input
+                    id="phoneNumber"
+                    {...form.register('phoneNumber')}
+                    placeholder="+998901234567"
+                    type="tel"
+                  />
+                  {form.formState.errors.phoneNumber && (
+                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.phoneNumber.message}</p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">Ixtiyoriy maydon</p>
                 </div>
               </div>
 
@@ -164,7 +179,7 @@ const ParentProfile: React.FC = () => {
                     </h3>
                     <div className="mt-2 text-sm text-blue-700">
                       <p>
-                        Hozircha faqat ism-familya ma'lumotini kiritish imkoniyati mavjud. 
+                        Ism-familya va telefon raqamingizni kiritishingiz mumkin. 
                         Kelajakda qo'shimcha funksiyalar qo'shiladi.
                       </p>
                     </div>
