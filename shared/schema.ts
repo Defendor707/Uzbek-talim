@@ -36,6 +36,7 @@ export const users = pgTable("users", {
 export const studentProfiles = pgTable("student_profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  phoneNumber: text("phone_number"), // Telefon raqam
   grade: text("grade").notNull(),
   classroom: text("classroom").notNull(), // e.g., "9-A"
   certificates: text("certificates").array(),
@@ -184,7 +185,12 @@ export const insertUserSchema = createInsertSchema(users)
 
 // Schema for inserting student profiles
 export const insertStudentProfileSchema = createInsertSchema(studentProfiles)
-  .omit({ id: true });
+  .omit({ id: true })
+  .extend({
+    phoneNumber: z.string().optional().or(z.literal('')),
+    grade: z.string().min(1, 'Sinf tanlanishi shart'),
+    classroom: z.string().min(1, 'Sinf harfi tanlanishi shart'),
+  });
 
 // Schema for inserting teacher profiles
 export const insertTeacherProfileSchema = createInsertSchema(teacherProfiles)

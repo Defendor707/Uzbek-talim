@@ -13,11 +13,18 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import useAuth from '@/hooks/useAuth';
 
-// Student Profile Schema - faqat ism-familya majburiy
+// Student Profile Schema
 const studentProfileSchema = z.object({
   fullName: z.string()
     .min(2, 'Ism-familya kamida 2 ta harfdan iborat bo\'lishi kerak')
     .max(50, 'Ism-familya 50 ta harfdan oshmasligi kerak'),
+  phoneNumber: z.string().optional().or(z.literal('')),
+  grade: z.string().min(1, 'Sinf tanlanishi shart'),
+  classroom: z.string().min(1, 'Sinf harfi tanlanishi shart'),
+  bio: z.string()
+    .max(200, 'Haqida bo\'limi 200 ta harfdan oshmasligi kerak')
+    .optional()
+    .or(z.literal('')),
 });
 
 type StudentProfileFormData = z.infer<typeof studentProfileSchema>;
@@ -36,6 +43,10 @@ const StudentProfile: React.FC = () => {
     resolver: zodResolver(studentProfileSchema),
     defaultValues: {
       fullName: user?.fullName || '',
+      phoneNumber: profile?.phoneNumber || '',
+      grade: profile?.grade || '',
+      classroom: profile?.classroom || '',
+      bio: profile?.bio || '',
     },
   });
 
@@ -91,6 +102,10 @@ const StudentProfile: React.FC = () => {
   React.useEffect(() => {
     form.reset({
       fullName: user?.fullName || '',
+      phoneNumber: profile?.phoneNumber || '',
+      grade: profile?.grade || '',
+      classroom: profile?.classroom || '',
+      bio: profile?.bio || '',
     });
   }, [profile, user, form]);
 
@@ -133,7 +148,7 @@ const StudentProfile: React.FC = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               
               {/* Basic Info */}
-              <div className="grid grid-cols-1 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="fullName">To'liq ism *</Label>
                   <Input
@@ -147,6 +162,64 @@ const StudentProfile: React.FC = () => {
                   )}
                   <p className="text-sm text-gray-500 mt-1">Majburiy maydon</p>
                 </div>
+                
+                <div>
+                  <Label htmlFor="phoneNumber">Telefon raqam</Label>
+                  <Input
+                    id="phoneNumber"
+                    {...form.register('phoneNumber')}
+                    placeholder="+998 90 123 45 67"
+                    type="tel"
+                  />
+                  {form.formState.errors.phoneNumber && (
+                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.phoneNumber.message}</p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">Ixtiyoriy</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="grade">Sinf *</Label>
+                  <Input
+                    id="grade"
+                    {...form.register('grade')}
+                    placeholder="Masalan: 9, 10, 11"
+                  />
+                  {form.formState.errors.grade && (
+                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.grade.message}</p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">Majburiy maydon</p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="classroom">Sinf harfi *</Label>
+                  <Input
+                    id="classroom"
+                    {...form.register('classroom')}
+                    placeholder="Masalan: A, B, V"
+                  />
+                  {form.formState.errors.classroom && (
+                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.classroom.message}</p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">Majburiy maydon</p>
+                </div>
+              </div>
+
+              {/* Bio */}
+              <div>
+                <Label htmlFor="bio">Haqida</Label>
+                <Textarea
+                  id="bio"
+                  {...form.register('bio')}
+                  placeholder="O'zingiz haqingizda qisqacha ma'lumot..."
+                  rows={4}
+                  maxLength={200}
+                />
+                {form.formState.errors.bio && (
+                  <p className="text-red-500 text-sm mt-1">{form.formState.errors.bio.message}</p>
+                )}
+                <p className="text-sm text-gray-500 mt-1">Ixtiyoriy. Maksimal 200 harf</p>
               </div>
 
               {/* Info Message */}
