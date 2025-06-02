@@ -771,6 +771,8 @@ bot.hears('📞 Telefon raqam', async (ctx) => {
   } else if (user.role === 'student') {
     const profile = await storage.getStudentProfile(user.id);
     currentPhone = profile?.phoneNumber || 'Kiritilmagan';
+  } else if (user.role === 'parent') {
+    currentPhone = user.phone || 'Kiritilmagan';
   }
 
   ctx.session.editingField = 'phoneNumber';
@@ -898,8 +900,8 @@ bot.on('text', async (ctx, next) => {
 
     try {
       const user = await storage.getUser(ctx.session.userId);
-      if (!user || user.role !== 'teacher') {
-        await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun mavjud.');
+      if (!user) {
+        await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
         return;
       }
 
@@ -977,6 +979,11 @@ bot.on('text', async (ctx, next) => {
           profileData.bio = field === 'bio' ? validatedValue : undefined;
           
           await storage.createStudentProfile(profileData);
+        }
+      } else if (user.role === 'parent') {
+        // For parent, update phone number in user table directly
+        if (field === 'phoneNumber') {
+          await storage.updateUser(user.id, { phone: validatedValue });
         }
       }
 
