@@ -30,7 +30,7 @@ interface BotSessionData extends Scenes.SceneSession {
     currentQuestionIndex?: number;
     answers?: { questionId: number, answer: string }[];
   };
-  editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience';
+  editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience' | 'grade' | 'classroom';
 }
 
 // Create custom context type
@@ -581,6 +581,79 @@ bot.command('profile_edit', async (ctx) => {
   }
 });
 
+// Student profile edit command
+bot.command('student_edit', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring.');
+    return;
+  }
+
+  try {
+    const user = await storage.getUser(ctx.session.userId);
+    if (!user) {
+      await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
+      return;
+    }
+
+    if (user.role !== 'student') {
+      await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun mavjud.');
+      return;
+    }
+
+    await ctx.reply(
+      '📝 *O\'quvchi profili tahrirlash*\n\n' +
+      'Quyidagi ma\'lumotlardan birini o\'zgartiring:',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard([
+          ['✏️ Ismni o\'zgartirish', '📞 Telefon raqam'],
+          ['🎓 Sinf', '📝 Sinf harfi'],
+          ['📄 Haqida', '🔙 Orqaga']
+        ]).resize()
+      }
+    );
+  } catch (error) {
+    console.error('Error in student_edit:', error);
+    await ctx.reply('❌ Profil tahrirlashda xatolik yuz berdi.');
+  }
+});
+
+// Parent profile edit command
+bot.command('parent_edit', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring.');
+    return;
+  }
+
+  try {
+    const user = await storage.getUser(ctx.session.userId);
+    if (!user) {
+      await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
+      return;
+    }
+
+    if (user.role !== 'parent') {
+      await ctx.reply('❌ Bu funksiya faqat ota-onalar uchun mavjud.');
+      return;
+    }
+
+    await ctx.reply(
+      '📝 *Ota-ona profili tahrirlash*\n\n' +
+      'Quyidagi ma\'lumotlardan birini o\'zgartiring:',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard([
+          ['✏️ Ismni o\'zgartirish', '📞 Telefon raqam'],
+          ['🔙 Orqaga']
+        ]).resize()
+      }
+    );
+  } catch (error) {
+    console.error('Error in parent_edit:', error);
+    await ctx.reply('❌ Profil tahrirlashda xatolik yuz berdi.');
+  }
+});
+
 // Specialty edit command
 bot.command('specialty', async (ctx) => {
   if (!ctx.session.userId) {
@@ -655,8 +728,8 @@ bot.hears('✏️ Ismni o\'zgartirish', async (ctx) => {
   }
 
   const user = await storage.getUser(ctx.session.userId);
-  if (!user || user.role !== 'teacher') {
-    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun mavjud.');
+  if (!user) {
+    await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
     return;
   }
 
@@ -669,6 +742,52 @@ bot.hears('✏️ Ismni o\'zgartirish', async (ctx) => {
   );
 });
 
+// Grade editing for students
+bot.hears('🎓 Sinf', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz.');
+    return;
+  }
+
+  const user = await storage.getUser(ctx.session.userId);
+  if (!user || user.role !== 'student') {
+    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun mavjud.');
+    return;
+  }
+
+  const profile = await storage.getStudentProfile(user.id);
+  ctx.session.editingField = 'grade';
+  await ctx.reply(
+    `🎓 Sinf o'zgartirish\n\n` +
+    `Joriy sinf: ${profile?.grade || 'Kiritilmagan'}\n\n` +
+    `Yangi sinfni kiriting (masalan: 9, 10, 11):`,
+    Markup.keyboard([['🔙 Orqaga']]).resize()
+  );
+});
+
+// Classroom editing for students
+bot.hears('📝 Sinf harfi', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz.');
+    return;
+  }
+
+  const user = await storage.getUser(ctx.session.userId);
+  if (!user || user.role !== 'student') {
+    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun mavjud.');
+    return;
+  }
+
+  const profile = await storage.getStudentProfile(user.id);
+  ctx.session.editingField = 'classroom';
+  await ctx.reply(
+    `📝 Sinf harfi o'zgartirish\n\n` +
+    `Joriy sinf harfi: ${profile?.classroom || 'Kiritilmagan'}\n\n` +
+    `Yangi sinf harfini kiriting (masalan: A, B, V):`,
+    Markup.keyboard([['🔙 Orqaga']]).resize()
+  );
+});
+
 bot.hears('📞 Telefon raqam', async (ctx) => {
   if (!ctx.session.userId) {
     await ctx.reply('❌ Siz tizimga kirmagansiz.');
@@ -676,17 +795,58 @@ bot.hears('📞 Telefon raqam', async (ctx) => {
   }
 
   const user = await storage.getUser(ctx.session.userId);
-  if (!user || user.role !== 'teacher') {
-    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun mavjud.');
+  if (!user) {
+    await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
     return;
   }
 
-  const profile = await storage.getTeacherProfile(user.id);
+  let currentPhone = 'Kiritilmagan';
+  
+  if (user.role === 'teacher') {
+    const profile = await storage.getTeacherProfile(user.id);
+    currentPhone = profile?.phoneNumber || 'Kiritilmagan';
+  } else if (user.role === 'student') {
+    const profile = await storage.getStudentProfile(user.id);
+    currentPhone = profile?.phoneNumber || 'Kiritilmagan';
+  }
+
   ctx.session.editingField = 'phoneNumber';
   await ctx.reply(
     `📞 Telefon raqam o'zgartirish\n\n` +
-    `Joriy telefon: ${profile?.phoneNumber || 'Kiritilmagan'}\n\n` +
+    `Joriy telefon: ${currentPhone}\n\n` +
     `Yangi telefon raqamingizni kiriting (+998901234567):`,
+    Markup.keyboard([['🔙 Orqaga']]).resize()
+  );
+});
+
+// Bio editing for students
+bot.hears('📄 Haqida', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz.');
+    return;
+  }
+
+  const user = await storage.getUser(ctx.session.userId);
+  if (!user) {
+    await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
+    return;
+  }
+
+  let currentBio = 'Kiritilmagan';
+  
+  if (user.role === 'teacher') {
+    const profile = await storage.getTeacherProfile(user.id);
+    currentBio = profile?.bio || 'Kiritilmagan';
+  } else if (user.role === 'student') {
+    const profile = await storage.getStudentProfile(user.id);
+    currentBio = profile?.bio || 'Kiritilmagan';
+  }
+
+  ctx.session.editingField = 'bio';
+  await ctx.reply(
+    `📄 Haqida o'zgartirish\n\n` +
+    `Joriy ma'lumot: ${currentBio}\n\n` +
+    `O'zingiz haqingizda ma'lumot kiriting (maksimal 200 harf):`,
     Markup.keyboard([['🔙 Orqaga']]).resize()
   );
 });
@@ -1552,17 +1712,25 @@ bot.hears('👤 Profil', async (ctx) => {
     let profileInfo = '';
     
     if (user.role === 'student') {
+      const studentProfile = await storage.getStudentProfile(user.id);
       profileInfo = `👨‍🎓 *O'quvchi profili*\n\n` +
                    `👤 Ism-familya: ${user.fullName}\n` +
                    `📧 Email: ${user.email}\n` +
-                   `👤 Foydalanuvchi nomi: ${user.username}\n\n` +
-                   `Profil ma'lumotlarini o'zgartirish uchun veb-saytdan foydalaning.`;
+                   `👤 Foydalanuvchi nomi: ${user.username}\n`;
+      if (studentProfile) {
+        profileInfo += `📞 Telefon: ${studentProfile.phoneNumber || 'Kiritilmagan'}\n` +
+                      `🎓 Sinf: ${studentProfile.grade || 'Kiritilmagan'}\n` +
+                      `📝 Sinf harfi: ${studentProfile.classroom || 'Kiritilmagan'}\n` +
+                      `📄 Haqida: ${studentProfile.bio || 'Kiritilmagan'}\n`;
+      }
+      profileInfo += `\nProfil ma'lumotlarini o'zgartirish uchun /student_edit buyrug'idan foydalaning.`;
+      
     } else if (user.role === 'parent') {
       profileInfo = `👨‍👩‍👧‍👦 *Ota-ona profili*\n\n` +
                    `👤 Ism-familya: ${user.fullName}\n` +
                    `📧 Email: ${user.email}\n` +
                    `👤 Foydalanuvchi nomi: ${user.username}\n\n` +
-                   `Profil ma'lumotlarini o'zgartirish uchun veb-saytdan foydalaning.`;
+                   `Profil ma'lumotlarini o'zgartirish uchun /parent_edit buyrug'idan foydalaning.`;
     } else if (user.role === 'center') {
       profileInfo = `🏫 *O'quv markaz profili*\n\n` +
                    `👤 Nomi: ${user.fullName}\n` +
