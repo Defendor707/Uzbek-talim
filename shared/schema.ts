@@ -190,12 +190,13 @@ export const insertStudentProfileSchema = createInsertSchema(studentProfiles)
 export const insertTeacherProfileSchema = createInsertSchema(teacherProfiles)
   .omit({ id: true, createdAt: true, updatedAt: true })
   .extend({
-    specialty: z.string()
-      .min(2, 'Mutaxassislik kamida 2 ta harfdan iborat bo\'lishi kerak')
-      .max(20, 'Mutaxassislik 20 ta harfdan oshmasligi kerak')
-      .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]+$/, 'Mutaxassislikda faqat harflar bo\'lishi mumkin')
-      .optional()
-      .or(z.literal('')),
+    specialty: z.union([
+      z.string()
+        .min(2, 'Mutaxassislik kamida 2 ta harfdan iborat bo\'lishi kerak')
+        .max(20, 'Mutaxassislik 20 ta harfdan oshmasligi kerak')
+        .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]+$/, 'Mutaxassislikda faqat harflar bo\'lishi mumkin'),
+      z.literal('')
+    ]).optional(),
     bio: z.string()
       .max(200, 'Haqida bo\'limi 200 ta harfdan oshmasligi kerak')
       .optional(),

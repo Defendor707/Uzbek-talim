@@ -18,14 +18,19 @@ const teacherProfileSchema = z.object({
   fullName: z.string()
     .min(2, 'Ism-familya kamida 2 ta harfdan iborat bo\'lishi kerak')
     .max(50, 'Ism-familya 50 ta harfdan oshmasligi kerak'),
-  phoneNumber: z.string().optional(),
-  specialty: z.string()
-    .max(20, 'Mutaxassislik 20 ta harfdan oshmasligi kerak')
-    .optional(),
+  phoneNumber: z.string().optional().or(z.literal('')),
+  specialty: z.union([
+    z.string()
+      .min(2, 'Mutaxassislik kamida 2 ta harfdan iborat bo\'lishi kerak')
+      .max(20, 'Mutaxassislik 20 ta harfdan oshmasligi kerak')
+      .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]+$/, 'Mutaxassislikda faqat harflar bo\'lishi mumkin'),
+    z.literal('')
+  ]).optional(),
   bio: z.string()
     .max(200, 'Haqida bo\'limi 200 ta harfdan oshmasligi kerak')
-    .optional(),
-  experience: z.number().min(0, 'Tajriba manfiy bo\'lishi mumkin emas').optional(),
+    .optional()
+    .or(z.literal('')),
+  experience: z.number().min(0, 'Tajriba manfiy bo\'lishi mumkin emas').optional().or(z.nan()),
 });
 
 type TeacherProfileFormData = z.infer<typeof teacherProfileSchema>;
