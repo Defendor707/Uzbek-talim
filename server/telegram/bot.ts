@@ -1071,11 +1071,26 @@ bot.hears('👤 Profil', async (ctx) => {
       }
     }
     
-    const keyboard = user.role === 'teacher' ? [
-      ['✏️ Ismni o\'zgartirish', '📞 Telefon raqam'],
-      ['🔬 Mutaxassislik', '⏱️ Tajriba'],
-      ['📝 Haqida', '🔙 Orqaga']
-    ] : [['🔙 Orqaga']];
+    let keyboard;
+    if (user.role === 'teacher') {
+      keyboard = [
+        ['✏️ Ismni o\'zgartirish', '📞 Telefon raqam'],
+        ['🔬 Mutaxassislik', '⏱️ Tajriba'],
+        ['📝 Haqida', '🔙 Orqaga']
+      ];
+    } else if (user.role === 'student') {
+      keyboard = [
+        ['✏️ Ismni o\'zgartirish', '📞 Telefon raqam'],
+        ['📝 Haqida', '🔙 Orqaga']
+      ];
+    } else if (user.role === 'parent') {
+      keyboard = [
+        ['✏️ Ismni o\'zgartirish', '📞 Telefon raqam'],
+        ['🔙 Orqaga']
+      ];
+    } else {
+      keyboard = [['🔙 Orqaga']];
+    }
 
     await ctx.reply(
       `👤 Profil ma'lumotlari\n\n` +
