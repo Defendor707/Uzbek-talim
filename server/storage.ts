@@ -114,6 +114,15 @@ export class DatabaseStorage implements IStorage {
     const [profile] = await db.select().from(schema.studentProfiles).where(eq(schema.studentProfiles.userId, userId));
     return profile;
   }
+
+  async updateStudentProfile(userId: number, profileData: Partial<schema.InsertStudentProfile>): Promise<schema.StudentProfile | undefined> {
+    const [updatedProfile] = await db
+      .update(schema.studentProfiles)
+      .set(profileData)
+      .where(eq(schema.studentProfiles.userId, userId))
+      .returning();
+    return updatedProfile;
+  }
   
   async createTeacherProfile(profile: schema.InsertTeacherProfile): Promise<schema.TeacherProfile> {
     const [newProfile] = await db.insert(schema.teacherProfiles).values(profile).returning();

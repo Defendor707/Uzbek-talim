@@ -11,6 +11,8 @@ import StudentDashboard from "@/pages/dashboard/StudentDashboard";
 import ParentDashboard from "@/pages/dashboard/ParentDashboard";
 import CenterDashboard from "@/pages/dashboard/CenterDashboard";
 import TeacherProfile from "@/pages/teacher/TeacherProfile";
+import StudentProfile from "@/pages/student/StudentProfile";
+import ParentProfile from "@/pages/parent/ParentProfile";
 import LessonsPage from "@/pages/teacher/Lessons";
 import TestsPage from "@/pages/teacher/Tests";
 import StudentsPage from "@/pages/teacher/Students";
@@ -70,9 +72,21 @@ function Router() {
       </Route>
       
       {/* Student routes */}
+      <Route path="/student/profile">
+        <ProtectedRoute allowedRoles={["student"]}>
+          <StudentProfile />
+        </ProtectedRoute>
+      </Route>
       <Route path="/student/tests">
         <ProtectedRoute allowedRoles={["student"]}>
           <StudentTestsPage />
+        </ProtectedRoute>
+      </Route>
+      
+      {/* Parent routes */}
+      <Route path="/parent/profile">
+        <ProtectedRoute allowedRoles={["parent"]}>
+          <ParentProfile />
         </ProtectedRoute>
       </Route>
       
