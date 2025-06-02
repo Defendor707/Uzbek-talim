@@ -1026,20 +1026,23 @@ function getKeyboardByRole(role: string) {
     ];
   } else if (role === 'parent') {
     return [
-      ['👶 Farzandim', '📊 Statistika'],
-      ['💳 To\'lovlar', '⚡ Boshqalar']
+      ['👤 Profil', '📝 Test ishlash'],
+      ['📚 Darsliklarim', '📊 Natijalarim'],
+      ['⚡ Boshqalar']
     ];
   } else if (role === 'center') {
     return [
-      ['👨‍🏫 O\'qituvchilar', '👨‍🎓 O\'quvchilar'],
-      ['📊 Hisobotlar', '⚡ Boshqalar']
+      ['👤 Profil', '📝 Test ishlash'],
+      ['📚 Darsliklarim', '📊 Natijalarim'],
+      ['⚡ Boshqalar']
     ];
   }
   
   // Default keyboard
   return [
-    ['👤 Profil', '📚 Darslar'],
-    ['📝 Testlar', '⚡ Boshqalar']
+    ['👤 Profil', '📝 Test ishlash'],
+    ['📚 Darsliklarim', '📊 Natijalarim'],
+    ['⚡ Boshqalar']
   ];
 }
 
@@ -1521,35 +1524,14 @@ bot.hears('⚡ Boshqalar', async (ctx) => {
     return;
   }
   
-  // Get user role to show appropriate menu
-  const user = await storage.getUser(ctx.session.userId);
-  if (!user) {
-    await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
-    return;
-  }
-  
-  let menu;
-  if (user.role === 'teacher') {
-    // O'qituvchilar uchun alohida menyu (profil tugmasi yo'q chunki ular uchun alohida profil bo'limi bor)
-    menu = [
+  await ctx.reply(
+    '⚡ Boshqa funksiyalar',
+    Markup.keyboard([
       ['🔔 Bildirishnomalar', '🌐 Veb-sayt'],
       ['ℹ️ Yordam', '📞 Aloqa'],
       ['🚪 Hisobdan chiqish'],
       ['🔙 Orqaga']
-    ];
-  } else {
-    // O'quvchi, ota-ona va o'quv markaz uchun profil tugmasi qo'shamiz
-    menu = [
-      ['👤 Profil', '🔔 Bildirishnomalar'],
-      ['🌐 Veb-sayt', 'ℹ️ Yordam'],
-      ['📞 Aloqa', '🚪 Hisobdan chiqish'],
-      ['🔙 Orqaga']
-    ];
-  }
-  
-  await ctx.reply(
-    '⚡ Boshqa funksiyalar',
-    Markup.keyboard(menu).resize()
+    ]).resize()
   );
 });
 
