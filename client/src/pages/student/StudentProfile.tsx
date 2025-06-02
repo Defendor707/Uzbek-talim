@@ -19,8 +19,6 @@ const studentProfileSchema = z.object({
     .min(2, 'Ism-familya kamida 2 ta harfdan iborat bo\'lishi kerak')
     .max(50, 'Ism-familya 50 ta harfdan oshmasligi kerak'),
   phoneNumber: z.string().optional().or(z.literal('')),
-  grade: z.string().min(1, 'Sinf tanlanishi shart'),
-  classroom: z.string().min(1, 'Sinf harfi tanlanishi shart'),
   bio: z.string()
     .max(200, 'Haqida bo\'limi 200 ta harfdan oshmasligi kerak')
     .optional()
@@ -44,8 +42,6 @@ const StudentProfile: React.FC = () => {
     defaultValues: {
       fullName: user?.fullName || '',
       phoneNumber: profile?.phoneNumber || '',
-      grade: profile?.grade || '',
-      classroom: profile?.classroom || '',
       bio: profile?.bio || '',
     },
   });
@@ -103,8 +99,6 @@ const StudentProfile: React.FC = () => {
     form.reset({
       fullName: user?.fullName || '',
       phoneNumber: profile?.phoneNumber || '',
-      grade: profile?.grade || '',
-      classroom: profile?.classroom || '',
       bio: profile?.bio || '',
     });
   }, [profile, user, form]);
@@ -178,33 +172,7 @@ const StudentProfile: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="grade">Sinf *</Label>
-                  <Input
-                    id="grade"
-                    {...form.register('grade')}
-                    placeholder="Masalan: 9, 10, 11"
-                  />
-                  {form.formState.errors.grade && (
-                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.grade.message}</p>
-                  )}
-                  <p className="text-sm text-gray-500 mt-1">Majburiy maydon</p>
-                </div>
-                
-                <div>
-                  <Label htmlFor="classroom">Sinf harfi *</Label>
-                  <Input
-                    id="classroom"
-                    {...form.register('classroom')}
-                    placeholder="Masalan: A, B, V"
-                  />
-                  {form.formState.errors.classroom && (
-                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.classroom.message}</p>
-                  )}
-                  <p className="text-sm text-gray-500 mt-1">Majburiy maydon</p>
-                </div>
-              </div>
+
 
               {/* Bio */}
               <div>

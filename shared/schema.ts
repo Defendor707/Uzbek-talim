@@ -37,8 +37,6 @@ export const studentProfiles = pgTable("student_profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   phoneNumber: text("phone_number"), // Telefon raqam
-  grade: text("grade").notNull(),
-  classroom: text("classroom").notNull(), // e.g., "9-A"
   certificates: text("certificates").array(),
   bio: text("bio"),
   parentId: integer("parent_id").references(() => users.id),
@@ -188,8 +186,10 @@ export const insertStudentProfileSchema = createInsertSchema(studentProfiles)
   .omit({ id: true })
   .extend({
     phoneNumber: z.string().optional().or(z.literal('')),
-    grade: z.string().min(1, 'Sinf tanlanishi shart'),
-    classroom: z.string().min(1, 'Sinf harfi tanlanishi shart'),
+    bio: z.string()
+      .max(200, 'Haqida bo\'limi 200 ta harfdan oshmasligi kerak')
+      .optional()
+      .or(z.literal('')),
   });
 
 // Schema for inserting teacher profiles

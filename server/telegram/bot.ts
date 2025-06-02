@@ -30,7 +30,7 @@ interface BotSessionData extends Scenes.SceneSession {
     currentQuestionIndex?: number;
     answers?: { questionId: number, answer: string }[];
   };
-  editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience' | 'grade' | 'classroom';
+  editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience';
 }
 
 // Create custom context type
