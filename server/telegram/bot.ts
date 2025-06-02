@@ -384,7 +384,8 @@ bot.command('lessons', async (ctx) => {
         await ctx.reply('❌ O\'quvchi profili topilmadi.');
         return;
       }
-      lessons = await storage.getLessonsByGrade(profile.grade);
+      // O'quvchi uchun barcha darslarni ko'rsatish
+      lessons = [];
     } else {
       await ctx.reply('❌ Sizning rolingiz darslarni ko\'rishga ruxsat bermaydi.');
       return;
@@ -448,7 +449,8 @@ bot.command('tests', async (ctx) => {
         await ctx.reply('❌ O\'quvchi profili topilmadi.');
         return;
       }
-      tests = await storage.getActiveTestsForStudent(profile.grade, profile.classroom);
+      // O'quvchi uchun barcha testlarni ko'rsatish
+      tests = [];
     } else {
       await ctx.reply('❌ Sizning rolingiz testlarni ko\'rishga ruxsat bermaydi.');
       return;
@@ -607,7 +609,6 @@ bot.command('student_edit', async (ctx) => {
         parse_mode: 'Markdown',
         ...Markup.keyboard([
           ['✏️ Ismni o\'zgartirish', '📞 Telefon raqam'],
-          ['🎓 Sinf', '📝 Sinf harfi'],
           ['📄 Haqida', '🔙 Orqaga']
         ]).resize()
       }
@@ -742,51 +743,7 @@ bot.hears('✏️ Ismni o\'zgartirish', async (ctx) => {
   );
 });
 
-// Grade editing for students
-bot.hears('🎓 Sinf', async (ctx) => {
-  if (!ctx.session.userId) {
-    await ctx.reply('❌ Siz tizimga kirmagansiz.');
-    return;
-  }
 
-  const user = await storage.getUser(ctx.session.userId);
-  if (!user || user.role !== 'student') {
-    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun mavjud.');
-    return;
-  }
-
-  const profile = await storage.getStudentProfile(user.id);
-  ctx.session.editingField = 'grade';
-  await ctx.reply(
-    `🎓 Sinf o'zgartirish\n\n` +
-    `Joriy sinf: ${profile?.grade || 'Kiritilmagan'}\n\n` +
-    `Yangi sinfni kiriting (masalan: 9, 10, 11):`,
-    Markup.keyboard([['🔙 Orqaga']]).resize()
-  );
-});
-
-// Classroom editing for students
-bot.hears('📝 Sinf harfi', async (ctx) => {
-  if (!ctx.session.userId) {
-    await ctx.reply('❌ Siz tizimga kirmagansiz.');
-    return;
-  }
-
-  const user = await storage.getUser(ctx.session.userId);
-  if (!user || user.role !== 'student') {
-    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun mavjud.');
-    return;
-  }
-
-  const profile = await storage.getStudentProfile(user.id);
-  ctx.session.editingField = 'classroom';
-  await ctx.reply(
-    `📝 Sinf harfi o'zgartirish\n\n` +
-    `Joriy sinf harfi: ${profile?.classroom || 'Kiritilmagan'}\n\n` +
-    `Yangi sinf harfini kiriting (masalan: A, B, V):`,
-    Markup.keyboard([['🔙 Orqaga']]).resize()
-  );
-});
 
 bot.hears('📞 Telefon raqam', async (ctx) => {
   if (!ctx.session.userId) {
@@ -969,14 +926,6 @@ bot.on('text', async (ctx, next) => {
         } else {
           validatedValue = num;
         }
-      } else if (field === 'grade') {
-        if (!/^[1-9][0-2]?$/.test(value)) {
-          errorMessage = 'Sinf raqami 1 dan 12 gacha bo\'lishi kerak.';
-        }
-      } else if (field === 'classroom') {
-        if (value.length > 5 || !/^[A-Za-z]+$/.test(value)) {
-          errorMessage = 'Sinf harfi faqat harflar (A, B, V) bo\'lishi kerak.';
-        }
       }
 
       if (errorMessage) {
@@ -1018,8 +967,6 @@ bot.on('text', async (ctx, next) => {
           await storage.updateStudentProfile(user.id, profileData);
         } else {
           // Create new profile with required values
-          profileData.grade = field === 'grade' ? validatedValue : '1';
-          profileData.classroom = field === 'classroom' ? validatedValue : 'A';
           profileData.phoneNumber = field === 'phoneNumber' ? validatedValue : undefined;
           profileData.bio = field === 'bio' ? validatedValue : undefined;
           
@@ -1035,9 +982,7 @@ bot.on('text', async (ctx, next) => {
         phoneNumber: 'Telefon raqam',
         specialty: 'Mutaxassislik',
         bio: 'Haqida bo\'limi',
-        experience: 'Tajriba',
-        grade: 'Sinf',
-        classroom: 'Sinf harfi'
+        experience: 'Tajriba'
       };
 
       await ctx.reply(
@@ -1099,14 +1044,24 @@ bot.hears('👤 Profil', async (ctx) => {
     } else if (user.role === 'student') {
       const studentProfile = await storage.getStudentProfile(user.id);
       if (studentProfile) {
-        profileDetails = `🎓 Sinf: ${studentProfile.grade}\n` +
-                         `🏫 Sinf: ${studentProfile.classroom}\n`;
+        profileDetails = '';
+        if (studentProfile.phoneNumber) {
+          profileDetails += `📞 Telefon: ${studentProfile.phoneNumber}\n`;
+        }
+        if (studentProfile.bio) {
+          profileDetails += `📄 Haqida: ${studentProfile.bio}\n`;
+        }
         if (studentProfile.parentId) {
           profileDetails += `👨‍👩‍👧‍👦 Ota-ona ID: ${studentProfile.parentId}\n`;
         }
         if (studentProfile.centerId) {
           profileDetails += `🏢 O'quv markazi ID: ${studentProfile.centerId}\n`;
         }
+        if (!profileDetails) {
+          profileDetails = `❗ Profil ma'lumotlari to'ldirilmagan.\n`;
+        }
+      } else {
+        profileDetails = `❗ O'quvchi profili yaratilmagan.\n`;
       }
     }
     
@@ -1747,8 +1702,6 @@ bot.hears('👤 Profil', async (ctx) => {
                    `👤 Foydalanuvchi nomi: ${user.username}\n`;
       if (studentProfile) {
         profileInfo += `📞 Telefon: ${studentProfile.phoneNumber || 'Kiritilmagan'}\n` +
-                      `🎓 Sinf: ${studentProfile.grade || 'Kiritilmagan'}\n` +
-                      `📝 Sinf harfi: ${studentProfile.classroom || 'Kiritilmagan'}\n` +
                       `📄 Haqida: ${studentProfile.bio || 'Kiritilmagan'}\n`;
       }
       profileInfo += `\nProfil ma'lumotlarini o'zgartirish uchun /student_edit buyrug'idan foydalaning.`;
