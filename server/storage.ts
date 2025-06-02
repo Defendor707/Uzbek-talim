@@ -15,6 +15,7 @@ export interface IStorage {
   // Profile related methods
   createStudentProfile(profile: schema.InsertStudentProfile): Promise<schema.StudentProfile>;
   getStudentProfile(userId: number): Promise<schema.StudentProfile | undefined>;
+  updateStudentProfile(userId: number, profileData: Partial<schema.InsertStudentProfile>): Promise<schema.StudentProfile | undefined>;
   createTeacherProfile(profile: schema.InsertTeacherProfile): Promise<schema.TeacherProfile>;
   getTeacherProfile(userId: number): Promise<schema.TeacherProfile | undefined>;
   updateTeacherProfile(userId: number, profileData: Partial<schema.InsertTeacherProfile>): Promise<schema.TeacherProfile | undefined>;

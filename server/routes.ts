@@ -840,6 +840,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Student Profile Routes
+  app.post("/api/profile/student", authenticate, authorize(["student"]), async (req, res) => {
+    try {
+      const profileData = schema.insertStudentProfileSchema.parse({
+        ...req.body,
+        userId: req.user!.userId,
+      });
+
+      const newProfile = await storage.createStudentProfile(profileData);
+      
+      // Notify bot users and sync with website
+      await botNotificationService.notifyProfileUpdated(req.user!.userId, 'student');
+      await syncService.notifyProfileUpdate(req.user!.userId, newProfile, 'student');
+      
+      return res.status(201).json(newProfile);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: fromZodError(error).details,
+        });
+      }
+      console.error("Error creating student profile:", error);
+      return res.status(500).json({ message: "Failed to create student profile" });
+    }
+  });
+
+  app.put("/api/profile/student", authenticate, authorize(["student"]), async (req, res) => {
+    try {
+      // Check if profile exists
+      const existingProfile = await storage.getStudentProfile(req.user!.userId);
+      if (!existingProfile) {
+        return res.status(404).json({ message: "Student profile not found" });
+      }
+
+      const profileData = schema.insertStudentProfileSchema.partial().parse(req.body);
+      
+      // Update profile through storage (we'll need to add this method)
+      const updatedProfile = await storage.updateStudentProfile(req.user!.userId, profileData);
+      
+      // Notify bot users and sync with website
+      await botNotificationService.notifyProfileUpdated(req.user!.userId, 'student');
+      await syncService.notifyProfileUpdate(req.user!.userId, updatedProfile, 'student');
+      
+      return res.status(200).json(updatedProfile);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: fromZodError(error).details,
+        });
+      }
+      console.error("Error updating student profile:", error);
+      return res.status(500).json({ message: "Failed to update student profile" });
+    }
+  });
+
+  // Parent Profile Routes
+  app.post("/api/profile/parent", authenticate, authorize(["parent"]), async (req, res) => {
+    try {
+      // Parent profile faqat fullName maydoniga ega
+      const profileData = {
+        userId: req.user!.userId,
+        fullName: req.body.fullName,
+      };
+
+      // Validate fullName
+      if (!profileData.fullName || profileData.fullName.length < 2) {
+        return res.status(400).json({ message: "To'liq ism kamida 2 ta harfdan iborat bo'lishi kerak" });
+      }
+
+      // Update user fullName
+      const updatedUser = await storage.updateUser(req.user!.userId, { fullName: profileData.fullName });
+      
+      // Notify bot users and sync with website
+      await botNotificationService.notifyProfileUpdated(req.user!.userId, 'parent');
+      await syncService.notifyProfileUpdate(req.user!.userId, updatedUser, 'parent');
+      
+      return res.status(201).json({ fullName: profileData.fullName });
+    } catch (error) {
+      console.error("Error creating parent profile:", error);
+      return res.status(500).json({ message: "Failed to create parent profile" });
+    }
+  });
+
+  app.put("/api/profile/parent", authenticate, authorize(["parent"]), async (req, res) => {
+    try {
+      // Parent profile faqat fullName maydoniga ega
+      const profileData = {
+        fullName: req.body.fullName,
+      };
+
+      // Validate fullName
+      if (!profileData.fullName || profileData.fullName.length < 2) {
+        return res.status(400).json({ message: "To'liq ism kamida 2 ta harfdan iborat bo'lishi kerak" });
+      }
+
+      // Update user fullName
+      const updatedUser = await storage.updateUser(req.user!.userId, { fullName: profileData.fullName });
+      
+      // Notify bot users and sync with website
+      await botNotificationService.notifyProfileUpdated(req.user!.userId, 'parent');
+      await syncService.notifyProfileUpdate(req.user!.userId, updatedUser, 'parent');
+      
+      return res.status(200).json({ fullName: profileData.fullName });
+    } catch (error) {
+      console.error("Error updating parent profile:", error);
+      return res.status(500).json({ message: "Failed to update parent profile" });
+    }
+  });
+
   // Sync status endpoint
   app.get("/api/sync/status", authenticate, async (req, res) => {
     try {
