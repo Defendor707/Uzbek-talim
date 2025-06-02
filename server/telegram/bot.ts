@@ -303,13 +303,19 @@ bot.help(async (ctx) => {
     '/tests - Testlar ro\'yxati\n' +
     '/logout - Tizimdan chiqish\n\n';
   
-  // Add teacher-specific commands if user is a teacher
+  // Add role-specific commands
   if (ctx.session.userId && ctx.session.role === 'teacher') {
     helpText += '*O\'qituvchi uchun qo\'shimcha buyruqlar:*\n' +
       '/profile_edit - Profil ma\'lumotlarini tahrirlash\n' +
       '/specialty - Mutaxassislikni o\'zgartirish\n' +
       '/bio - Haqida bo\'limini o\'zgartirish\n' +
       '/experience - Tajribani o\'zgartirish';
+  } else if (ctx.session.userId && ctx.session.role === 'student') {
+    helpText += '*O\'quvchi uchun qo\'shimcha buyruqlar:*\n' +
+      '/student_edit - Profil ma\'lumotlarini tahrirlash';
+  } else if (ctx.session.userId && ctx.session.role === 'parent') {
+    helpText += '*Ota-ona uchun qo\'shimcha buyruqlar:*\n' +
+      '/parent_edit - Profil ma\'lumotlarini tahrirlash';
   }
   
   await ctx.reply(helpText, { parse_mode: 'Markdown' });

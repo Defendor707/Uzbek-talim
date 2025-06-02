@@ -841,27 +841,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Student Profile Routes
+  app.get("/api/profile/student", authenticate, authorize(["student"]), async (req, res) => {
+    try {
+      const profile = await storage.getStudentProfile(req.user!.userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Student profile not found" });
+      }
+      return res.status(200).json(profile);
+    } catch (error) {
+      console.error("Error fetching student profile:", error);
+      return res.status(500).json({ message: "Failed to fetch student profile" });
+    }
+  });
+
   app.post("/api/profile/student", authenticate, authorize(["student"]), async (req, res) => {
     try {
-      // Student profile faqat fullName maydoniga ega
-      const profileData = {
-        fullName: req.body.fullName,
-      };
+      const profileData = schema.insertStudentProfileSchema.parse({
+        ...req.body,
+        userId: req.user!.userId,
+      });
 
-      // Validate fullName
-      if (!profileData.fullName || profileData.fullName.length < 2) {
-        return res.status(400).json({ message: "To'liq ism kamida 2 ta harfdan iborat bo'lishi kerak" });
+      // Update user fullName if provided
+      if (req.body.fullName) {
+        await storage.updateUser(req.user!.userId, { fullName: req.body.fullName });
       }
 
-      // Update user fullName
-      const updatedUser = await storage.updateUser(req.user!.userId, { fullName: profileData.fullName });
+      const newProfile = await storage.createStudentProfile(profileData);
       
       // Notify bot users and sync with website
       await botNotificationService.notifyProfileUpdated(req.user!.userId, 'student');
-      await syncService.notifyProfileUpdate(req.user!.userId, updatedUser, 'student');
+      await syncService.notifyProfileUpdate(req.user!.userId, newProfile, 'student');
       
-      return res.status(201).json({ fullName: profileData.fullName });
+      return res.status(201).json(newProfile);
     } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: fromZodError(error).details,
+        });
+      }
       console.error("Error creating student profile:", error);
       return res.status(500).json({ message: "Failed to create student profile" });
     }
@@ -869,25 +887,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/profile/student", authenticate, authorize(["student"]), async (req, res) => {
     try {
-      // Student profile faqat fullName maydoniga ega
-      const profileData = {
-        fullName: req.body.fullName,
-      };
-
-      // Validate fullName
-      if (!profileData.fullName || profileData.fullName.length < 2) {
-        return res.status(400).json({ message: "To'liq ism kamida 2 ta harfdan iborat bo'lishi kerak" });
+      // Check if profile exists
+      const existingProfile = await storage.getStudentProfile(req.user!.userId);
+      if (!existingProfile) {
+        return res.status(404).json({ message: "Student profile not found" });
       }
 
-      // Update user fullName
-      const updatedUser = await storage.updateUser(req.user!.userId, { fullName: profileData.fullName });
+      const profileData = schema.insertStudentProfileSchema.partial().parse(req.body);
+      
+      // Update user fullName if provided
+      if (req.body.fullName) {
+        await storage.updateUser(req.user!.userId, { fullName: req.body.fullName });
+      }
+      
+      // Update student profile
+      const updatedProfile = await storage.updateStudentProfile(req.user!.userId, profileData);
       
       // Notify bot users and sync with website
       await botNotificationService.notifyProfileUpdated(req.user!.userId, 'student');
-      await syncService.notifyProfileUpdate(req.user!.userId, updatedUser, 'student');
+      await syncService.notifyProfileUpdate(req.user!.userId, updatedProfile, 'student');
       
-      return res.status(200).json({ fullName: profileData.fullName });
+      return res.status(200).json(updatedProfile);
     } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: fromZodError(error).details,
+        });
+      }
       console.error("Error updating student profile:", error);
       return res.status(500).json({ message: "Failed to update student profile" });
     }
