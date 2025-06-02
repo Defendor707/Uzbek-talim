@@ -1203,8 +1203,8 @@ function getKeyboardByRole(role: string) {
     ];
   } else if (role === 'center') {
     return [
-      ['👤 Profil', '📝 Test ishlash'],
-      ['📚 Darsliklarim', '📊 Natijalarim'],
+      ['👤 Profil', '👨‍🏫 O\'qituvchilar'],
+      ['👥 O\'quvchilar', '📊 Davomat'],
       ['⚡ Boshqalar']
     ];
   }
