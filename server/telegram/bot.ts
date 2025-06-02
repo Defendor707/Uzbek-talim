@@ -1521,19 +1521,95 @@ bot.hears('⚡ Boshqalar', async (ctx) => {
     return;
   }
   
-  await ctx.reply(
-    '⚡ Boshqa funksiyalar',
-    Markup.keyboard([
+  // Get user role to show appropriate menu
+  const user = await storage.getUser(ctx.session.userId);
+  if (!user) {
+    await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
+    return;
+  }
+  
+  let menu;
+  if (user.role === 'teacher') {
+    // O'qituvchilar uchun alohida menyu (profil tugmasi yo'q chunki ular uchun alohida profil bo'limi bor)
+    menu = [
       ['🔔 Bildirishnomalar', '🌐 Veb-sayt'],
       ['ℹ️ Yordam', '📞 Aloqa'],
       ['🚪 Hisobdan chiqish'],
       ['🔙 Orqaga']
-    ]).resize()
+    ];
+  } else {
+    // O'quvchi, ota-ona va o'quv markaz uchun profil tugmasi qo'shamiz
+    menu = [
+      ['👤 Profil', '🔔 Bildirishnomalar'],
+      ['🌐 Veb-sayt', 'ℹ️ Yordam'],
+      ['📞 Aloqa', '🚪 Hisobdan chiqish'],
+      ['🔙 Orqaga']
+    ];
+  }
+  
+  await ctx.reply(
+    '⚡ Boshqa funksiyalar',
+    Markup.keyboard(menu).resize()
   );
 });
 
+// 👤 Profil handler for non-teacher roles
+bot.hears('👤 Profil', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz.');
+    return;
+  }
+
+  try {
+    const user = await storage.getUser(ctx.session.userId);
+    if (!user) {
+      await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
+      return;
+    }
+
+    let profileInfo = '';
+    
+    if (user.role === 'student') {
+      profileInfo = `👨‍🎓 *O'quvchi profili*\n\n` +
+                   `👤 Ism-familya: ${user.fullName}\n` +
+                   `📧 Email: ${user.email}\n` +
+                   `👤 Foydalanuvchi nomi: ${user.username}\n\n` +
+                   `Profil ma'lumotlarini o'zgartirish uchun veb-saytdan foydalaning.`;
+    } else if (user.role === 'parent') {
+      profileInfo = `👨‍👩‍👧‍👦 *Ota-ona profili*\n\n` +
+                   `👤 Ism-familya: ${user.fullName}\n` +
+                   `📧 Email: ${user.email}\n` +
+                   `👤 Foydalanuvchi nomi: ${user.username}\n\n` +
+                   `Profil ma'lumotlarini o'zgartirish uchun veb-saytdan foydalaning.`;
+    } else if (user.role === 'center') {
+      profileInfo = `🏫 *O'quv markaz profili*\n\n` +
+                   `👤 Nomi: ${user.fullName}\n` +
+                   `📧 Email: ${user.email}\n` +
+                   `👤 Foydalanuvchi nomi: ${user.username}\n\n` +
+                   `Profil ma'lumotlarini o'zgartirish uchun veb-saytdan foydalaning.`;
+    } else {
+      await ctx.reply('❌ Bu funksiya sizning rolingiz uchun mavjud emas.');
+      return;
+    }
+
+    await ctx.reply(
+      profileInfo,
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard([
+          ['🌐 Veb-saytga o\'tish'],
+          ['🔙 Orqaga']
+        ]).resize()
+      }
+    );
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    await ctx.reply('❌ Profil ma\'lumotlarini olishda xatolik yuz berdi.');
+  }
+});
+
 // Additional menu handlers for each role
-bot.hears(['👤 Profil', '📚 Darslik', '📝 Testlar', '📊 Statistika'], async (ctx) => {
+bot.hears(['📚 Darslik', '📝 Testlar', '📊 Statistika'], async (ctx) => {
   if (!ctx.session.userId) {
     await ctx.reply('❌ Avval tizimga kiring.');
     return;

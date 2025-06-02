@@ -13,19 +13,11 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import useAuth from '@/hooks/useAuth';
 
-// Student Profile Schema
+// Student Profile Schema - faqat ism-familya majburiy
 const studentProfileSchema = z.object({
   fullName: z.string()
     .min(2, 'Ism-familya kamida 2 ta harfdan iborat bo\'lishi kerak')
     .max(50, 'Ism-familya 50 ta harfdan oshmasligi kerak'),
-  age: z.number()
-    .min(5, 'Yosh 5 dan kichik bo\'lishi mumkin emas')
-    .max(25, 'Yosh 25 dan katta bo\'lishi mumkin emas'),
-  grade: z.string()
-    .min(1, 'Sinf ko\'rsatilishi shart'),
-  classroom: z.string()
-    .min(1, 'Sinf-guruh ko\'rsatilishi shart'),
-  subjects: z.array(z.string()).optional(),
 });
 
 type StudentProfileFormData = z.infer<typeof studentProfileSchema>;
@@ -44,10 +36,6 @@ const StudentProfile: React.FC = () => {
     resolver: zodResolver(studentProfileSchema),
     defaultValues: {
       fullName: user?.fullName || '',
-      age: 16,
-      grade: '',
-      classroom: '',
-      subjects: [],
     },
   });
 
@@ -103,10 +91,6 @@ const StudentProfile: React.FC = () => {
   React.useEffect(() => {
     form.reset({
       fullName: user?.fullName || '',
-      age: profile?.age || 16,
-      grade: profile?.grade || '',
-      classroom: profile?.classroom || '',
-      subjects: profile?.subjects || [],
     });
   }, [profile, user, form]);
 
@@ -149,7 +133,7 @@ const StudentProfile: React.FC = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               
               {/* Basic Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 <div>
                   <Label htmlFor="fullName">To'liq ism *</Label>
                   <Input
@@ -163,61 +147,28 @@ const StudentProfile: React.FC = () => {
                   )}
                   <p className="text-sm text-gray-500 mt-1">Majburiy maydon</p>
                 </div>
-                
-                <div>
-                  <Label htmlFor="age">Yoshi *</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    {...form.register('age', { valueAsNumber: true })}
-                    placeholder="16"
-                    min="5"
-                    max="25"
-                  />
-                  {form.formState.errors.age && (
-                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.age.message}</p>
-                  )}
-                  <p className="text-sm text-gray-500 mt-1">5-25 yosh oraligi</p>
-                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="grade">Sinf *</Label>
-                  <Input
-                    id="grade"
-                    {...form.register('grade')}
-                    placeholder="Masalan: 9"
-                  />
-                  {form.formState.errors.grade && (
-                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.grade.message}</p>
-                  )}
-                  <p className="text-sm text-gray-500 mt-1">Majburiy maydon</p>
+              {/* Info Message */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">
+                      O'quvchi profili
+                    </h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <p>
+                        Hozircha faqat ism-familya ma'lumotini kiritish imkoniyati mavjud. 
+                        Kelajakda qo'shimcha funksiyalar qo'shiladi.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                
-                <div>
-                  <Label htmlFor="classroom">Sinf-guruh *</Label>
-                  <Input
-                    id="classroom"
-                    {...form.register('classroom')}
-                    placeholder="Masalan: 9-A"
-                  />
-                  {form.formState.errors.classroom && (
-                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.classroom.message}</p>
-                  )}
-                  <p className="text-sm text-gray-500 mt-1">Majburiy maydon</p>
-                </div>
-              </div>
-
-              {/* Subjects */}
-              <div>
-                <Label htmlFor="subjects">Tayyorgarlik fanlari</Label>
-                <Textarea
-                  id="subjects"
-                  placeholder="Masalan: Matematika, Fizika, Kimyo, Ingliz tili"
-                  rows={3}
-                />
-                <p className="text-sm text-gray-500 mt-1">Vergul bilan ajrating</p>
               </div>
 
               {/* Submit Button */}
