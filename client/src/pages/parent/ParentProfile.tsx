@@ -12,11 +12,12 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import useAuth from '@/hooks/useAuth';
 
-// Parent Profile Schema - faqat ism-familya
+// Parent Profile Schema
 const parentProfileSchema = z.object({
   fullName: z.string()
     .min(2, 'Ism-familya kamida 2 ta harfdan iborat bo\'lishi kerak')
     .max(50, 'Ism-familya 50 ta harfdan oshmasligi kerak'),
+  phoneNumber: z.string().optional().or(z.literal('')),
 });
 
 type ParentProfileFormData = z.infer<typeof parentProfileSchema>;
@@ -35,6 +36,7 @@ const ParentProfile: React.FC = () => {
     resolver: zodResolver(parentProfileSchema),
     defaultValues: {
       fullName: user?.fullName || '',
+      phoneNumber: profile?.phoneNumber || '',
     },
   });
 

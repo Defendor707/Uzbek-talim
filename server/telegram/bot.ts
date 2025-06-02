@@ -1281,26 +1281,7 @@ async function checkAndSendNotifications(ctx: BotContext) {
 
 // Role-specific menu handlers
 
-// TEACHER MENU HANDLERS
-bot.hears('1️⃣ Profil', async (ctx) => {
-  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
-    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun.');
-    return;
-  }
-  
-  await ctx.reply(
-    '👤 *Profil bo\'limi*\n\nQuyidagi amallardan birini tanlang:',
-    {
-      parse_mode: 'Markdown',
-      ...Markup.keyboard([
-        ['🖼️ Shaxsiy rasm', '👤 Ism familiya'],
-        ['📜 Sertifikat', '🎂 Yoshi'],
-        ['💼 Tajribasi', 'ℹ️ Haqida'],
-        ['🔙 Orqaga']
-      ]).resize()
-    }
-  );
-});
+// TEACHER MENU HANDLERS (removed old numbered profile handler)
 
 bot.hears('2️⃣ Darslik', async (ctx) => {
   if (!ctx.session.userId || ctx.session.role !== 'teacher') {
@@ -1360,25 +1341,7 @@ bot.hears('4️⃣ Boshqa', async (ctx) => {
   );
 });
 
-// STUDENT MENU HANDLERS  
-bot.hears('1️⃣ Profil', async (ctx) => {
-  if (!ctx.session.userId || ctx.session.role !== 'student') {
-    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun.');
-    return;
-  }
-  
-  await ctx.reply(
-    '👤 *Profil bo\'limi*\n\nQuyidagi amallardan birini tanlang:',
-    {
-      parse_mode: 'Markdown',
-      ...Markup.keyboard([
-        ['👤 Ism familiya', '🖼️ Shaxsiy rasmi'],
-        ['📜 Sertifikatlar', 'ℹ️ Haqida'],
-        ['🔙 Orqaga']
-      ]).resize()
-    }
-  );
-});
+// STUDENT MENU HANDLERS (removed old numbered profile handler)
 
 bot.hears('2️⃣ Test ishlash', async (ctx) => {
   if (!ctx.session.userId || ctx.session.role !== 'student') {
