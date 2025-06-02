@@ -969,6 +969,14 @@ bot.on('text', async (ctx, next) => {
         } else {
           validatedValue = num;
         }
+      } else if (field === 'grade') {
+        if (!/^[1-9][0-2]?$/.test(value)) {
+          errorMessage = 'Sinf raqami 1 dan 12 gacha bo\'lishi kerak.';
+        }
+      } else if (field === 'classroom') {
+        if (value.length > 5 || !/^[A-Za-z]+$/.test(value)) {
+          errorMessage = 'Sinf harfi faqat harflar (A, B, V) bo\'lishi kerak.';
+        }
       }
 
       if (errorMessage) {
@@ -980,7 +988,7 @@ bot.on('text', async (ctx, next) => {
       if (field === 'fullName') {
         // Update user's full name
         await storage.updateUser(user.id, { fullName: validatedValue });
-      } else {
+      } else if (user.role === 'teacher') {
         // Update teacher profile
         let profile = await storage.getTeacherProfile(user.id);
         const profileData: any = { userId: user.id };
@@ -999,6 +1007,24 @@ bot.on('text', async (ctx, next) => {
           
           await storage.createTeacherProfile(profileData);
         }
+      } else if (user.role === 'student') {
+        // Update student profile
+        let profile = await storage.getStudentProfile(user.id);
+        const profileData: any = { userId: user.id };
+
+        if (profile) {
+          // Update existing profile
+          profileData[field] = validatedValue;
+          await storage.updateStudentProfile(user.id, profileData);
+        } else {
+          // Create new profile with required values
+          profileData.grade = field === 'grade' ? validatedValue : '1';
+          profileData.classroom = field === 'classroom' ? validatedValue : 'A';
+          profileData.phoneNumber = field === 'phoneNumber' ? validatedValue : undefined;
+          profileData.bio = field === 'bio' ? validatedValue : undefined;
+          
+          await storage.createStudentProfile(profileData);
+        }
       }
 
       // Clear editing state
@@ -1009,7 +1035,9 @@ bot.on('text', async (ctx, next) => {
         phoneNumber: 'Telefon raqam',
         specialty: 'Mutaxassislik',
         bio: 'Haqida bo\'limi',
-        experience: 'Tajriba'
+        experience: 'Tajriba',
+        grade: 'Sinf',
+        classroom: 'Sinf harfi'
       };
 
       await ctx.reply(
