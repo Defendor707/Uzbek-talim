@@ -30,7 +30,7 @@ interface BotSessionData extends Scenes.SceneSession {
     currentQuestionIndex?: number;
     answers?: { questionId: number, answer: string }[];
   };
-  editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience' | 'addChild';
+  editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience' | 'addChild' | 'testCode';
   testCreation?: {
     step?: 'type' | 'questionCount' | 'answers' | 'inputMethod';
     testType?: 'public' | 'private';
@@ -231,6 +231,58 @@ bot.on('text', async (ctx, next) => {
         ctx.session.registrationStep = undefined;
         ctx.session.registrationData = undefined;
       }
+      return;
+    }
+  }
+  
+  // Handle test code search
+  if (ctx.session.editingField === 'testCode') {
+    const testCode = messageText.trim();
+    
+    if (!/^\d{6}$/.test(testCode)) {
+      await ctx.reply('❌ Test kodi 6 ta raqamdan iborat bo\'lishi kerak. Qaytadan kiriting:');
+      return;
+    }
+    
+    try {
+      // Search for test with this code
+      const tests = await storage.getTestsByGradeAndClassroom('10'); // Search in all tests
+      const foundTest = tests.find(test => test.description && test.description.includes(testCode));
+      
+      if (!foundTest) {
+        await ctx.reply('❌ Bunday kodli test topilmadi. Qaytadan urinib ko\'ring:');
+        return;
+      }
+      
+      if (foundTest.status !== 'active') {
+        await ctx.reply('❌ Bu test hozirda faol emas.');
+        ctx.session.editingField = undefined;
+        return;
+      }
+      
+      // Show test details and start option
+      await ctx.reply(
+        `📝 *Test topildi!*\n\n` +
+        `📋 Nomi: ${foundTest.title}\n` +
+        `📊 Savollar soni: ${foundTest.totalQuestions}\n` +
+        `⏰ Davomiyligi: Cheklanmagan\n` +
+        `🎓 Sinf: ${foundTest.grade}\n\n` +
+        'Testni boshlashni xohlaysizmi?',
+        {
+          parse_mode: 'Markdown',
+          ...Markup.inlineKeyboard([
+            [Markup.button.callback('▶️ Testni boshlash', `start_test_${foundTest.id}`)],
+            [Markup.button.callback('🔙 Orqaga', 'back_to_menu')]
+          ])
+        }
+      );
+      
+      ctx.session.editingField = undefined;
+      return;
+    } catch (error) {
+      console.error('Error searching test by code:', error);
+      await ctx.reply('❌ Test qidirishda xatolik yuz berdi.');
+      ctx.session.editingField = undefined;
       return;
     }
   }
@@ -2036,7 +2088,7 @@ bot.hears('📝 Testlar', async (ctx) => {
         parse_mode: 'Markdown',
         ...Markup.keyboard([
           ['🔢 Maxsus raqam orqali', '🌐 Ommaviy testlar'],
-          ['📋 Mavjud testlar', '📊 Test natijalari'],
+          ['📊 Test natijalari'],
           ['🔙 Orqaga']
         ]).resize()
       }
@@ -2100,6 +2152,114 @@ bot.hears('📝 Test ishlash', async (ctx) => {
       ]).resize()
     }
   );
+});
+
+// Maxsus raqam orqali test topish
+bot.hears('🔢 Maxsus raqam orqali', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'student') {
+    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun.');
+    return;
+  }
+  
+  await ctx.reply(
+    '🔢 *Maxsus test kodi*\n\n' +
+    '6 raqamli test kodini kiriting:\n' +
+    'Masalan: 123456',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([['🔙 Orqaga']]).resize()
+    }
+  );
+  
+  ctx.session.editingField = 'testCode';
+});
+
+// Ommaviy testlar
+bot.hears('🌐 Ommaviy testlar', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'student') {
+    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun.');
+    return;
+  }
+  
+  try {
+    // Get all public tests (active status)
+    const tests = await storage.getTestsByGradeAndClassroom('10'); // Default grade for now
+    const publicTests = tests.filter(test => test.status === 'active');
+    
+    if (!publicTests || publicTests.length === 0) {
+      await ctx.reply('ℹ️ Hozircha ommaviy testlar mavjud emas.');
+      return;
+    }
+    
+    // Create inline keyboard for public tests (max 10)
+    const testButtons = await Promise.all(publicTests.slice(0, 10).map(async test => {
+      return [Markup.button.callback(`📝 ${test.title} (${test.totalQuestions} savol)`, `start_test_${test.id}`)];
+    }));
+    
+    await ctx.reply(
+      '🌐 *Ommaviy testlar*\n\n' +
+      'Quyidagi testlardan birini tanlang:',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard(testButtons)
+      }
+    );
+    
+    if (publicTests.length > 10) {
+      await ctx.reply(`... va yana ${publicTests.length - 10} ta testlar.`);
+    }
+  } catch (error) {
+    console.error('Error fetching public tests:', error);
+    await ctx.reply('❌ Ommaviy testlarni olishda xatolik yuz berdi.');
+  }
+});
+
+// O'qituvchilar uchun mavjud testlar
+bot.hears('📋 Mavjud testlar', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    return;
+  }
+  
+  try {
+    const user = await storage.getUser(ctx.session.userId);
+    if (!user) {
+      await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
+      return;
+    }
+    
+    const tests = await storage.getTestsByTeacherId(user.id);
+    
+    if (!tests || tests.length === 0) {
+      await ctx.reply('ℹ️ Siz hali test yaratmagansiz.');
+      return;
+    }
+    
+    // Create inline keyboard for tests (max 10)
+    const testButtons = await Promise.all(tests.slice(0, 10).map(async test => {
+      const statusEmoji = test.status === 'active' ? '✅' : test.status === 'draft' ? '📝' : '🔚';
+      return [Markup.button.callback(
+        `${statusEmoji} ${test.title} (${test.totalQuestions} savol)`, 
+        `teacher_test_${test.id}`
+      )];
+    }));
+    
+    await ctx.reply(
+      '📋 *Sizning testlaringiz*\n\n' +
+      'Test haqida batafsil ma\'lumot olish uchun tugmani bosing:',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard(testButtons)
+      }
+    );
+    
+    if (tests.length > 10) {
+      await ctx.reply(`... va yana ${tests.length - 10} ta testlar.`);
+    }
+  } catch (error) {
+    console.error('Error fetching teacher tests:', error);
+    await ctx.reply('❌ Testlar ro\'yxatini olishda xatolik yuz berdi.');
+  }
 });
 
 bot.hears('🔍 Qidiruv', async (ctx) => {
