@@ -5,7 +5,7 @@ import { botNotificationService } from '../sync/botNotifications';
 import bcrypt from 'bcrypt';
 import * as schema from '@shared/schema';
 import { db } from '../db';
-import { eq } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 
 // Type for our session data
 interface BotSessionData extends Scenes.SceneSession {
@@ -1172,6 +1172,172 @@ bot.hears('📊 Statistika', async (ctx) => {
   } catch (error) {
     console.error('Error fetching statistics:', error);
     await ctx.reply('❌ Statistika ma\'lumotlarini olishda xatolik yuz berdi.');
+  }
+});
+
+// Parent-specific button handlers
+bot.hears('👶 Farzandlarim', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring.');
+    return;
+  }
+  
+  try {
+    const user = await storage.getUser(ctx.session.userId);
+    if (!user || user.role !== 'parent') {
+      await ctx.reply('❌ Bu funksiya faqat ota-onalar uchun mavjud.');
+      return;
+    }
+    
+    // Get children (students where parentId equals current user id)
+    const children = await db.select({
+      id: schema.users.id,
+      fullName: schema.users.fullName,
+      username: schema.users.username,
+      phoneNumber: schema.studentProfiles.phoneNumber,
+      bio: schema.studentProfiles.bio
+    })
+    .from(schema.users)
+    .innerJoin(schema.studentProfiles, eq(schema.users.id, schema.studentProfiles.userId))
+    .where(eq(schema.studentProfiles.parentId, user.id));
+    
+    if (!children || children.length === 0) {
+      await ctx.reply('👶 Hozircha sizning farzandlaringiz ro\'yxatga olinmagan.');
+      return;
+    }
+    
+    let childrenInfo = '👶 *Farzandlarim ro\'yxati*\n\n';
+    for (const child of children) {
+      childrenInfo += `👤 *${child.fullName}*\n`;
+      childrenInfo += `🔑 Username: ${child.username}\n`;
+      if (child.phoneNumber) {
+        childrenInfo += `📞 Telefon: ${child.phoneNumber}\n`;
+      }
+      if (child.bio) {
+        childrenInfo += `📄 Haqida: ${child.bio}\n`;
+      }
+      childrenInfo += '\n';
+    }
+    
+    await ctx.reply(childrenInfo, { parse_mode: 'Markdown' });
+  } catch (error) {
+    console.error('Error fetching children:', error);
+    await ctx.reply('❌ Farzandlar ma\'lumotini olishda xatolik yuz berdi.');
+  }
+});
+
+bot.hears('📊 Test natijalari', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring.');
+    return;
+  }
+  
+  try {
+    const user = await storage.getUser(ctx.session.userId);
+    if (!user || user.role !== 'parent') {
+      await ctx.reply('❌ Bu funksiya faqat ota-onalar uchun mavjud.');
+      return;
+    }
+    
+    // Get children's test attempts
+    const testResults = await db.select({
+      studentName: schema.users.fullName,
+      testTitle: schema.tests.title,
+      score: schema.testAttempts.score,
+      totalQuestions: schema.testAttempts.totalQuestions,
+      endTime: schema.testAttempts.endTime,
+      status: schema.testAttempts.status
+    })
+    .from(schema.testAttempts)
+    .innerJoin(schema.users, eq(schema.testAttempts.studentId, schema.users.id))
+    .innerJoin(schema.studentProfiles, eq(schema.users.id, schema.studentProfiles.userId))
+    .innerJoin(schema.tests, eq(schema.testAttempts.testId, schema.tests.id))
+    .where(eq(schema.studentProfiles.parentId, user.id))
+    .orderBy(schema.testAttempts.endTime);
+    
+    if (!testResults || testResults.length === 0) {
+      await ctx.reply('📊 Hozircha farzandlaringizning test natijalari mavjud emas.');
+      return;
+    }
+    
+    let resultsText = '📊 *Farzandlarning test natijalari*\n\n';
+    for (const result of testResults.slice(0, 10)) {
+      resultsText += `👤 *${result.studentName}*\n`;
+      resultsText += `📝 Test: ${result.testTitle}\n`;
+      if (result.score !== null && result.totalQuestions) {
+        const scoreNum = Number(result.score);
+        const percentage = Math.round((scoreNum / result.totalQuestions) * 100);
+        resultsText += `💯 Natija: ${scoreNum}/${result.totalQuestions} (${percentage}%)\n`;
+      }
+      resultsText += `📅 Sana: ${result.endTime ? new Date(result.endTime).toLocaleDateString('uz-UZ') : 'Yakunlanmagan'}\n`;
+      resultsText += `📊 Holat: ${getTestStatusInUzbek(result.status)}\n\n`;
+    }
+    
+    if (testResults.length > 10) {
+      resultsText += `... va yana ${testResults.length - 10} ta natija. To'liq ro'yxatni ko'rish uchun veb-saytdan foydalaning.`;
+    }
+    
+    await ctx.reply(resultsText, { parse_mode: 'Markdown' });
+  } catch (error) {
+    console.error('Error fetching test results:', error);
+    await ctx.reply('❌ Test natijalarini olishda xatolik yuz berdi.');
+  }
+});
+
+bot.hears('📈 Hisobotlar', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring.');
+    return;
+  }
+  
+  try {
+    const user = await storage.getUser(ctx.session.userId);
+    if (!user || user.role !== 'parent') {
+      await ctx.reply('❌ Bu funksiya faqat ota-onalar uchun mavjud.');
+      return;
+    }
+    
+    // Get children data for basic report
+    const children = await db.select()
+      .from(schema.studentProfiles)
+      .where(eq(schema.studentProfiles.parentId, user.id));
+    
+    // Get all test attempts by children
+    const allAttempts = await db.select({
+      status: schema.testAttempts.status,
+      score: schema.testAttempts.score,
+      totalQuestions: schema.testAttempts.totalQuestions
+    })
+    .from(schema.testAttempts)
+    .innerJoin(schema.studentProfiles, eq(schema.testAttempts.studentId, schema.studentProfiles.userId))
+    .where(eq(schema.studentProfiles.parentId, user.id));
+    
+    const childrenCount = children.length;
+    const totalAttempts = allAttempts.length;
+    const completedAttempts = allAttempts.filter(a => a.status === 'completed').length;
+    
+    // Calculate average score for completed tests
+    const completedTests = allAttempts.filter(a => a.status === 'completed' && a.score !== null && a.totalQuestions > 0);
+    let avgScore = 0;
+    if (completedTests.length > 0) {
+      const totalPercentage = completedTests.reduce((sum, test) => {
+        const scoreNum = Number(test.score);
+        return sum + (scoreNum / test.totalQuestions) * 100;
+      }, 0);
+      avgScore = Math.round(totalPercentage / completedTests.length);
+    }
+    
+    const reportText = '📈 *Umumiy hisobot*\n\n' +
+      `👶 Farzandlar soni: ${childrenCount}\n` +
+      `📝 Jami test urinishlari: ${totalAttempts}\n` +
+      `✅ Tugallangan testlar: ${completedAttempts}\n` +
+      `💯 O'rtacha ball: ${avgScore}%\n\n` +
+      'Batafsil hisobot uchun veb-saytdan foydalaning.';
+    
+    await ctx.reply(reportText, { parse_mode: 'Markdown' });
+  } catch (error) {
+    console.error('Error generating report:', error);
+    await ctx.reply('❌ Hisobot yaratishda xatolik yuz berdi.');
   }
 });
 
