@@ -31,6 +31,18 @@ interface BotSessionData extends Scenes.SceneSession {
     answers?: { questionId: number, answer: string }[];
   };
   editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience' | 'addChild';
+  testCreation?: {
+    step?: 'type' | 'questionCount' | 'answers' | 'inputMethod';
+    testType?: 'public' | 'private';
+    questionCount?: number;
+    answers?: string[];
+    currentQuestionIndex?: number;
+    testCode?: string;
+    testData?: {
+      title?: string;
+      description?: string;
+    };
+  };
 }
 
 // Create custom context type
@@ -219,6 +231,116 @@ bot.on('text', async (ctx, next) => {
         ctx.session.registrationStep = undefined;
         ctx.session.registrationData = undefined;
       }
+      return;
+    }
+  }
+  
+  // Handle test creation flow
+  if (ctx.session.testCreation) {
+    if (ctx.session.testCreation.step === 'questionCount') {
+      const questionCount = parseInt(messageText);
+      
+      if (isNaN(questionCount) || questionCount < 5 || questionCount > 90) {
+        await ctx.reply('❌ Savollar soni 5 dan 90 gacha bo\'lishi kerak. Qaytadan kiriting:');
+        return;
+      }
+      
+      ctx.session.testCreation.questionCount = questionCount;
+      ctx.session.testCreation.step = 'inputMethod';
+      
+      await ctx.reply(
+        '📝 *Javoblarni kiritish usulini tanlang:*\n\n' +
+        '1️⃣ Bitta qatorda - 1a2b3c4d5a...\n' +
+        '2️⃣ Har bir savolni alohida\n' +
+        '3️⃣ Tugmalar orqali',
+        {
+          parse_mode: 'Markdown',
+          ...Markup.keyboard([
+            ['1️⃣ Bitta qatorda'],
+            ['2️⃣ Har bir savolni alohida', '3️⃣ Tugmalar orqali'],
+            ['🔙 Orqaga']
+          ]).resize()
+        }
+      );
+      return;
+    }
+    
+    if (ctx.session.testCreation.step === 'answers') {
+      // Handle single line answers (1a2b3c4d format or abcda format)
+      const cleanText = messageText.toLowerCase().replace(/[^abcd0-9]/g, '');
+      const answers: string[] = [];
+      
+      // Try to parse different formats
+      let parsed = false;
+      
+      // Format 1: 1a2b3c4d5a... (with numbers)
+      if (/^\d+[abcd]/.test(cleanText)) {
+        const matches = cleanText.match(/\d+[abcd]/g);
+        if (matches) {
+          for (const match of matches) {
+            const answer = match.slice(-1).toUpperCase();
+            answers.push(answer);
+          }
+          parsed = true;
+        }
+      }
+      
+      // Format 2: abcda... (letters only)
+      if (!parsed && /^[abcd]+$/.test(cleanText)) {
+        for (const char of cleanText) {
+          answers.push(char.toUpperCase());
+        }
+        parsed = true;
+      }
+      
+      if (!parsed || answers.length !== ctx.session.testCreation.questionCount) {
+        await ctx.reply(
+          `❌ Javoblar noto'g'ri formatda yoki soni mos kelmaydi.\n\n` +
+          `Kerakli savollar soni: ${ctx.session.testCreation.questionCount}\n` +
+          `Sizning javoblaringiz soni: ${answers.length}\n\n` +
+          'Qaytadan kiriting:'
+        );
+        return;
+      }
+      
+      ctx.session.testCreation.answers = answers;
+      await saveTest(ctx);
+      return;
+    }
+    
+    // Handle individual question answers
+    if (ctx.session.testCreation.step === 'inputMethod' && 
+        ctx.session.testCreation.currentQuestionIndex !== undefined) {
+      const answer = messageText.toUpperCase();
+      
+      if (!['A', 'B', 'C', 'D'].includes(answer)) {
+        await ctx.reply('❌ Faqat A, B, C yoki D harflarini kiriting:');
+        return;
+      }
+      
+      if (!ctx.session.testCreation.answers) {
+        ctx.session.testCreation.answers = [];
+      }
+      
+      ctx.session.testCreation.answers[ctx.session.testCreation.currentQuestionIndex] = answer;
+      ctx.session.testCreation.currentQuestionIndex++;
+      
+      const questionCount = ctx.session.testCreation.questionCount || 0;
+      
+      if (ctx.session.testCreation.currentQuestionIndex >= questionCount) {
+        await saveTest(ctx);
+        return;
+      }
+      
+      const nextQuestionNum = ctx.session.testCreation.currentQuestionIndex + 1;
+      await ctx.reply(
+        `📝 *${nextQuestionNum}-savol javobini kiriting*\n\n` +
+        'A, B, C yoki D harflaridan birini kiriting:',
+        {
+          parse_mode: 'Markdown',
+          ...Markup.keyboard([['A', 'B', 'C', 'D'], ['🔙 Orqaga']]).resize()
+        }
+      );
       return;
     }
   }
@@ -1407,6 +1529,227 @@ bot.hears('📈 Hisobotlar', async (ctx) => {
     await ctx.reply('❌ Hisobot yaratishda xatolik yuz berdi.');
   }
 });
+
+// TEST CREATION HANDLERS
+
+// Oddiy test yaratish
+bot.hears('📝 Oddiy test', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    return;
+  }
+
+  // Initialize test creation session
+  ctx.session.testCreation = {
+    step: 'type',
+    answers: []
+  };
+
+  await ctx.reply(
+    '📝 *Oddiy test yaratish*\n\n' +
+    'Test turini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['🌐 Ommaviy test', '🔢 Maxsus raqamli test'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+// Test turi tanlash
+bot.hears(['🌐 Ommaviy test', '🔢 Maxsus raqamli test'], async (ctx) => {
+  if (!ctx.session.testCreation || ctx.session.testCreation.step !== 'type') {
+    return;
+  }
+
+  const messageText = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+  ctx.session.testCreation.testType = messageText === '🌐 Ommaviy test' ? 'public' : 'private';
+  ctx.session.testCreation.step = 'questionCount';
+
+  // Maxsus raqamli test uchun kod generatsiya qilish
+  if (ctx.session.testCreation.testType === 'private') {
+    ctx.session.testCreation.testCode = Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  await ctx.reply(
+    '📊 *Savollar soni*\n\n' +
+    'Test nechta savoldan iborat bo\'lsin?\n' +
+    '(5 dan 90 tagacha raqam kiriting)',
+    Markup.keyboard([['🔙 Orqaga']]).resize()
+  );
+});
+
+// Javob kiritish usulini tanlash
+bot.hears(['1️⃣ Bitta qatorda', '2️⃣ Har bir savolni alohida', '3️⃣ Tugmalar orqali'], async (ctx) => {
+  if (!ctx.session.testCreation || ctx.session.testCreation.step !== 'inputMethod') {
+    return;
+  }
+
+  const messageText = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+  
+  if (messageText === '1️⃣ Bitta qatorda') {
+    await ctx.reply(
+      '📝 *Javoblarni kiriting*\n\n' +
+      `${ctx.session.testCreation.questionCount} ta savolning javoblarini ketma-ket kiriting:\n\n` +
+      'Misol: 1a2b3c4d5a...\n' +
+      'yoki: abcda...\n\n' +
+      'Har bir javob A, B, C yoki D bo\'lishi kerak.',
+      Markup.keyboard([['🔙 Orqaga']]).resize()
+    );
+  } else if (messageText === '2️⃣ Har bir savolni alohida') {
+    ctx.session.testCreation.currentQuestionIndex = 0;
+    await ctx.reply(
+      `📝 *1-savol javobini kiriting*\n\n` +
+      'A, B, C yoki D harflaridan birini kiriting:',
+      Markup.keyboard([['A', 'B', 'C', 'D'], ['🔙 Orqaga']]).resize()
+    );
+  } else if (messageText === '3️⃣ Tugmalar orqali') {
+    ctx.session.testCreation.currentQuestionIndex = 0;
+    await showQuestionButtons(ctx);
+  }
+});
+
+// Tugmalar orqali javob kiritish
+async function showQuestionButtons(ctx: BotContext) {
+  if (!ctx.session.testCreation || !ctx.session.testCreation.questionCount) return;
+  
+  const currentIndex = ctx.session.testCreation.currentQuestionIndex || 0;
+  const totalQuestions = ctx.session.testCreation.questionCount;
+  
+  if (currentIndex >= totalQuestions) {
+    await saveTest(ctx);
+    return;
+  }
+  
+  const questionNum = currentIndex + 1;
+  const keyboard = [];
+  
+  // A B C D tugmalari
+  keyboard.push([
+    Markup.button.callback('A', `answer_${currentIndex}_A`),
+    Markup.button.callback('B', `answer_${currentIndex}_B`),
+    Markup.button.callback('C', `answer_${currentIndex}_C`),
+    Markup.button.callback('D', `answer_${currentIndex}_D`)
+  ]);
+  
+  await ctx.reply(
+    `📝 *${questionNum}-savol javobini tanlang*\n\n` +
+    `Savol ${questionNum}/${totalQuestions}\n\n` +
+    'To\'g\'ri javobni tanlang:',
+    {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: keyboard
+      }
+    }
+  );
+}
+
+// Inline tugma bosilganda javobni saqlash
+bot.action(/answer_(\d+)_([ABCD])/, async (ctx) => {
+  if (!ctx.session.testCreation) return;
+  
+  const questionIndex = parseInt(ctx.match[1]);
+  const answer = ctx.match[2];
+  
+  // Javobni saqlash
+  if (!ctx.session.testCreation.answers) {
+    ctx.session.testCreation.answers = [];
+  }
+  ctx.session.testCreation.answers[questionIndex] = answer;
+  
+  // Keyingi savolga o'tish
+  ctx.session.testCreation.currentQuestionIndex = questionIndex + 1;
+  
+  await ctx.answerCbQuery(`${questionIndex + 1}-savol: ${answer} tanlandi`);
+  
+  // Keyingi savolni ko'rsatish yoki testni saqlash
+  if (ctx.session.testCreation.currentQuestionIndex >= (ctx.session.testCreation.questionCount || 0)) {
+    await saveTest(ctx);
+  } else {
+    await showQuestionButtons(ctx);
+  }
+});
+
+// Testni saqlash funksiyasi
+async function saveTest(ctx: BotContext) {
+  if (!ctx.session.testCreation || !ctx.session.userId) return;
+  
+  try {
+    const user = await storage.getUser(ctx.session.userId);
+    if (!user) {
+      await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
+      return;
+    }
+    
+    const teacherProfile = await storage.getTeacherProfile(user.id);
+    if (!teacherProfile) {
+      await ctx.reply('❌ O\'qituvchi profili topilmadi.');
+      return;
+    }
+    
+    // Test ma'lumotlarini yaratish
+    const testData = {
+      title: `Oddiy test - ${new Date().toLocaleDateString('uz-UZ')}`,
+      description: ctx.session.testCreation.testType === 'public' ? 'Ommaviy test' : `Maxsus test (Kod: ${ctx.session.testCreation.testCode})`,
+      teacherId: user.id, // Use user.id instead of teacherProfile.id
+      type: 'simple' as const,
+      status: 'active' as const,
+      duration: 30, // 30 daqiqa
+      totalQuestions: ctx.session.testCreation.questionCount || 0,
+      grade: '10', // Default grade
+      classroom: null
+    };
+    
+    // Testni yaratish
+    const newTest = await storage.createTest(testData);
+    
+    // Savollarni yaratish
+    const answers = ctx.session.testCreation.answers || [];
+    for (let i = 0; i < answers.length; i++) {
+      const questionData = {
+        testId: newTest.id,
+        questionText: `${i + 1}-savol`,
+        questionType: 'simple' as const,
+        options: ['A', 'B', 'C', 'D'],
+        correctAnswer: answers[i],
+        points: 1,
+        order: i + 1
+      };
+      
+      await storage.createQuestion(questionData);
+    }
+    
+    // Muvaffaqiyatli xabar
+    let successMessage = '✅ *Test muvaffaqiyatli yaratildi!*\n\n' +
+      `📝 Test nomi: ${testData.title}\n` +
+      `📊 Savollar soni: ${testData.totalQuestions}\n` +
+      `⏰ Vaqt: ${testData.duration} daqiqa\n` +
+      `🌐 Turi: ${ctx.session.testCreation.testType === 'public' ? 'Ommaviy' : 'Maxsus raqamli'}\n`;
+    
+    if (ctx.session.testCreation.testCode) {
+      successMessage += `🔢 Test kodi: *${ctx.session.testCreation.testCode}*\n\n`;
+      successMessage += 'O\'quvchilar ushbu kod orqali testni topa olishadi.';
+    }
+    
+    await ctx.reply(successMessage, { parse_mode: 'Markdown' });
+    
+    // Session tozalash
+    ctx.session.testCreation = undefined;
+    
+    // Asosiy menyuga qaytish
+    await ctx.reply(
+      'Boshqa amal bajarish uchun menyudan tanlang:',
+      Markup.keyboard(getKeyboardByRole(ctx.session.role || 'teacher')).resize()
+    );
+    
+  } catch (error) {
+    console.error('Error saving test:', error);
+    await ctx.reply('❌ Testni saqlashda xatolik yuz berdi. Qaytadan urinib ko\'ring.');
+  }
+}
 
 // Handle unexpected errors
 bot.catch((err, ctx) => {
