@@ -85,46 +85,47 @@ const ChildrenPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 space-y-3 sm:space-y-0">
+            <div className="flex items-center space-x-3">
               <Link href="/dashboard/parent">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Orqaga
+                <Button variant="ghost" size="sm" className="p-2 sm:px-3">
+                  <ArrowLeft className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Orqaga</span>
                 </Button>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Farzandlarim</h1>
-                <p className="text-gray-600">Farzandlar ro'yxati va boshqaruv</p>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Farzandlarim</h1>
+                <p className="text-sm sm:text-base text-gray-600 hidden sm:block">Farzandlar ro'yxati va boshqaruv</p>
               </div>
             </div>
             
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-green-600 hover:bg-green-700">
-                  <Plus className="w-4 h-4 mr-2" />
+                <Button className="bg-green-600 hover:bg-green-700 w-full sm:w-auto py-3 sm:py-2 text-base sm:text-sm">
+                  <Plus className="w-5 h-5 mr-2" />
                   Farzand qo'shish
                 </Button>
               </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Farzand qo'shish</DialogTitle>
-                  <DialogDescription>
+              <DialogContent className="w-[95%] max-w-md mx-auto rounded-lg">
+                <DialogHeader className="space-y-3">
+                  <DialogTitle className="text-lg sm:text-xl">Farzand qo'shish</DialogTitle>
+                  <DialogDescription className="text-sm text-gray-600">
                     Farzandingizning username (foydalanuvchi nomi) orqali uni hisobingizga bog'lang.
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <FormField
                       control={form.control}
                       name="childUsername"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Farzand username</FormLabel>
+                          <FormLabel className="text-base font-medium">Farzand username</FormLabel>
                           <FormControl>
                             <Input
                               placeholder="farzand_username"
+                              className="h-12 text-base border-2 border-gray-200 focus:border-green-500"
                               {...field}
                             />
                           </FormControl>
@@ -132,18 +133,19 @@ const ChildrenPage: React.FC = () => {
                         </FormItem>
                       )}
                     />
-                    <div className="flex justify-end space-x-2">
+                    <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => setIsDialogOpen(false)}
+                        className="w-full sm:w-auto h-12 sm:h-10 text-base sm:text-sm border-2"
                       >
                         Bekor qilish
                       </Button>
                       <Button
                         type="submit"
                         disabled={addChildMutation.isPending}
-                        className="bg-green-600 hover:bg-green-700"
+                        className="w-full sm:w-auto h-12 sm:h-10 text-base sm:text-sm bg-green-600 hover:bg-green-700"
                       >
                         {addChildMutation.isPending ? "Qo'shilmoqda..." : "Qo'shish"}
                       </Button>
@@ -157,38 +159,38 @@ const ChildrenPage: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
         {children && children.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {children.map((child: any) => (
-              <Card key={child.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
+              <Card key={child.id} className="hover:shadow-md transition-shadow border-2 border-gray-100">
+                <CardHeader className="pb-3 p-4 sm:p-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-blue-600" />
+                    <div className="w-14 h-14 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="w-7 h-7 sm:w-6 sm:h-6 text-blue-600" />
                     </div>
-                    <div>
-                      <CardTitle className="text-lg">{child.fullName}</CardTitle>
-                      <CardDescription>@{child.username}</CardDescription>
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-lg sm:text-base truncate">{child.fullName}</CardTitle>
+                      <CardDescription className="text-base sm:text-sm">@{child.username}</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6 pt-0">
                   <div className="space-y-3">
                     {child.phoneNumber && (
-                      <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <span>📞</span>
-                        <span>{child.phoneNumber}</span>
+                      <div className="flex items-center space-x-2 text-sm sm:text-xs text-gray-600">
+                        <span className="text-base">📞</span>
+                        <span className="truncate">{child.phoneNumber}</span>
                       </div>
                     )}
                     {child.bio && (
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm sm:text-xs text-gray-600">
                         <p className="line-clamp-2">{child.bio}</p>
                       </div>
                     )}
-                    <div className="flex items-center space-x-2 text-sm text-gray-500">
-                      <span>📅</span>
-                      <span>Qo'shilgan: {new Date(child.createdAt).toLocaleDateString('uz-UZ')}</span>
+                    <div className="flex items-center space-x-2 text-sm sm:text-xs text-gray-500">
+                      <span className="text-base">📅</span>
+                      <span className="truncate">Qo'shilgan: {new Date(child.createdAt).toLocaleDateString('uz-UZ')}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -196,18 +198,18 @@ const ChildrenPage: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <div className="text-center py-12 px-4">
+            <Users className="w-20 h-20 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-6 sm:mb-4" />
+            <h3 className="text-xl sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-2">
               Hozircha farzandlar yo'q
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-base sm:text-sm text-gray-600 mb-8 sm:mb-6 max-w-md mx-auto leading-relaxed">
               Farzandlaringizni qo'shib, ularning o'quv jarayonini kuzatib boring.
             </p>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-green-600 hover:bg-green-700">
-                  <Plus className="w-4 h-4 mr-2" />
+                <Button className="bg-green-600 hover:bg-green-700 w-full sm:w-auto py-3 sm:py-2 text-base sm:text-sm">
+                  <Plus className="w-5 h-5 mr-2" />
                   Birinchi farzandni qo'shish
                 </Button>
               </DialogTrigger>
