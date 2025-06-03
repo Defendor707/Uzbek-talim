@@ -54,18 +54,16 @@ const useAuth = () => {
       // Invalidate auth queries to refetch user data
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       
-      // Redirect based on user role
-      setTimeout(() => {
-        if (data.user.role === 'teacher') {
-          setLocation('/dashboard/teacher');
-        } else if (data.user.role === 'student') {
-          setLocation('/dashboard/student');
-        } else if (data.user.role === 'parent') {
-          setLocation('/dashboard/parent');
-        } else if (data.user.role === 'center') {
-          setLocation('/dashboard/center');
-        }
-      }, 100);
+      // Redirect based on user role immediately
+      if (data.user.role === 'teacher') {
+        setLocation('/dashboard/teacher');
+      } else if (data.user.role === 'student') {
+        setLocation('/dashboard/student');
+      } else if (data.user.role === 'parent') {
+        setLocation('/dashboard/parent');
+      } else if (data.user.role === 'center') {
+        setLocation('/dashboard/center');
+      }
       
       toast({
         title: 'Muvaffaqiyatli',
@@ -95,18 +93,16 @@ const useAuth = () => {
       // Invalidate auth queries to refetch user data
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       
-      // Redirect based on user role
-      setTimeout(() => {
-        if (data.user.role === 'teacher') {
-          setLocation('/dashboard/teacher');
-        } else if (data.user.role === 'student') {
-          setLocation('/dashboard/student');
-        } else if (data.user.role === 'parent') {
-          setLocation('/dashboard/parent');
-        } else if (data.user.role === 'center') {
-          setLocation('/dashboard/center');
-        }
-      }, 100);
+      // Redirect based on user role immediately
+      if (data.user.role === 'teacher') {
+        setLocation('/dashboard/teacher');
+      } else if (data.user.role === 'student') {
+        setLocation('/dashboard/student');
+      } else if (data.user.role === 'parent') {
+        setLocation('/dashboard/parent');
+      } else if (data.user.role === 'center') {
+        setLocation('/dashboard/center');
+      }
       
       toast({
         title: 'Muvaffaqiyatli',
