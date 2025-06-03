@@ -51,19 +51,19 @@ const useAuth = () => {
       localStorage.setItem('token', data.token);
       setToken(data.token);
       
-      // Invalidate auth queries to refetch user data
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-      
-      // Redirect based on user role immediately
-      if (data.user.role === 'teacher') {
-        setLocation('/dashboard/teacher');
-      } else if (data.user.role === 'student') {
-        setLocation('/dashboard/student');
-      } else if (data.user.role === 'parent') {
-        setLocation('/dashboard/parent');
-      } else if (data.user.role === 'center') {
-        setLocation('/dashboard/center');
-      }
+      // Wait for queries to refetch and then redirect
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] }).then(() => {
+        // Redirect based on user role after cache update
+        if (data.user.role === 'teacher') {
+          setLocation('/dashboard/teacher');
+        } else if (data.user.role === 'student') {
+          setLocation('/dashboard/student');
+        } else if (data.user.role === 'parent') {
+          setLocation('/dashboard/parent');
+        } else if (data.user.role === 'center') {
+          setLocation('/dashboard/center');
+        }
+      });
       
       toast({
         title: 'Muvaffaqiyatli',
@@ -90,19 +90,19 @@ const useAuth = () => {
       localStorage.setItem('token', data.token);
       setToken(data.token);
       
-      // Invalidate auth queries to refetch user data
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-      
-      // Redirect based on user role immediately
-      if (data.user.role === 'teacher') {
-        setLocation('/dashboard/teacher');
-      } else if (data.user.role === 'student') {
-        setLocation('/dashboard/student');
-      } else if (data.user.role === 'parent') {
-        setLocation('/dashboard/parent');
-      } else if (data.user.role === 'center') {
-        setLocation('/dashboard/center');
-      }
+      // Wait for queries to refetch and then redirect
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] }).then(() => {
+        // Redirect based on user role after cache update
+        if (data.user.role === 'teacher') {
+          setLocation('/dashboard/teacher');
+        } else if (data.user.role === 'student') {
+          setLocation('/dashboard/student');
+        } else if (data.user.role === 'parent') {
+          setLocation('/dashboard/parent');
+        } else if (data.user.role === 'center') {
+          setLocation('/dashboard/center');
+        }
+      });
       
       toast({
         title: 'Muvaffaqiyatli',
