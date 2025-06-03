@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { queryClient } from '@/lib/queryClient';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import { Plus, Users, ArrowLeft, User } from 'lucide-react';
 
 const addChildSchema = z.object({
@@ -37,15 +37,7 @@ const ChildrenPage: React.FC = () => {
   // Add child mutation
   const addChildMutation = useMutation({
     mutationFn: async (data: z.infer<typeof addChildSchema>) => {
-      const response = await fetch('/api/parent/add-child', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Farzand qo\'shishda xatolik');
-      }
+      const response = await apiRequest('POST', '/api/parent/add-child', data);
       return response.json();
     },
     onSuccess: () => {
