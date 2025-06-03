@@ -998,6 +998,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Parent Children Management Routes
+  app.get("/api/parent/children", authenticate, authorize(["parent"]), async (req, res) => {
+    try {
+      const children = await storage.getChildrenByParentId(req.user!.userId);
+      return res.status(200).json(children);
+    } catch (error) {
+      console.error("Error fetching children:", error);
+      return res.status(500).json({ message: "Failed to fetch children" });
+    }
+  });
+
+  app.post("/api/parent/add-child", authenticate, authorize(["parent"]), async (req, res) => {
+    try {
+      const { childUsername } = req.body;
+      
+      if (!childUsername || typeof childUsername !== 'string') {
+        return res.status(400).json({ message: "Farzand username kiriting" });
+      }
+
+      await storage.addChildToParent(req.user!.userId, childUsername);
+      return res.status(200).json({ message: "Farzand muvaffaqiyatli qo'shildi" });
+    } catch (error: any) {
+      console.error("Error adding child:", error);
+      return res.status(400).json({ message: error.message || "Farzand qo'shishda xatolik" });
+    }
+  });
+
+  app.get("/api/parent/test-results", authenticate, authorize(["parent"]), async (req, res) => {
+    try {
+      // Get children IDs first
+      const children = await storage.getChildrenByParentId(req.user!.userId);
+      const childrenIds = children.map(child => child.id);
+      
+      if (childrenIds.length === 0) {
+        return res.status(200).json([]);
+      }
+
+      // Get test attempts for all children
+      const testResults: any[] = [];
+      for (const childId of childrenIds) {
+        const attempts = await storage.getTestAttemptsByStudentId(childId);
+        testResults.push(...attempts);
+      }
+
+      return res.status(200).json(testResults);
+    } catch (error) {
+      console.error("Error fetching test results:", error);
+      return res.status(500).json({ message: "Failed to fetch test results" });
+    }
+  });
+
   // Sync status endpoint
   app.get("/api/sync/status", authenticate, async (req, res) => {
     try {

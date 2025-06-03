@@ -30,7 +30,7 @@ interface BotSessionData extends Scenes.SceneSession {
     currentQuestionIndex?: number;
     answers?: { questionId: number, answer: string }[];
   };
-  editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience';
+  editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience' | 'addChild';
 }
 
 // Create custom context type
@@ -934,6 +934,10 @@ bot.on('text', async (ctx, next) => {
         } else {
           validatedValue = num;
         }
+      } else if (field === 'addChild') {
+        if (value.length < 3) {
+          errorMessage = 'Username kamida 3 ta belgidan iborat bo\'lishi kerak.';
+        }
       }
 
       if (errorMessage) {
@@ -981,9 +985,12 @@ bot.on('text', async (ctx, next) => {
           await storage.createStudentProfile(profileData);
         }
       } else if (user.role === 'parent') {
-        // For parent, update phone number in user table directly
+        // For parent, update phone number in user table directly or handle add child
         if (field === 'phoneNumber') {
           await storage.updateUser(user.id, { phone: validatedValue });
+        } else if (field === 'addChild') {
+          // Add child to parent
+          await storage.addChildToParent(user.id, validatedValue);
         }
       }
 
@@ -995,7 +1002,8 @@ bot.on('text', async (ctx, next) => {
         phoneNumber: 'Telefon raqam',
         specialty: 'Mutaxassislik',
         bio: 'Haqida bo\'limi',
-        experience: 'Tajriba'
+        experience: 'Tajriba',
+        addChild: 'Farzand'
       };
 
       await ctx.reply(
@@ -1189,20 +1197,50 @@ bot.hears('👶 Farzandlarim', async (ctx) => {
       return;
     }
     
-    // Get children (students where parentId equals current user id)
-    const children = await db.select({
-      id: schema.users.id,
-      fullName: schema.users.fullName,
-      username: schema.users.username,
-      phoneNumber: schema.studentProfiles.phoneNumber,
-      bio: schema.studentProfiles.bio
-    })
-    .from(schema.users)
-    .innerJoin(schema.studentProfiles, eq(schema.users.id, schema.studentProfiles.userId))
-    .where(eq(schema.studentProfiles.parentId, user.id));
+    const keyboard = [
+      ['👶 Farzandlar ro\'yxati', '➕ Farzand qo\'shish'],
+      ['🔙 Orqaga']
+    ];
+    
+    await ctx.reply(
+      '👶 *Farzandlarim bo\'limi*\n\n' +
+      'Quyidagi amallardan birini tanlang:',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard(keyboard).resize()
+      }
+    );
+  } catch (error) {
+    console.error('Error in farzandlarim menu:', error);
+    await ctx.reply('❌ Xatolik yuz berdi. Iltimos, qaytadan urinib ko\'ring.');
+  }
+});
+
+bot.hears('👶 Farzandlar ro\'yxati', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring.');
+    return;
+  }
+  
+  try {
+    const user = await storage.getUser(ctx.session.userId);
+    if (!user || user.role !== 'parent') {
+      await ctx.reply('❌ Bu funksiya faqat ota-onalar uchun mavjud.');
+      return;
+    }
+    
+    // Get children using storage method
+    const children = await storage.getChildrenByParentId(user.id);
     
     if (!children || children.length === 0) {
-      await ctx.reply('👶 Hozircha sizning farzandlaringiz ro\'yxatga olinmagan.');
+      await ctx.reply(
+        '👶 Hozircha sizning farzandlaringiz ro\'yxatga olinmagan.\n\n' +
+        'Farzand qo\'shish uchun "➕ Farzand qo\'shish" tugmasini bosing.',
+        Markup.keyboard([
+          ['➕ Farzand qo\'shish'],
+          ['🔙 Orqaga']
+        ]).resize()
+      );
       return;
     }
     
@@ -1223,6 +1261,35 @@ bot.hears('👶 Farzandlarim', async (ctx) => {
   } catch (error) {
     console.error('Error fetching children:', error);
     await ctx.reply('❌ Farzandlar ma\'lumotini olishda xatolik yuz berdi.');
+  }
+});
+
+bot.hears('➕ Farzand qo\'shish', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring.');
+    return;
+  }
+  
+  try {
+    const user = await storage.getUser(ctx.session.userId);
+    if (!user || user.role !== 'parent') {
+      await ctx.reply('❌ Bu funksiya faqat ota-onalar uchun mavjud.');
+      return;
+    }
+    
+    ctx.session.editingField = 'addChild';
+    await ctx.reply(
+      '➕ *Farzand qo\'shish*\n\n' +
+      'Farzandingizning username (foydalanuvchi nomi) ni kiriting:\n\n' +
+      '💡 *Eslatma:* Farzandingiz avval o\'quvchi sifatida ro\'yxatdan o\'tgan bo\'lishi kerak.',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard([['🔙 Orqaga']]).resize()
+      }
+    );
+  } catch (error) {
+    console.error('Error in add child handler:', error);
+    await ctx.reply('❌ Xatolik yuz berdi. Iltimos, qaytadan urinib ko\'ring.');
   }
 });
 
