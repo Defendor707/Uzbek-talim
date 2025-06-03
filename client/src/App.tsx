@@ -13,6 +13,7 @@ import CenterDashboard from "@/pages/dashboard/CenterDashboard";
 import TeacherProfile from "@/pages/teacher/TeacherProfile";
 import StudentProfile from "@/pages/student/StudentProfile";
 import ParentProfile from "@/pages/parent/ParentProfile";
+import ChildrenPage from "@/pages/parent/ChildrenPage";
 import LessonsPage from "@/pages/teacher/Lessons";
 import TestsPage from "@/pages/teacher/Tests";
 import StudentsPage from "@/pages/teacher/Students";
@@ -87,6 +88,11 @@ function Router() {
       <Route path="/parent/profile">
         <ProtectedRoute allowedRoles={["parent"]}>
           <ParentProfile />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/parent/children">
+        <ProtectedRoute allowedRoles={["parent"]}>
+          <ChildrenPage />
         </ProtectedRoute>
       </Route>
       

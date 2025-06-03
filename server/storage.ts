@@ -57,6 +57,10 @@ export interface IStorage {
   createSchedule(schedule: schema.InsertSchedule): Promise<schema.Schedule>;
   getSchedulesByTeacherId(teacherId: number): Promise<schema.Schedule[]>;
   getSchedulesByClassName(className: string): Promise<schema.Schedule[]>;
+  
+  // Parent-child relationship methods
+  addChildToParent(parentId: number, childUsername: string): Promise<boolean>;
+  getChildrenByParentId(parentId: number): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -313,6 +317,62 @@ export class DatabaseStorage implements IStorage {
   
   async getSchedulesByClassName(className: string): Promise<schema.Schedule[]> {
     return await db.select().from(schema.schedules).where(eq(schema.schedules.className, className));
+  }
+  
+  // Parent-child relationship methods
+  async addChildToParent(parentId: number, childUsername: string): Promise<boolean> {
+    try {
+      // Find the child user by username
+      const child = await this.getUserByUsername(childUsername);
+      if (!child) {
+        throw new Error('Farzand topilmadi');
+      }
+      
+      if (child.role !== 'student') {
+        throw new Error('Faqat o\'quvchilarni farzand sifatida qo\'shish mumkin');
+      }
+      
+      // Check if child already has a parent
+      const existingProfile = await this.getStudentProfile(child.id);
+      if (existingProfile?.parentId) {
+        throw new Error('Bu farzand allaqachon boshqa ota-onaga biriktirilgan');
+      }
+      
+      // Update student profile with parent ID
+      if (existingProfile) {
+        await db
+          .update(schema.studentProfiles)
+          .set({ parentId })
+          .where(eq(schema.studentProfiles.userId, child.id));
+      } else {
+        // Create student profile if doesn't exist
+        await this.createStudentProfile({
+          userId: child.id,
+          parentId
+        });
+      }
+      
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  async getChildrenByParentId(parentId: number): Promise<any[]> {
+    const children = await db.select({
+      id: schema.users.id,
+      fullName: schema.users.fullName,
+      username: schema.users.username,
+      email: schema.users.email,
+      createdAt: schema.users.createdAt,
+      phoneNumber: schema.studentProfiles.phoneNumber,
+      bio: schema.studentProfiles.bio
+    })
+    .from(schema.users)
+    .innerJoin(schema.studentProfiles, eq(schema.users.id, schema.studentProfiles.userId))
+    .where(eq(schema.studentProfiles.parentId, parentId));
+    
+    return children;
   }
 }
 
