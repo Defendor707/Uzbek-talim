@@ -1197,8 +1197,8 @@ function getKeyboardByRole(role: string) {
     ];
   } else if (role === 'parent') {
     return [
-      ['👤 Profil', '📝 Test ishlash'],
-      ['📚 Darsliklarim', '📊 Natijalarim'],
+      ['👤 Profil', '👶 Farzandlarim'],
+      ['📊 Test natijalari', '📈 Hisobotlar'],
       ['⚡ Boshqalar']
     ];
   } else if (role === 'center') {
