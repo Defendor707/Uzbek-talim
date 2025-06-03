@@ -2405,6 +2405,102 @@ bot.hears('⚡ Boshqalar', async (ctx) => {
   );
 });
 
+// Callback handlers for test interactions
+bot.action(/start_test_(\d+)/, async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'student') {
+    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun.');
+    return;
+  }
+  
+  const testId = parseInt(ctx.match[1]);
+  
+  try {
+    const test = await storage.getTestById(testId);
+    if (!test) {
+      await ctx.reply('❌ Test topilmadi.');
+      return;
+    }
+    
+    // Create test attempt
+    const attempt = await storage.createTestAttempt({
+      testId: test.id,
+      studentId: ctx.session.userId,
+      totalQuestions: test.totalQuestions,
+      status: 'in_progress'
+    });
+    
+    // Initialize test session
+    ctx.session.testAttempt = {
+      testId: test.id,
+      currentQuestionIndex: 0,
+      answers: []
+    };
+    
+    await ctx.reply(
+      `📝 *${test.title}*\n\n` +
+      `✅ Test boshlandi!\n` +
+      `📊 Jami savollar: ${test.totalQuestions}\n` +
+      `⏰ Vaqt: Cheklanmagan\n\n` +
+      'Birinchi savolga o\'tish uchun tugmani bosing:',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([
+          [Markup.button.callback('▶️ Birinchi savol', `next_question_${test.id}`)]
+        ])
+      }
+    );
+  } catch (error) {
+    console.error('Error starting test:', error);
+    await ctx.reply('❌ Testni boshlashda xatolik yuz berdi.');
+  }
+});
+
+bot.action(/teacher_test_(\d+)/, async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    return;
+  }
+  
+  const testId = parseInt(ctx.match[1]);
+  
+  try {
+    const test = await storage.getTestById(testId);
+    if (!test) {
+      await ctx.reply('❌ Test topilmadi.');
+      return;
+    }
+    
+    const statusEmoji = test.status === 'active' ? '✅' : test.status === 'draft' ? '📝' : '🔚';
+    
+    await ctx.reply(
+      `📝 *${test.title}*\n\n` +
+      `${statusEmoji} *Holati*: ${getTestStatusInUzbek(test.status)}\n` +
+      `📊 *Savollar soni*: ${test.totalQuestions}\n` +
+      `🎓 *Sinf*: ${test.grade}\n` +
+      `📅 *Yaratilgan*: ${new Date(test.createdAt).toLocaleDateString('uz-UZ')}\n` +
+      `📝 *Tavsif*: ${test.description || 'Tavsif yo\'q'}`,
+      {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([
+          [Markup.button.callback('📊 Test statistikasi', `test_stats_${test.id}`)],
+          [Markup.button.callback('🔙 Orqaga', 'back_to_menu')]
+        ])
+      }
+    );
+  } catch (error) {
+    console.error('Error viewing teacher test:', error);
+    await ctx.reply('❌ Test ma\'lumotlarini olishda xatolik yuz berdi.');
+  }
+});
+
+bot.action('back_to_menu', async (ctx) => {
+  const keyboard = getKeyboardByRole(ctx.session.role || 'student');
+  await ctx.reply(
+    '🏠 Bosh menyu',
+    Markup.keyboard(keyboard).resize()
+  );
+});
+
 // 👤 Profil handler for non-teacher roles
 bot.hears('👤 Profil', async (ctx) => {
   if (!ctx.session.userId) {
