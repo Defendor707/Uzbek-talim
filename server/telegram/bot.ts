@@ -27,8 +27,11 @@ interface BotSessionData extends Scenes.SceneSession {
   };
   testAttempt?: {
     testId?: number;
-    currentQuestionIndex?: number;
+    attemptId?: number;
+    currentPage?: number;
+    totalQuestions?: number;
     answers?: { questionId: number, answer: string }[];
+    questions?: any[];
   };
   editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience' | 'addChild' | 'testCode';
   testCreation?: {
