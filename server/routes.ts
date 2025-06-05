@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { authenticate, authorize, login, register } from "./utils/auth";
-import { upload, uploadLessonFile, uploadProfileImage } from "./utils/upload";
+import { upload, uploadLessonFile, uploadProfileImage, uploadTestImage, uploadQuestionImage } from "./utils/upload";
+import { generateTestReportExcel, generateStudentProgressExcel } from "./utils/excelExport";
 import { syncService } from "./sync/syncService";
 import { botNotificationService } from "./sync/botNotifications";
 import express from "express";
@@ -1068,6 +1069,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching sync status:", error);
       return res.status(500).json({ message: "Failed to fetch sync status" });
+    }
+  });
+
+  // Image Upload Routes
+  app.post("/api/upload/test-image", authenticate, authorize(["teacher"]), upload.single('testImage'), uploadTestImage);
+  app.post("/api/upload/question-image", authenticate, authorize(["teacher"]), upload.single('questionImage'), uploadQuestionImage);
+
+  // Excel Export Routes
+  app.get("/api/tests/:testId/export", authenticate, authorize(["teacher"]), async (req, res) => {
+    try {
+      const testId = parseInt(req.params.testId);
+      if (isNaN(testId)) {
+        return res.status(400).json({ message: "Noto'g'ri test ID" });
+      }
+
+      // Check if test exists and belongs to the teacher
+      const test = await storage.getTestById(testId);
+      if (!test) {
+        return res.status(404).json({ message: "Test topilmadi" });
+      }
+
+      if (test.teacherId !== req.user!.userId) {
+        return res.status(403).json({ message: "Ruxsat berilmagan" });
+      }
+
+      await generateTestReportExcel(testId, res);
+    } catch (error) {
+      console.error("Excel export error:", error);
+      return res.status(500).json({ message: "Excel fayl yaratishda xatolik" });
+    }
+  });
+
+  app.get("/api/students/:studentId/progress-export", authenticate, authorize(["teacher", "parent"]), async (req, res) => {
+    try {
+      const studentId = parseInt(req.params.studentId);
+      if (isNaN(studentId)) {
+        return res.status(400).json({ message: "Noto'g'ri o'quvchi ID" });
+      }
+
+      // Check permissions
+      if (req.user?.role === "parent") {
+        // Parents can only export their children's progress
+        const children = await storage.getChildrenByParentId(req.user.userId);
+        const childrenIds = children.map(child => child.id);
+        
+        if (!childrenIds.includes(studentId)) {
+          return res.status(403).json({ message: "Ruxsat berilmagan" });
+        }
+      }
+
+      await generateStudentProgressExcel(studentId, res);
+    } catch (error) {
+      console.error("Excel export error:", error);
+      return res.status(500).json({ message: "Excel fayl yaratishda xatolik" });
     }
   });
 

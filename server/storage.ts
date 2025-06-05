@@ -296,6 +296,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(schema.testAttempts).where(eq(schema.testAttempts.studentId, studentId));
   }
   
+  async getTestAttemptsByTestId(testId: number): Promise<schema.TestAttempt[]> {
+    return await db.select().from(schema.testAttempts).where(eq(schema.testAttempts.testId, testId));
+  }
+  
   // Student answer related methods
   async createStudentAnswer(answer: schema.InsertStudentAnswer): Promise<schema.StudentAnswer> {
     const [newAnswer] = await db.insert(schema.studentAnswers).values(answer).returning();
