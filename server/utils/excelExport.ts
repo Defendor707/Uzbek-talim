@@ -30,9 +30,9 @@ export async function generateTestReportExcel(testId: number): Promise<Buffer> {
         if (student) {
           results.push({
             studentName: student.fullName,
-            correctAnswers: attempt.score,
+            correctAnswers: Number(attempt.score),
             totalQuestions: attempt.totalQuestions,
-            percentage: Math.round((attempt.score / attempt.totalQuestions) * 100),
+            percentage: Math.round((Number(attempt.score) / attempt.totalQuestions) * 100),
             completedAt: attempt.endTime || new Date()
           });
         }
@@ -109,9 +109,9 @@ export async function generateStudentProgressExcel(studentId: number): Promise<B
         if (test) {
           results.push({
             testName: test.title,
-            correctAnswers: attempt.score,
+            correctAnswers: Number(attempt.score),
             totalQuestions: attempt.totalQuestions,
-            percentage: Math.round((attempt.score / attempt.totalQuestions) * 100),
+            percentage: Math.round((Number(attempt.score) / attempt.totalQuestions) * 100),
             completedAt: attempt.endTime || new Date()
           });
         }

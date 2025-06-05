@@ -2885,8 +2885,21 @@ bot.action(/test_answer_(\d+)_([ABCD])/, async (ctx) => {
     
     await ctx.answerCbQuery(`✅ ${answer} javobni tanladingiz`);
     
-    // Refresh the current page
-    await showTestQuestionsPage(ctx);
+    // Update the same message with new state - fix the button updating issue
+    try {
+      const text = generateStudentTestText(ctx);
+      const keyboard = generateStudentTestKeyboard(ctx);
+      
+      await ctx.editMessageText(text, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: keyboard
+        }
+      });
+    } catch (error) {
+      // If message edit fails, send new message
+      await showTestQuestionsPage(ctx);
+    }
     
   } catch (error) {
     console.error('Error saving test answer:', error);
