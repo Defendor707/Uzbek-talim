@@ -2656,7 +2656,7 @@ bot.action(/test_submit_(\d+)/, async (ctx) => {
     
     // Update test attempt
     await storage.updateTestAttempt(attemptId, {
-      score: score.toString(),
+      score: score,
       status: 'completed',
       endTime: new Date()
     });
