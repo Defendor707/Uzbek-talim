@@ -614,6 +614,20 @@ bot.command('tests', async (ctx) => {
     }
     
     if (user.role === 'teacher') {
+      // Check if teacher profile exists, create if not
+      let teacherProfile = await storage.getTeacherProfile(user.id);
+      if (!teacherProfile) {
+        teacherProfile = await storage.createTeacherProfile({
+          userId: user.id,
+          phoneNumber: null,
+          specialty: null,
+          subjects: [],
+          bio: null,
+          experience: null,
+          certificates: [],
+          centerId: null
+        });
+      }
       tests = await storage.getTestsByTeacherId(user.id);
     } else if (user.role === 'student') {
       const profile = await storage.getStudentProfile(user.id);

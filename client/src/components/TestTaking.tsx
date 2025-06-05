@@ -3,12 +3,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Clock, ChevronLeft, ChevronRight, Flag } from "lucide-react";
+import { Clock, ChevronLeft, ChevronRight, Flag, Check } from "lucide-react";
 
 interface Question {
   id: number;
@@ -48,11 +46,13 @@ interface StudentAnswer {
 export function TestTaking() {
   const { testId } = useParams<{ testId: string }>();
   const [, setLocation] = useLocation();
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentBatch, setCurrentBatch] = useState(0);
   const [answers, setAnswers] = useState<{ [questionId: number]: string }>({});
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [attemptId, setAttemptId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showQuestionsView, setShowQuestionsView] = useState(false);
+  const BATCH_SIZE = 10;
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -165,16 +165,35 @@ export function TestTaking() {
     }
   };
 
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+  const handleNextBatch = () => {
+    const totalBatches = Math.ceil(questions.length / BATCH_SIZE);
+    if (currentBatch < totalBatches - 1) {
+      setCurrentBatch(prev => prev + 1);
     }
   };
 
-  const handlePrevQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
+  const handlePrevBatch = () => {
+    if (currentBatch > 0) {
+      setCurrentBatch(prev => prev - 1);
     }
+  };
+
+  const getCurrentBatchQuestions = () => {
+    const start = currentBatch * BATCH_SIZE;
+    const end = start + BATCH_SIZE;
+    return questions.slice(start, end);
+  };
+
+  const getBatchAnsweredCount = (batchIndex: number) => {
+    const start = batchIndex * BATCH_SIZE;
+    const end = start + BATCH_SIZE;
+    const batchQuestions = questions.slice(start, end);
+    return batchQuestions.filter(q => answers[q.id]).length;
+  };
+
+  const canProceedToNextBatch = () => {
+    const currentBatchQuestions = getCurrentBatchQuestions();
+    return currentBatchQuestions.every(q => answers[q.id]);
   };
 
   const handleSubmitTest = async () => {
@@ -188,8 +207,9 @@ export function TestTaking() {
     }
   };
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
+  const currentBatchQuestions = getCurrentBatchQuestions();
+  const totalBatches = Math.ceil(questions.length / BATCH_SIZE);
+  const progress = questions.length > 0 ? ((currentBatch + 1) / totalBatches) * 100 : 0;
   const answeredQuestions = Object.keys(answers).length;
 
   if (testLoading || questionsLoading) {
@@ -252,12 +272,8 @@ export function TestTaking() {
     );
   }
 
-  if (!currentQuestion) {
-    return <div className="text-center">Savollar yuklanmoqda...</div>;
-  }
-
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6">
       {/* Header with timer and progress */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -281,105 +297,140 @@ export function TestTaking() {
         
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-gray-600">
-            <span>Savol {currentQuestionIndex + 1} / {questions.length}</span>
+            <span>Savollar to'plami {currentBatch + 1} / {totalBatches}</span>
             <span>Javob berilgan: {answeredQuestions} / {questions.length}</span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
       </div>
 
-      {/* Question card */}
+      {/* Batch navigation */}
+      {totalBatches > 1 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-center space-x-2">
+            {Array.from({ length: totalBatches }, (_, index) => (
+              <Button
+                key={index}
+                variant={index === currentBatch ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentBatch(index)}
+                className="min-w-[80px]"
+              >
+                {index * BATCH_SIZE + 1} - {Math.min((index + 1) * BATCH_SIZE, questions.length)}
+                <span className="ml-2 text-xs">
+                  ({getBatchAnsweredCount(index)}/{Math.min(BATCH_SIZE, questions.length - index * BATCH_SIZE)})
+                </span>
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Questions batch display */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-lg">
-            {currentQuestionIndex + 1}. {currentQuestion.questionText}
+            Savollar {currentBatch * BATCH_SIZE + 1} - {Math.min((currentBatch + 1) * BATCH_SIZE, questions.length)}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {currentQuestion.questionImage && (
-            <div className="text-center">
-              <img
-                src={`/${currentQuestion.questionImage}`}
-                alt="Savol rasmi"
-                className="max-w-full h-auto max-h-96 mx-auto rounded-lg"
-              />
-            </div>
-          )}
-          
-          <RadioGroup
-            value={answers[currentQuestion.id] || ""}
-            onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
-          >
-            {currentQuestion.options?.map((option, index) => (
-              <div key={index} className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-gray-50">
-                <RadioGroupItem value={String.fromCharCode(65 + index)} id={`option-${index}`} />
-                <Label 
-                  htmlFor={`option-${index}`} 
-                  className="flex-1 cursor-pointer font-medium"
-                >
-                  <span className="inline-block w-8 text-center font-bold">
-                    {String.fromCharCode(65 + index)}.
-                  </span>
-                  {option}
-                </Label>
+          {currentBatchQuestions.map((question, index) => (
+            <div key={question.id} className="border rounded-lg p-4">
+              <div className="mb-4">
+                <h3 className="font-semibold text-lg mb-2">
+                  {currentBatch * BATCH_SIZE + index + 1}. {question.questionText}
+                </h3>
+                {question.questionImage && (
+                  <div className="mb-4">
+                    <img
+                      src={`/${question.questionImage}`}
+                      alt="Savol rasmi"
+                      className="max-w-full h-auto max-h-64 rounded-lg"
+                    />
+                  </div>
+                )}
               </div>
-            ))}
-          </RadioGroup>
+              
+              <div className="grid grid-cols-4 gap-2">
+                {['A', 'B', 'C', 'D'].map((option) => (
+                  <Button
+                    key={option}
+                    variant={answers[question.id] === option ? "default" : "outline"}
+                    size="lg"
+                    onClick={() => handleAnswerChange(question.id, option)}
+                    className={`h-12 text-lg font-bold ${
+                      answers[question.id] === option 
+                        ? "bg-green-600 text-white hover:bg-green-700" 
+                        : "hover:bg-gray-50"
+                    }`}
+                  >
+                    {answers[question.id] === option && <Check className="h-4 w-4 mr-2" />}
+                    {option}
+                  </Button>
+                ))}
+              </div>
+              
+              {answers[question.id] && (
+                <div className="mt-2 text-sm text-green-600 font-medium">
+                  Tanlangan javob: {answers[question.id]}
+                </div>
+              )}
+            </div>
+          ))}
         </CardContent>
       </Card>
 
-      {/* Navigation */}
+      {/* Navigation buttons */}
       <div className="flex justify-between items-center">
         <Button
           variant="outline"
-          onClick={handlePrevQuestion}
-          disabled={currentQuestionIndex === 0}
+          onClick={handlePrevBatch}
+          disabled={currentBatch === 0}
         >
           <ChevronLeft className="h-4 w-4 mr-2" />
-          Oldingi savol
+          Oldingi to'plam
         </Button>
 
-        <div className="text-sm text-gray-600">
-          {answers[currentQuestion.id] ? (
-            <span className="text-green-600 font-medium">
-              Javob berilgan: {answers[currentQuestion.id]}
-            </span>
-          ) : (
-            <span className="text-gray-400">Javob berilmagan</span>
+        <div className="text-center">
+          <div className="text-sm text-gray-600 mb-2">
+            Joriy to'plamda javob berilgan: {getBatchAnsweredCount(currentBatch)} / {currentBatchQuestions.length}
+          </div>
+          {!canProceedToNextBatch() && currentBatch < totalBatches - 1 && (
+            <div className="text-sm text-orange-600">
+              Keyingi to'plamga o'tish uchun barcha savollarga javob bering
+            </div>
           )}
         </div>
 
         <Button
           variant="outline"
-          onClick={handleNextQuestion}
-          disabled={currentQuestionIndex === questions.length - 1}
+          onClick={handleNextBatch}
+          disabled={currentBatch === totalBatches - 1 || !canProceedToNextBatch()}
         >
-          Keyingi savol
+          Keyingi to'plam
           <ChevronRight className="h-4 w-4 ml-2" />
         </Button>
       </div>
 
-      {/* Question overview */}
+      {/* Progress overview */}
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle className="text-base">Savollar ko'rinishi</CardTitle>
+          <CardTitle className="text-base">Umumiy progress</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-            {questions.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentQuestionIndex(index)}
-                className={`w-10 h-10 rounded-lg border text-sm font-medium transition-colors ${
-                  index === currentQuestionIndex
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : answers[questions[index]?.id]
+          <div className="grid grid-cols-10 sm:grid-cols-20 gap-1">
+            {questions.map((question, index) => (
+              <div
+                key={question.id}
+                className={`w-8 h-8 rounded border text-xs flex items-center justify-center font-medium ${
+                  answers[question.id]
                     ? "bg-green-100 text-green-800 border-green-300"
-                    : "bg-gray-50 text-gray-600 border-gray-300 hover:bg-gray-100"
+                    : "bg-gray-50 text-gray-600 border-gray-300"
                 }`}
+                title={`Savol ${index + 1}: ${answers[question.id] || 'Javob berilmagan'}`}
               >
                 {index + 1}
-              </button>
+              </div>
             ))}
           </div>
         </CardContent>
