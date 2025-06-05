@@ -1673,29 +1673,72 @@ bot.hears(['1️⃣ Bitta qatorda', '2️⃣ Har bir savolni alohida', '3️⃣ 
 async function showQuestionButtons(ctx: BotContext) {
   if (!ctx.session.testCreation || !ctx.session.testCreation.questionCount) return;
   
-  const currentIndex = ctx.session.testCreation.currentQuestionIndex || 0;
   const totalQuestions = ctx.session.testCreation.questionCount;
+  const answers = ctx.session.testCreation.answers || [];
+  const currentBatch = Math.floor((ctx.session.testCreation.currentQuestionIndex || 0) / 10);
+  const totalBatches = Math.ceil(totalQuestions / 10);
   
-  if (currentIndex >= totalQuestions) {
-    await saveTest(ctx);
-    return;
-  }
+  // Calculate batch range
+  const batchStart = currentBatch * 10;
+  const batchEnd = Math.min(batchStart + 10, totalQuestions);
   
-  const questionNum = currentIndex + 1;
   const keyboard = [];
   
-  // A B C D tugmalari
+  // Create batch header
   keyboard.push([
-    Markup.button.callback('A', `answer_${currentIndex}_A`),
-    Markup.button.callback('B', `answer_${currentIndex}_B`),
-    Markup.button.callback('C', `answer_${currentIndex}_C`),
-    Markup.button.callback('D', `answer_${currentIndex}_D`)
+    Markup.button.callback(`📊 To'plam ${currentBatch + 1}/${totalBatches} (${batchStart + 1}-${batchEnd})`, 'batch_info')
   ]);
   
+  // Add questions with A, B, C, D buttons for current batch
+  for (let i = batchStart; i < batchEnd; i++) {
+    const questionNum = i + 1;
+    
+    // Question header
+    keyboard.push([
+      Markup.button.callback(`${questionNum}-savol`, `question_${i}`)
+    ]);
+    
+    // Answer options row
+    const answerRow = [];
+    ['A', 'B', 'C', 'D'].forEach(option => {
+      const isSelected = answers[i] === option;
+      const buttonText = isSelected ? `${option} ✅` : option;
+      answerRow.push(Markup.button.callback(buttonText, `answer_${i}_${option}`));
+    });
+    keyboard.push(answerRow);
+  }
+  
+  // Navigation buttons
+  const navButtons = [];
+  if (currentBatch > 0) {
+    navButtons.push(Markup.button.callback('⬅️ Oldingi', `batch_prev_${currentBatch - 1}`));
+  }
+  
+  // Check if current batch is complete
+  const currentBatchAnswered = answers.slice(batchStart, batchEnd).filter(a => a).length;
+  const currentBatchComplete = currentBatchAnswered === (batchEnd - batchStart);
+  
+  if (currentBatch < totalBatches - 1 && currentBatchComplete) {
+    navButtons.push(Markup.button.callback('Keyingi ➡️', `batch_next_${currentBatch + 1}`));
+  }
+  
+  if (navButtons.length > 0) {
+    keyboard.push(navButtons);
+  }
+  
+  // Submit button if all questions are answered
+  const totalAnswered = answers.filter(a => a).length;
+  if (totalAnswered === totalQuestions) {
+    keyboard.push([Markup.button.callback('✅ Testni saqlash', 'save_test')]);
+  }
+  
   await ctx.reply(
-    `📝 *${questionNum}-savol javobini tanlang*\n\n` +
-    `Savol ${questionNum}/${totalQuestions}\n\n` +
-    'To\'g\'ri javobni tanlang:',
+    `📝 *Test yaratish - Javoblarni belgilash*\n\n` +
+    `📊 To'plam: ${currentBatch + 1}/${totalBatches}\n` +
+    `📋 Savollar: ${batchStart + 1}-${batchEnd}\n` +
+    `✅ Belgilangan: ${currentBatchAnswered}/${batchEnd - batchStart}\n` +
+    `📈 Umumiy: ${totalAnswered}/${totalQuestions}\n\n` +
+    `${!currentBatchComplete ? '⚠️ Keyingi to\'plamga o\'tish uchun joriy to\'plamdagi barcha javoblarni belgilang!' : ''}`,
     {
       parse_mode: 'Markdown',
       reply_markup: {
@@ -1718,17 +1761,55 @@ bot.action(/answer_(\d+)_([ABCD])/, async (ctx) => {
   }
   ctx.session.testCreation.answers[questionIndex] = answer;
   
-  // Keyingi savolga o'tish
-  ctx.session.testCreation.currentQuestionIndex = questionIndex + 1;
-  
   await ctx.answerCbQuery(`${questionIndex + 1}-savol: ${answer} tanlandi`);
   
-  // Keyingi savolni ko'rsatish yoki testni saqlash
-  if (ctx.session.testCreation.currentQuestionIndex >= (ctx.session.testCreation.questionCount || 0)) {
-    await saveTest(ctx);
-  } else {
-    await showQuestionButtons(ctx);
+  // Update the same message with new state
+  await showQuestionButtons(ctx);
+});
+
+// Batch navigation handlers
+bot.action(/batch_prev_(\d+)/, async (ctx) => {
+  if (!ctx.session.testCreation) return;
+  
+  const batchIndex = parseInt(ctx.match[1]);
+  ctx.session.testCreation.currentQuestionIndex = batchIndex * 10;
+  
+  await ctx.answerCbQuery('Oldingi to\'plam');
+  await showQuestionButtons(ctx);
+});
+
+bot.action(/batch_next_(\d+)/, async (ctx) => {
+  if (!ctx.session.testCreation) return;
+  
+  const batchIndex = parseInt(ctx.match[1]);
+  const batchStart = batchIndex * 10;
+  const batchEnd = Math.min(batchStart + 10, ctx.session.testCreation.questionCount || 0);
+  const answers = ctx.session.testCreation.answers || [];
+  
+  // Check if current batch is complete
+  const currentBatch = Math.floor((ctx.session.testCreation.currentQuestionIndex || 0) / 10);
+  const currentBatchStart = currentBatch * 10;
+  const currentBatchEnd = Math.min(currentBatchStart + 10, ctx.session.testCreation.questionCount || 0);
+  const currentBatchAnswered = answers.slice(currentBatchStart, currentBatchEnd).filter(a => a).length;
+  const currentBatchComplete = currentBatchAnswered === (currentBatchEnd - currentBatchStart);
+  
+  if (!currentBatchComplete) {
+    await ctx.answerCbQuery('Avval joriy to\'plamdagi barcha javoblarni belgilang!', { show_alert: true });
+    return;
   }
+  
+  ctx.session.testCreation.currentQuestionIndex = batchStart;
+  
+  await ctx.answerCbQuery('Keyingi to\'plam');
+  await showQuestionButtons(ctx);
+});
+
+// Save test handler
+bot.action('save_test', async (ctx) => {
+  if (!ctx.session.testCreation) return;
+  
+  await ctx.answerCbQuery('Test saqlanmoqda...');
+  await saveTest(ctx);
 });
 
 // Testni saqlash funksiyasi
@@ -1742,10 +1823,19 @@ async function saveTest(ctx: BotContext) {
       return;
     }
     
-    const teacherProfile = await storage.getTeacherProfile(user.id);
+    // Check if teacher profile exists, create if not
+    let teacherProfile = await storage.getTeacherProfile(user.id);
     if (!teacherProfile) {
-      await ctx.reply('❌ O\'qituvchi profili topilmadi.');
-      return;
+      teacherProfile = await storage.createTeacherProfile({
+        userId: user.id,
+        phoneNumber: undefined,
+        specialty: undefined,
+        subjects: [],
+        bio: undefined,
+        experience: undefined,
+        certificates: [],
+        centerId: undefined
+      });
     }
     
     // Test ma'lumotlarini yaratish
