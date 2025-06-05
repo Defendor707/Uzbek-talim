@@ -303,20 +303,9 @@ bot.on('text', async (ctx, next) => {
       ctx.session.testCreation.questionCount = questionCount;
       ctx.session.testCreation.step = 'inputMethod';
       
-      await ctx.reply(
-        '📝 *Javoblarni kiritish usulini tanlang:*\n\n' +
-        '1️⃣ Bitta qatorda - 1a2b3c4d5a...\n' +
-        '2️⃣ Har bir savolni alohida\n' +
-        '3️⃣ Tugmalar orqali',
-        {
-          parse_mode: 'Markdown',
-          ...Markup.keyboard([
-            ['1️⃣ Bitta qatorda'],
-            ['2️⃣ Har bir savolni alohida', '3️⃣ Tugmalar orqali'],
-            ['🔙 Orqaga']
-          ]).resize()
-        }
-      );
+      // Use inline keyboard method only
+      ctx.session.testCreation.currentQuestionIndex = 0;
+      await showQuestionButtons(ctx);
       return;
     }
     
@@ -1869,6 +1858,78 @@ function getTestStatusInUzbek(status: string): string {
   return statusMap[status] || status;
 }
 
+// Show test questions page with inline keyboard
+async function showTestQuestionsPage(ctx: BotContext) {
+  if (!ctx.session.testAttempt || !ctx.session.testAttempt.questions) return;
+  
+  const currentPage = ctx.session.testAttempt.currentPage || 0;
+  const totalQuestions = ctx.session.testAttempt.totalQuestions || 0;
+  const questions = ctx.session.testAttempt.questions;
+  const answers = ctx.session.testAttempt.answers || [];
+  
+  // Calculate pagination
+  const questionsPerPage = 10;
+  const startIndex = currentPage * questionsPerPage;
+  const endIndex = Math.min(startIndex + questionsPerPage, totalQuestions);
+  const totalPages = Math.ceil(totalQuestions / questionsPerPage);
+  
+  // Create inline keyboard for current page questions
+  const keyboard = [];
+  
+  for (let i = startIndex; i < endIndex; i++) {
+    const questionNum = i + 1;
+    const userAnswer = answers.find(a => a.questionId === questions[i].id)?.answer;
+    const row = [];
+    
+    // Add question number
+    const questionLabel = `${questionNum}-savol`;
+    
+    // Add A, B, C, D buttons for this question
+    ['A', 'B', 'C', 'D'].forEach(option => {
+      const isSelected = userAnswer === option;
+      const buttonText = isSelected ? `${option} ✅` : option;
+      row.push(Markup.button.callback(buttonText, `test_answer_${questions[i].id}_${option}`));
+    });
+    
+    // Add question label and answer buttons
+    keyboard.push([Markup.button.callback(questionLabel, `question_info_${questions[i].id}`)]);
+    keyboard.push(row);
+  }
+  
+  // Add navigation buttons
+  const navButtons = [];
+  if (currentPage > 0) {
+    navButtons.push(Markup.button.callback('⬅️ Oldingi', `test_prev_page_${currentPage - 1}`));
+  }
+  if (currentPage < totalPages - 1) {
+    navButtons.push(Markup.button.callback('Keyingi ➡️', `test_next_page_${currentPage + 1}`));
+  }
+  if (navButtons.length > 0) {
+    keyboard.push(navButtons);
+  }
+  
+  // Add submit button if all questions are answered
+  const answeredCount = answers.length;
+  if (answeredCount >= totalQuestions) {
+    keyboard.push([Markup.button.callback('✅ Testni yakunlash', `test_submit_${ctx.session.testAttempt.attemptId}`)]);
+  }
+  
+  const pageInfo = totalPages > 1 ? ` (${currentPage + 1}/${totalPages} bet)` : '';
+  const progressInfo = `Javob berilgan: ${answeredCount}/${totalQuestions}`;
+  
+  await ctx.reply(
+    `📝 *Test savollari ${startIndex + 1}-${endIndex}*${pageInfo}\n\n` +
+    `${progressInfo}\n\n` +
+    'Har bir savol uchun A, B, C, D tugmalaridan birini tanlang:',
+    {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: keyboard
+      }
+    }
+  );
+}
+
 // Check and send pending notifications to user
 async function checkAndSendNotifications(ctx: BotContext) {
   if (!ctx.session.userId) return;
@@ -2432,11 +2493,21 @@ bot.action(/start_test_(\d+)/, async (ctx) => {
       status: 'in_progress'
     });
     
+    // Get test questions
+    const questions = await storage.getQuestionsByTestId(test.id);
+    if (!questions || questions.length === 0) {
+      await ctx.reply('❌ Bu testda savollar mavjud emas.');
+      return;
+    }
+    
     // Initialize test session
     ctx.session.testAttempt = {
       testId: test.id,
-      currentQuestionIndex: 0,
-      answers: []
+      attemptId: attempt.id,
+      currentPage: 0,
+      totalQuestions: test.totalQuestions,
+      answers: [],
+      questions: questions
     };
     
     await ctx.reply(
@@ -2444,14 +2515,12 @@ bot.action(/start_test_(\d+)/, async (ctx) => {
       `✅ Test boshlandi!\n` +
       `📊 Jami savollar: ${test.totalQuestions}\n` +
       `⏰ Vaqt: Cheklanmagan\n\n` +
-      'Birinchi savolga o\'tish uchun tugmani bosing:',
-      {
-        parse_mode: 'Markdown',
-        ...Markup.inlineKeyboard([
-          [Markup.button.callback('▶️ Birinchi savol', `next_question_${test.id}`)]
-        ])
-      }
+      'Har bir savol uchun A, B, C, D tugmalaridan birini bosing. Javobni almashtirish uchun qaytadan tugmani bosishingiz mumkin.',
+      { parse_mode: 'Markdown' }
     );
+    
+    // Show first page of questions
+    await showTestQuestionsPage(ctx);
   } catch (error) {
     console.error('Error starting test:', error);
     await ctx.reply('❌ Testni boshlashda xatolik yuz berdi.');
@@ -2493,6 +2562,126 @@ bot.action(/teacher_test_(\d+)/, async (ctx) => {
   } catch (error) {
     console.error('Error viewing teacher test:', error);
     await ctx.reply('❌ Test ma\'lumotlarini olishda xatolik yuz berdi.');
+  }
+});
+
+// Handle test answer selection
+bot.action(/test_answer_(\d+)_([ABCD])/, async (ctx) => {
+  if (!ctx.session.testAttempt || !ctx.session.userId) {
+    await ctx.answerCbQuery('❌ Test sessiyasi topilmadi');
+    return;
+  }
+  
+  const questionId = parseInt(ctx.match[1]);
+  const answer = ctx.match[2];
+  
+  try {
+    // Update answer in session
+    if (!ctx.session.testAttempt.answers) {
+      ctx.session.testAttempt.answers = [];
+    }
+    
+    // Remove existing answer for this question
+    ctx.session.testAttempt.answers = ctx.session.testAttempt.answers.filter(a => a.questionId !== questionId);
+    
+    // Add new answer
+    ctx.session.testAttempt.answers.push({ questionId, answer });
+    
+    // Save answer to database
+    await storage.createStudentAnswer({
+      attemptId: ctx.session.testAttempt.attemptId!,
+      questionId: questionId,
+      answer: answer
+    });
+    
+    await ctx.answerCbQuery(`✅ ${answer} javobni tanladingiz`);
+    
+    // Refresh the current page
+    await showTestQuestionsPage(ctx);
+    
+  } catch (error) {
+    console.error('Error saving test answer:', error);
+    await ctx.answerCbQuery('❌ Javobni saqlashda xatolik');
+  }
+});
+
+// Handle test page navigation
+bot.action(/test_prev_page_(\d+)/, async (ctx) => {
+  if (!ctx.session.testAttempt) {
+    await ctx.answerCbQuery('❌ Test sessiyasi topilmadi');
+    return;
+  }
+  
+  const page = parseInt(ctx.match[1]);
+  ctx.session.testAttempt.currentPage = page;
+  
+  await ctx.answerCbQuery();
+  await showTestQuestionsPage(ctx);
+});
+
+bot.action(/test_next_page_(\d+)/, async (ctx) => {
+  if (!ctx.session.testAttempt) {
+    await ctx.answerCbQuery('❌ Test sessiyasi topilmadi');
+    return;
+  }
+  
+  const page = parseInt(ctx.match[1]);
+  ctx.session.testAttempt.currentPage = page;
+  
+  await ctx.answerCbQuery();
+  await showTestQuestionsPage(ctx);
+});
+
+// Handle test submission
+bot.action(/test_submit_(\d+)/, async (ctx) => {
+  if (!ctx.session.testAttempt || !ctx.session.userId) {
+    await ctx.answerCbQuery('❌ Test sessiyasi topilmadi');
+    return;
+  }
+  
+  const attemptId = parseInt(ctx.match[1]);
+  
+  try {
+    // Calculate score
+    const answers = ctx.session.testAttempt.answers || [];
+    const questions = ctx.session.testAttempt.questions || [];
+    let score = 0;
+    
+    for (const answer of answers) {
+      const question = questions.find(q => q.id === answer.questionId);
+      if (question && question.correctAnswer === answer.answer) {
+        score++;
+      }
+    }
+    
+    // Update test attempt
+    await storage.updateTestAttempt(attemptId, {
+      score: score.toString(),
+      status: 'completed',
+      endTime: new Date()
+    });
+    
+    const percentage = Math.round((score / (ctx.session.testAttempt.totalQuestions || 1)) * 100);
+    
+    await ctx.reply(
+      `🎉 *Test yakunlandi!*\n\n` +
+      `✅ To'g'ri javoblar: ${score}/${ctx.session.testAttempt.totalQuestions}\n` +
+      `📊 Natija: ${percentage}%\n\n` +
+      'Tabriklaymiz!',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard(getKeyboardByRole(ctx.session.role || 'student')).resize()
+      }
+    );
+    
+    // Clear test session
+    ctx.session.testAttempt = undefined;
+    
+    await ctx.answerCbQuery('✅ Test yakunlandi');
+    
+  } catch (error) {
+    console.error('Error submitting test:', error);
+    await ctx.answerCbQuery('❌ Testni yakunlashda xatolik');
   }
 });
 
