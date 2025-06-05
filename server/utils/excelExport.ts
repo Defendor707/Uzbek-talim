@@ -1,236 +1,170 @@
 import * as XLSX from 'xlsx';
 import { storage } from '../storage';
-import { Response } from 'express';
+import * as schema from '@shared/schema';
 
-export interface TestReportData {
-  testId: number;
-  testTitle: string;
-  teacherName: string;
+export interface TestResultData {
   studentName: string;
-  totalQuestions: number;
   correctAnswers: number;
-  score: number;
+  totalQuestions: number;
   percentage: number;
   completedAt: Date;
-  duration: string;
 }
 
-export const generateTestReportExcel = async (testId: number, res: Response) => {
+export async function generateTestReportExcel(testId: number): Promise<Buffer> {
   try {
     // Get test details
     const test = await storage.getTestById(testId);
     if (!test) {
-      return res.status(404).json({ message: 'Test topilmadi' });
-    }
-
-    // Get teacher details
-    const teacher = await storage.getUser(test.teacherId);
-    if (!teacher) {
-      return res.status(404).json({ message: 'Ustoz ma\'lumotlari topilmadi' });
+      throw new Error('Test not found');
     }
 
     // Get all test attempts for this test
-    const allAttempts = await storage.getTestAttemptsByTestId(testId);
+    const attempts = await storage.getTestAttemptsByTestId(testId);
     
-    const reportData: TestReportData[] = [];
-
-    for (const attempt of allAttempts) {
-      // Get student details
-      const student = await storage.getUser(attempt.studentId);
-      if (!student) continue;
-
-      // Calculate duration
-      const duration = attempt.endTime && attempt.startTime 
-        ? Math.round((attempt.endTime.getTime() - attempt.startTime.getTime()) / (1000 * 60)) 
-        : 0;
-
-      const percentage = attempt.totalQuestions > 0 
-        ? Math.round((Number(attempt.totalCorrect || 0) / attempt.totalQuestions) * 100)
-        : 0;
-
-      reportData.push({
-        testId: test.id,
-        testTitle: test.title,
-        teacherName: teacher.fullName,
-        studentName: student.fullName,
-        totalQuestions: attempt.totalQuestions,
-        correctAnswers: Number(attempt.totalCorrect || 0),
-        score: Number(attempt.score || 0),
-        percentage: percentage,
-        completedAt: attempt.endTime || attempt.startTime,
-        duration: `${duration} daqiqa`
-      });
+    // Get student data for each attempt
+    const results: TestResultData[] = [];
+    
+    for (const attempt of attempts) {
+      if (attempt.status === 'completed' && attempt.score !== null) {
+        const student = await storage.getUser(attempt.studentId);
+        if (student) {
+          results.push({
+            studentName: student.fullName,
+            correctAnswers: attempt.score,
+            totalQuestions: attempt.totalQuestions,
+            percentage: Math.round((attempt.score / attempt.totalQuestions) * 100),
+            completedAt: attempt.endTime || new Date()
+          });
+        }
+      }
     }
+
+    // Sort by student name
+    results.sort((a, b) => a.studentName.localeCompare(b.studentName));
+
+    // Create Excel data
+    const excelData = results.map((result, index) => ({
+      '№': index + 1,
+      'Ism familya': result.studentName,
+      'T.J.S.': result.correctAnswers,
+      'T.S': result.totalQuestions,
+      'Foiz': `${result.percentage}%`,
+      'Sana': result.completedAt.toLocaleDateString('uz-UZ')
+    }));
 
     // Create workbook
     const workbook = XLSX.utils.book_new();
-
-    // Create worksheet data
-    const worksheetData = [
-      [
-        'Test ID',
-        'Test nomi',
-        'Ustoz ismi',
-        'O\'quvchi ismi',
-        'Jami savollar',
-        'To\'g\'ri javoblar',
-        'Ball',
-        'Foiz (%)',
-        'Tugatilgan vaqt',
-        'Davomiyligi'
-      ],
-      ...reportData.map(row => [
-        row.testId,
-        row.testTitle,
-        row.teacherName,
-        row.studentName,
-        row.totalQuestions,
-        row.correctAnswers,
-        row.score,
-        row.percentage,
-        row.completedAt.toLocaleString('uz-UZ'),
-        row.duration
-      ])
-    ];
-
-    // Create worksheet
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
 
     // Set column widths
     worksheet['!cols'] = [
-      { width: 10 }, // Test ID
-      { width: 25 }, // Test nomi
-      { width: 20 }, // Ustoz ismi
-      { width: 20 }, // O'quvchi ismi
-      { width: 15 }, // Jami savollar
-      { width: 15 }, // To'g'ri javoblar
-      { width: 10 }, // Ball
-      { width: 10 }, // Foiz
-      { width: 20 }, // Tugatilgan vaqt
-      { width: 15 }  // Davomiyligi
+      { width: 5 },   // №
+      { width: 25 },  // Ism familya
+      { width: 10 },  // T.J.S.
+      { width: 8 },   // T.S
+      { width: 10 },  // Foiz
+      { width: 15 }   // Sana
     ];
 
+    // Add title row
+    XLSX.utils.sheet_add_aoa(worksheet, [[`Test: ${test.title}`]], { origin: 'A1' });
+    XLSX.utils.sheet_add_aoa(worksheet, [['Savollar soni:', test.totalQuestions]], { origin: 'A2' });
+    XLSX.utils.sheet_add_aoa(worksheet, [['Jami ishtirokchilar:', results.length]], { origin: 'A3' });
+    XLSX.utils.sheet_add_aoa(worksheet, [['']], { origin: 'A4' });
+
+    // Move data down to accommodate title
+    const dataRange = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    dataRange.s.r = 4; // Start from row 5
+    
     // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Test hisoboti');
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Test Natijalari');
 
     // Generate buffer
-    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    return buffer;
 
-    // Set response headers
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename="test_hisoboti_${test.title}_${new Date().toLocaleDateString('uz-UZ')}.xlsx"`);
-
-    // Send file
-    res.send(excelBuffer);
   } catch (error) {
-    console.error('Excel export error:', error);
-    res.status(500).json({ message: 'Excel fayl yaratishda xatolik yuz berdi' });
+    console.error('Error generating Excel report:', error);
+    throw new Error('Failed to generate Excel report');
   }
-};
+}
 
-export const generateStudentProgressExcel = async (studentId: number, res: Response) => {
+export async function generateStudentProgressExcel(studentId: number): Promise<Buffer> {
   try {
-    // Get student details
+    // Get student data
     const student = await storage.getUser(studentId);
     if (!student) {
-      return res.status(404).json({ message: 'O\'quvchi topilmadi' });
+      throw new Error('Student not found');
     }
 
-    // Get all student's test attempts
+    // Get all test attempts for this student
     const attempts = await storage.getTestAttemptsByStudentId(studentId);
     
-    const reportData: any[] = [];
-
+    // Get test data for each attempt
+    const results: any[] = [];
+    
     for (const attempt of attempts) {
-      // Get test details
-      const test = await storage.getTestById(attempt.testId);
-      if (!test) continue;
-
-      // Get teacher details
-      const teacher = await storage.getUser(test.teacherId);
-      if (!teacher) continue;
-
-      // Calculate duration
-      const duration = attempt.endTime && attempt.startTime 
-        ? Math.round((attempt.endTime.getTime() - attempt.startTime.getTime()) / (1000 * 60)) 
-        : 0;
-
-      const percentage = attempt.totalQuestions > 0 
-        ? Math.round((Number(attempt.totalCorrect || 0) / attempt.totalQuestions) * 100)
-        : 0;
-
-      reportData.push({
-        testTitle: test.title,
-        teacherName: teacher.fullName,
-        totalQuestions: attempt.totalQuestions,
-        correctAnswers: Number(attempt.totalCorrect || 0),
-        score: Number(attempt.score || 0),
-        percentage: percentage,
-        status: attempt.status === 'completed' ? 'Tugatilgan' : 'Jarayonda',
-        completedAt: attempt.endTime ? attempt.endTime.toLocaleString('uz-UZ') : 'Tugatilmagan',
-        duration: `${duration} daqiqa`
-      });
+      if (attempt.status === 'completed' && attempt.score !== null) {
+        const test = await storage.getTestById(attempt.testId);
+        if (test) {
+          results.push({
+            testName: test.title,
+            correctAnswers: attempt.score,
+            totalQuestions: attempt.totalQuestions,
+            percentage: Math.round((attempt.score / attempt.totalQuestions) * 100),
+            completedAt: attempt.endTime || new Date()
+          });
+        }
+      }
     }
+
+    // Sort by completion date
+    results.sort((a, b) => b.completedAt.getTime() - a.completedAt.getTime());
+
+    // Create Excel data
+    const excelData = results.map((result, index) => ({
+      '№': index + 1,
+      'Test nomi': result.testName,
+      'T.J.S.': result.correctAnswers,
+      'T.S': result.totalQuestions,
+      'Foiz': `${result.percentage}%`,
+      'Sana': result.completedAt.toLocaleDateString('uz-UZ')
+    }));
 
     // Create workbook
     const workbook = XLSX.utils.book_new();
-
-    // Create worksheet data
-    const worksheetData = [
-      [
-        'Test nomi',
-        'Ustoz',
-        'Jami savollar',
-        'To\'g\'ri javoblar',
-        'Ball',
-        'Foiz (%)',
-        'Holati',
-        'Tugatilgan vaqt',
-        'Davomiyligi'
-      ],
-      ...reportData.map(row => [
-        row.testTitle,
-        row.teacherName,
-        row.totalQuestions,
-        row.correctAnswers,
-        row.score,
-        row.percentage,
-        row.status,
-        row.completedAt,
-        row.duration
-      ])
-    ];
-
-    // Create worksheet
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
 
     // Set column widths
     worksheet['!cols'] = [
-      { width: 25 }, // Test nomi
-      { width: 20 }, // Ustoz
-      { width: 15 }, // Jami savollar
-      { width: 15 }, // To'g'ri javoblar
-      { width: 10 }, // Ball
-      { width: 10 }, // Foiz
-      { width: 15 }, // Holati
-      { width: 20 }, // Tugatilgan vaqt
-      { width: 15 }  // Davomiyligi
+      { width: 5 },   // №
+      { width: 30 },  // Test nomi
+      { width: 10 },  // T.J.S.
+      { width: 8 },   // T.S
+      { width: 10 },  // Foiz
+      { width: 15 }   // Sana
     ];
 
+    // Add title row
+    XLSX.utils.sheet_add_aoa(worksheet, [[`O'quvchi: ${student.fullName}`]], { origin: 'A1' });
+    XLSX.utils.sheet_add_aoa(worksheet, [['Jami testlar:', results.length]], { origin: 'A2' });
+    
+    // Calculate average score
+    const avgScore = results.length > 0 
+      ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / results.length)
+      : 0;
+    XLSX.utils.sheet_add_aoa(worksheet, [['O\'rtacha natija:', `${avgScore}%`]], { origin: 'A3' });
+    XLSX.utils.sheet_add_aoa(worksheet, [['']], { origin: 'A4' });
+
     // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, `${student.fullName} - Taraqqiyot`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Test Natijalari');
 
     // Generate buffer
-    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    return buffer;
 
-    // Set response headers
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename="${student.fullName}_taraqqiyot_${new Date().toLocaleDateString('uz-UZ')}.xlsx"`);
-
-    // Send file
-    res.send(excelBuffer);
   } catch (error) {
-    console.error('Excel export error:', error);
-    res.status(500).json({ message: 'Excel fayl yaratishda xatolik yuz berdi' });
+    console.error('Error generating student progress Excel:', error);
+    throw new Error('Failed to generate student progress Excel');
   }
-};
+}

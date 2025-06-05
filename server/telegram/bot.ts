@@ -2006,7 +2006,7 @@ async function saveTest(ctx: BotContext) {
       teacherId: user.id, // Use user.id instead of teacherProfile.id
       type: 'simple' as const,
       status: 'active' as const,
-      duration: 30, // 30 daqiqa
+      duration: 0, // Oddiy testda vaqt cheklanmagan
       totalQuestions: ctx.session.testCreation.questionCount || 0,
       grade: '10', // Default grade
       classroom: undefined
@@ -2035,7 +2035,7 @@ async function saveTest(ctx: BotContext) {
     let successMessage = '✅ *Test muvaffaqiyatli yaratildi!*\n\n' +
       `📝 Test nomi: ${testData.title}\n` +
       `📊 Savollar soni: ${testData.totalQuestions}\n` +
-      `⏰ Vaqt: ${testData.duration} daqiqa\n` +
+      `⏰ Vaqt: Cheklanmagan\n` +
       `🌐 Turi: ${ctx.session.testCreation.testType === 'public' ? 'Ommaviy' : 'Maxsus raqamli'}\n`;
     
     if (ctx.session.testCreation.testCode) {
@@ -2123,46 +2123,68 @@ function getTestStatusInUzbek(status: string): string {
   return statusMap[status] || status;
 }
 
-// Show test questions page with inline keyboard
-async function showTestQuestionsPage(ctx: BotContext) {
-  if (!ctx.session.testAttempt || !ctx.session.testAttempt.questions) return;
+// Helper functions for student test interface
+function generateStudentTestText(ctx: BotContext): string {
+  if (!ctx.session.testAttempt || !ctx.session.testAttempt.questions) return '';
+  
+  const currentPage = ctx.session.testAttempt.currentPage || 0;
+  const totalQuestions = ctx.session.testAttempt.totalQuestions || 0;
+  const answers = ctx.session.testAttempt.answers || [];
+  
+  const questionsPerPage = 10;
+  const startIndex = currentPage * questionsPerPage;
+  const endIndex = Math.min(startIndex + questionsPerPage, totalQuestions);
+  const totalPages = Math.ceil(totalQuestions / questionsPerPage);
+  const answeredCount = answers.length;
+  
+  const pageInfo = totalPages > 1 ? ` (${currentPage + 1}/${totalPages} bet)` : '';
+  const progressInfo = `Javob berilgan: ${answeredCount}/${totalQuestions}`;
+  
+  return `📝 *Test savollari ${startIndex + 1}-${endIndex}*${pageInfo}\n\n` +
+    `${progressInfo}\n\n` +
+    'Har bir savol uchun A, B, C, D tugmalaridan birini tanlang:';
+}
+
+function generateStudentTestKeyboard(ctx: BotContext): any[][] {
+  if (!ctx.session.testAttempt || !ctx.session.testAttempt.questions) return [];
   
   const currentPage = ctx.session.testAttempt.currentPage || 0;
   const totalQuestions = ctx.session.testAttempt.totalQuestions || 0;
   const questions = ctx.session.testAttempt.questions;
   const answers = ctx.session.testAttempt.answers || [];
   
-  // Calculate pagination
   const questionsPerPage = 10;
   const startIndex = currentPage * questionsPerPage;
   const endIndex = Math.min(startIndex + questionsPerPage, totalQuestions);
   const totalPages = Math.ceil(totalQuestions / questionsPerPage);
   
-  // Create inline keyboard for current page questions
-  const keyboard = [];
+  const keyboard: any[][] = [];
+  
+  // Add batch header
+  keyboard.push([
+    Markup.button.callback(`📊 Bet ${currentPage + 1}/${totalPages} (${startIndex + 1}-${endIndex})`, 'test_page_info')
+  ]);
   
   for (let i = startIndex; i < endIndex; i++) {
     const questionNum = i + 1;
     const userAnswer = answers.find(a => a.questionId === questions[i].id)?.answer;
-    const row = [];
     
     // Add question number
     const questionLabel = `${questionNum}-savol`;
+    keyboard.push([Markup.button.callback(questionLabel, `question_info_${questions[i].id}`)]);
     
     // Add A, B, C, D buttons for this question
+    const row: any[] = [];
     ['A', 'B', 'C', 'D'].forEach(option => {
       const isSelected = userAnswer === option;
       const buttonText = isSelected ? `${option} ✅` : option;
       row.push(Markup.button.callback(buttonText, `test_answer_${questions[i].id}_${option}`));
     });
-    
-    // Add question label and answer buttons
-    keyboard.push([Markup.button.callback(questionLabel, `question_info_${questions[i].id}`)]);
     keyboard.push(row);
   }
   
   // Add navigation buttons
-  const navButtons = [];
+  const navButtons: any[] = [];
   if (currentPage > 0) {
     navButtons.push(Markup.button.callback('⬅️ Oldingi', `test_prev_page_${currentPage - 1}`));
   }
@@ -2179,20 +2201,22 @@ async function showTestQuestionsPage(ctx: BotContext) {
     keyboard.push([Markup.button.callback('✅ Testni yakunlash', `test_submit_${ctx.session.testAttempt.attemptId}`)]);
   }
   
-  const pageInfo = totalPages > 1 ? ` (${currentPage + 1}/${totalPages} bet)` : '';
-  const progressInfo = `Javob berilgan: ${answeredCount}/${totalQuestions}`;
+  return keyboard;
+}
+
+// Show test questions page with inline keyboard
+async function showTestQuestionsPage(ctx: BotContext) {
+  if (!ctx.session.testAttempt || !ctx.session.testAttempt.questions) return;
   
-  await ctx.reply(
-    `📝 *Test savollari ${startIndex + 1}-${endIndex}*${pageInfo}\n\n` +
-    `${progressInfo}\n\n` +
-    'Har bir savol uchun A, B, C, D tugmalaridan birini tanlang:',
-    {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: keyboard
-      }
+  const text = generateStudentTestText(ctx);
+  const keyboard = generateStudentTestKeyboard(ctx);
+  
+  await ctx.reply(text, {
+    parse_mode: 'Markdown',
+    reply_markup: {
+      inline_keyboard: keyboard
     }
-  );
+  });
 }
 
 // Check and send pending notifications to user

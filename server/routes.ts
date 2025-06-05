@@ -730,6 +730,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Excel Export Routes
+  app.get("/api/tests/:testId/export/excel", authenticate, authorize(["teacher"]), async (req, res) => {
+    try {
+      const testId = parseInt(req.params.testId);
+      if (isNaN(testId)) {
+        return res.status(400).json({ message: "Invalid test ID" });
+      }
+
+      // Check if test exists and belongs to the teacher
+      const test = await storage.getTestById(testId);
+      if (!test) {
+        return res.status(404).json({ message: "Test not found" });
+      }
+
+      if (test.teacherId !== req.user!.userId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const buffer = await generateTestReportExcel(testId);
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="test_${testId}_results.xlsx"`);
+      
+      return res.send(buffer);
+    } catch (error) {
+      console.error("Error generating Excel report:", error);
+      return res.status(500).json({ message: "Failed to generate Excel report" });
+    }
+  });
+
+  app.get("/api/students/:studentId/export/excel", authenticate, async (req, res) => {
+    try {
+      const studentId = parseInt(req.params.studentId);
+      if (isNaN(studentId)) {
+        return res.status(400).json({ message: "Invalid student ID" });
+      }
+
+      // Check authorization - student can only export their own data, teacher/parent can export student data
+      if (req.user?.role === 'student' && req.user.userId !== studentId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const buffer = await generateStudentProgressExcel(studentId);
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="student_${studentId}_progress.xlsx"`);
+      
+      return res.send(buffer);
+    } catch (error) {
+      console.error("Error generating student progress Excel:", error);
+      return res.status(500).json({ message: "Failed to generate student progress Excel" });
+    }
+  });
+
   // Bot Sync Routes - for Telegram bot data synchronization
   app.get("/api/bot/notifications/:userId", authenticate, async (req, res) => {
     try {
