@@ -1599,19 +1599,16 @@ bot.hears('📝 Oddiy test', async (ctx) => {
 
   // Initialize test creation session
   ctx.session.testCreation = {
-    step: 'type',
+    step: 'title',
     answers: []
   };
 
   await ctx.reply(
     '📝 *Oddiy test yaratish*\n\n' +
-    'Test turini tanlang:',
+    'Test nomini kiriting:',
     {
       parse_mode: 'Markdown',
-      ...Markup.keyboard([
-        ['🌐 Ommaviy test', '🔢 Maxsus raqamli test'],
-        ['🔙 Orqaga']
-      ]).resize()
+      ...Markup.keyboard([['🔙 Orqaga']]).resize()
     }
   );
 });
