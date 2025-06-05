@@ -1765,20 +1765,42 @@ bot.hears(['1️⃣ Bitta qatorda', '2️⃣ Har bir savolni alohida', '3️⃣ 
   }
 });
 
-// Tugmalar orqali javob kiritish
-async function showQuestionButtons(ctx: BotContext) {
-  if (!ctx.session.testCreation || !ctx.session.testCreation.questionCount) return;
+// Helper function to generate question buttons text
+function generateQuestionButtonsText(ctx: BotContext): string {
+  if (!ctx.session.testCreation || !ctx.session.testCreation.questionCount) return '';
   
   const totalQuestions = ctx.session.testCreation.questionCount;
   const answers = ctx.session.testCreation.answers || [];
   const currentBatch = Math.floor((ctx.session.testCreation.currentQuestionIndex || 0) / 10);
   const totalBatches = Math.ceil(totalQuestions / 10);
   
-  // Calculate batch range
+  const batchStart = currentBatch * 10;
+  const batchEnd = Math.min(batchStart + 10, totalQuestions);
+  const currentBatchAnswered = answers.slice(batchStart, batchEnd).filter(a => a).length;
+  const currentBatchComplete = currentBatchAnswered === (batchEnd - batchStart);
+  const totalAnswered = answers.filter(a => a).length;
+  
+  return `📝 *Test yaratish - Javoblarni belgilash*\n\n` +
+    `📊 To'plam: ${currentBatch + 1}/${totalBatches}\n` +
+    `📋 Savollar: ${batchStart + 1}-${batchEnd}\n` +
+    `✅ Belgilangan: ${currentBatchAnswered}/${batchEnd - batchStart}\n` +
+    `📈 Umumiy: ${totalAnswered}/${totalQuestions}\n\n` +
+    `${!currentBatchComplete ? '⚠️ Keyingi to\'plamga o\'tish uchun joriy to\'plamdagi barcha javoblarni belgilang!' : ''}`;
+}
+
+// Helper function to generate question buttons keyboard
+function generateQuestionButtonsKeyboard(ctx: BotContext): any[][] {
+  if (!ctx.session.testCreation || !ctx.session.testCreation.questionCount) return [];
+  
+  const totalQuestions = ctx.session.testCreation.questionCount;
+  const answers = ctx.session.testCreation.answers || [];
+  const currentBatch = Math.floor((ctx.session.testCreation.currentQuestionIndex || 0) / 10);
+  const totalBatches = Math.ceil(totalQuestions / 10);
+  
   const batchStart = currentBatch * 10;
   const batchEnd = Math.min(batchStart + 10, totalQuestions);
   
-  const keyboard = [];
+  const keyboard: any[][] = [];
   
   // Create batch header
   keyboard.push([
@@ -1795,7 +1817,7 @@ async function showQuestionButtons(ctx: BotContext) {
     ]);
     
     // Answer options row
-    const answerRow = [];
+    const answerRow: any[] = [];
     ['A', 'B', 'C', 'D'].forEach(option => {
       const isSelected = answers[i] === option;
       const buttonText = isSelected ? `${option} ✅` : option;
@@ -1805,7 +1827,7 @@ async function showQuestionButtons(ctx: BotContext) {
   }
   
   // Navigation buttons
-  const navButtons = [];
+  const navButtons: any[] = [];
   if (currentBatch > 0) {
     navButtons.push(Markup.button.callback('⬅️ Oldingi', `batch_prev_${currentBatch - 1}`));
   }
@@ -1828,20 +1850,22 @@ async function showQuestionButtons(ctx: BotContext) {
     keyboard.push([Markup.button.callback('✅ Testni saqlash', 'save_test')]);
   }
   
-  await ctx.reply(
-    `📝 *Test yaratish - Javoblarni belgilash*\n\n` +
-    `📊 To'plam: ${currentBatch + 1}/${totalBatches}\n` +
-    `📋 Savollar: ${batchStart + 1}-${batchEnd}\n` +
-    `✅ Belgilangan: ${currentBatchAnswered}/${batchEnd - batchStart}\n` +
-    `📈 Umumiy: ${totalAnswered}/${totalQuestions}\n\n` +
-    `${!currentBatchComplete ? '⚠️ Keyingi to\'plamga o\'tish uchun joriy to\'plamdagi barcha javoblarni belgilang!' : ''}`,
-    {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: keyboard
-      }
+  return keyboard;
+}
+
+// Tugmalar orqali javob kiritish
+async function showQuestionButtons(ctx: BotContext) {
+  if (!ctx.session.testCreation || !ctx.session.testCreation.questionCount) return;
+  
+  const text = generateQuestionButtonsText(ctx);
+  const keyboard = generateQuestionButtonsKeyboard(ctx);
+  
+  await ctx.reply(text, {
+    parse_mode: 'Markdown',
+    reply_markup: {
+      inline_keyboard: keyboard
     }
-  );
+  });
 }
 
 // Inline tugma bosilganda javobni saqlash
@@ -1861,15 +1885,15 @@ bot.action(/answer_(\d+)_([ABCD])/, async (ctx) => {
   
   // Update the same message with new state - fix the button updating issue
   try {
-    await ctx.editMessageText(
-      await generateQuestionButtonsText(ctx),
-      {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: await generateQuestionButtonsKeyboard(ctx)
-        }
+    const text = generateQuestionButtonsText(ctx);
+    const keyboard = generateQuestionButtonsKeyboard(ctx);
+    
+    await ctx.editMessageText(text, {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: keyboard
       }
-    );
+    });
   } catch (error) {
     // If message edit fails, send new message
     await showQuestionButtons(ctx);
@@ -1884,7 +1908,20 @@ bot.action(/batch_prev_(\d+)/, async (ctx) => {
   ctx.session.testCreation.currentQuestionIndex = batchIndex * 10;
   
   await ctx.answerCbQuery('Oldingi to\'plam');
-  await showQuestionButtons(ctx);
+  
+  try {
+    const text = generateQuestionButtonsText(ctx);
+    const keyboard = generateQuestionButtonsKeyboard(ctx);
+    
+    await ctx.editMessageText(text, {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: keyboard
+      }
+    });
+  } catch (error) {
+    await showQuestionButtons(ctx);
+  }
 });
 
 bot.action(/batch_next_(\d+)/, async (ctx) => {
@@ -1892,7 +1929,6 @@ bot.action(/batch_next_(\d+)/, async (ctx) => {
   
   const batchIndex = parseInt(ctx.match[1]);
   const batchStart = batchIndex * 10;
-  const batchEnd = Math.min(batchStart + 10, ctx.session.testCreation.questionCount || 0);
   const answers = ctx.session.testCreation.answers || [];
   
   // Check if current batch is complete
@@ -1910,7 +1946,20 @@ bot.action(/batch_next_(\d+)/, async (ctx) => {
   ctx.session.testCreation.currentQuestionIndex = batchStart;
   
   await ctx.answerCbQuery('Keyingi to\'plam');
-  await showQuestionButtons(ctx);
+  
+  try {
+    const text = generateQuestionButtonsText(ctx);
+    const keyboard = generateQuestionButtonsKeyboard(ctx);
+    
+    await ctx.editMessageText(text, {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: keyboard
+      }
+    });
+  } catch (error) {
+    await showQuestionButtons(ctx);
+  }
 });
 
 // Save test handler
