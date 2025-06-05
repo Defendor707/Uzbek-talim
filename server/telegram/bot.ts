@@ -35,7 +35,7 @@ interface BotSessionData extends Scenes.SceneSession {
   };
   editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience' | 'addChild' | 'testCode';
   testCreation?: {
-    step?: 'type' | 'questionCount' | 'answers' | 'inputMethod';
+    step?: 'title' | 'type' | 'questionCount' | 'answers' | 'inputMethod' | 'imageUpload';
     testType?: 'public' | 'private';
     questionCount?: number;
     answers?: string[];
@@ -44,6 +44,7 @@ interface BotSessionData extends Scenes.SceneSession {
     testData?: {
       title?: string;
       description?: string;
+      imageUrl?: string;
     };
   };
 }
@@ -292,6 +293,47 @@ bot.on('text', async (ctx, next) => {
   
   // Handle test creation flow
   if (ctx.session.testCreation) {
+    if (ctx.session.testCreation.step === 'title') {
+      const title = messageText.trim();
+      
+      if (title.length < 3 || title.length > 100) {
+        await ctx.reply('❌ Test nomi 3 dan 100 ta belgigacha bo\'lishi kerak. Qaytadan kiriting:');
+        return;
+      }
+      
+      if (!ctx.session.testCreation.testData) {
+        ctx.session.testCreation.testData = {};
+      }
+      ctx.session.testCreation.testData.title = title;
+      
+      // Ommaviy test uchun rasm yuklash talab qilish
+      if (ctx.session.testCreation.testType === 'public') {
+        ctx.session.testCreation.step = 'imageUpload';
+        await ctx.reply(
+          '🖼️ *Test rasmi*\n\n' +
+          'Ommaviy test uchun test rasmini yuklang:\n\n' +
+          '📸 Rasm yuklash uchun rasmni bu chatga yuboring.',
+          {
+            parse_mode: 'Markdown',
+            ...Markup.keyboard([['⏭️ O\'tkazib yuborish', '🔙 Orqaga']]).resize()
+          }
+        );
+        return;
+      } else {
+        ctx.session.testCreation.step = 'questionCount';
+        await ctx.reply(
+          '📊 *Savollar soni*\n\n' +
+          'Test nechta savoldan iborat bo\'lsin?\n' +
+          '(5 dan 90 tagacha raqam kiriting)',
+          {
+            parse_mode: 'Markdown',
+            ...Markup.keyboard([['🔙 Orqaga']]).resize()
+          }
+        );
+        return;
+      }
+    }
+    
     if (ctx.session.testCreation.step === 'questionCount') {
       const questionCount = parseInt(messageText);
       
@@ -303,8 +345,16 @@ bot.on('text', async (ctx, next) => {
       ctx.session.testCreation.questionCount = questionCount;
       ctx.session.testCreation.step = 'inputMethod';
       
-      // Use inline keyboard method only
+      // Faqat tugmalar orqali kiritish usulini taklif qilish
       ctx.session.testCreation.currentQuestionIndex = 0;
+      await ctx.reply(
+        '📝 *Javoblarni belgilash*\n\n' +
+        'Har bir savol uchun to\'g\'ri javobni belgilang:',
+        {
+          parse_mode: 'Markdown',
+          ...Markup.keyboard([['🔙 Orqaga']]).resize()
+        }
+      );
       await showQuestionButtons(ctx);
       return;
     }
@@ -1062,6 +1112,50 @@ bot.hears('⏱️ Tajriba', async (ctx) => {
   );
 });
 
+// Handle image upload for test creation
+bot.hears('⏭️ O\'tkazib yuborish', async (ctx) => {
+  if (ctx.session.testCreation && ctx.session.testCreation.step === 'imageUpload') {
+    ctx.session.testCreation.step = 'questionCount';
+    await ctx.reply(
+      '📊 *Savollar soni*\n\n' +
+      'Test nechta savoldan iborat bo\'lsin?\n' +
+      '(5 dan 90 tagacha raqam kiriting)',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard([['🔙 Orqaga']]).resize()
+      }
+    );
+  }
+});
+
+// Handle photo upload for test
+bot.on('photo', async (ctx, next) => {
+  if (ctx.session.testCreation && ctx.session.testCreation.step === 'imageUpload') {
+    if (!ctx.session.testCreation.testData) {
+      ctx.session.testCreation.testData = {};
+    }
+    
+    // Store photo file_id for later use
+    const photo = ctx.message.photo[ctx.message.photo.length - 1];
+    ctx.session.testCreation.testData.imageUrl = photo.file_id;
+    
+    ctx.session.testCreation.step = 'questionCount';
+    await ctx.reply(
+      '✅ *Test rasmi saqlandi*\n\n' +
+      '📊 *Savollar soni*\n\n' +
+      'Test nechta savoldan iborat bo\'lsin?\n' +
+      '(5 dan 90 tagacha raqam kiriting)',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard([['🔙 Orqaga']]).resize()
+      }
+    );
+    return;
+  }
+  
+  return next();
+});
+
 // Handle profile field editing
 bot.on('text', async (ctx, next) => {
   if (ctx.session.editingField && ctx.session.userId) {
@@ -1599,16 +1693,19 @@ bot.hears('📝 Oddiy test', async (ctx) => {
 
   // Initialize test creation session
   ctx.session.testCreation = {
-    step: 'title',
+    step: 'type',
     answers: []
   };
 
   await ctx.reply(
     '📝 *Oddiy test yaratish*\n\n' +
-    'Test nomini kiriting:',
+    'Test turini tanlang:',
     {
       parse_mode: 'Markdown',
-      ...Markup.keyboard([['🔙 Orqaga']]).resize()
+      ...Markup.keyboard([
+        ['🌐 Ommaviy test', '🔢 Maxsus raqamli test'],
+        ['🔙 Orqaga']
+      ]).resize()
     }
   );
 });
@@ -1621,7 +1718,7 @@ bot.hears(['🌐 Ommaviy test', '🔢 Maxsus raqamli test'], async (ctx) => {
 
   const messageText = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
   ctx.session.testCreation.testType = messageText === '🌐 Ommaviy test' ? 'public' : 'private';
-  ctx.session.testCreation.step = 'questionCount';
+  ctx.session.testCreation.step = 'title';
 
   // Maxsus raqamli test uchun kod generatsiya qilish
   if (ctx.session.testCreation.testType === 'private') {
@@ -1629,10 +1726,12 @@ bot.hears(['🌐 Ommaviy test', '🔢 Maxsus raqamli test'], async (ctx) => {
   }
 
   await ctx.reply(
-    '📊 *Savollar soni*\n\n' +
-    'Test nechta savoldan iborat bo\'lsin?\n' +
-    '(5 dan 90 tagacha raqam kiriting)',
-    Markup.keyboard([['🔙 Orqaga']]).resize()
+    '📝 *Test nomi*\n\n' +
+    'Test nomini kiriting:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([['🔙 Orqaga']]).resize()
+    }
   );
 });
 
@@ -1760,8 +1859,21 @@ bot.action(/answer_(\d+)_([ABCD])/, async (ctx) => {
   
   await ctx.answerCbQuery(`${questionIndex + 1}-savol: ${answer} tanlandi`);
   
-  // Update the same message with new state
-  await showQuestionButtons(ctx);
+  // Update the same message with new state - fix the button updating issue
+  try {
+    await ctx.editMessageText(
+      await generateQuestionButtonsText(ctx),
+      {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: await generateQuestionButtonsKeyboard(ctx)
+        }
+      }
+    );
+  } catch (error) {
+    // If message edit fails, send new message
+    await showQuestionButtons(ctx);
+  }
 });
 
 // Batch navigation handlers
@@ -1836,16 +1948,19 @@ async function saveTest(ctx: BotContext) {
     }
     
     // Test ma'lumotlarini yaratish
+    const testTitle = ctx.session.testCreation.testData?.title || `Oddiy test - ${new Date().toLocaleDateString('uz-UZ')}`;
+    const testDescription = ctx.session.testCreation.testType === 'public' ? 'Ommaviy test' : `Maxsus test (Kod: ${ctx.session.testCreation.testCode})`;
+    
     const testData = {
-      title: `Oddiy test - ${new Date().toLocaleDateString('uz-UZ')}`,
-      description: ctx.session.testCreation.testType === 'public' ? 'Ommaviy test' : `Maxsus test (Kod: ${ctx.session.testCreation.testCode})`,
+      title: testTitle,
+      description: testDescription,
       teacherId: user.id, // Use user.id instead of teacherProfile.id
       type: 'simple' as const,
       status: 'active' as const,
       duration: 30, // 30 daqiqa
       totalQuestions: ctx.session.testCreation.questionCount || 0,
       grade: '10', // Default grade
-      classroom: null
+      classroom: undefined
     };
     
     // Testni yaratish
