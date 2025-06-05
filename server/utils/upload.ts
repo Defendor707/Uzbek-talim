@@ -141,3 +141,51 @@ export const uploadProfileImage = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Profile image upload failed' });
   }
 };
+
+// Upload test image
+export const uploadTestImage = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Rasm yuklanmadi' });
+    }
+    
+    if (!req.user) {
+      return res.status(401).json({ message: 'Autentifikatsiya talab etiladi' });
+    }
+    
+    // Get relative path to store in database
+    const relativePath = path.relative(process.cwd(), req.file.path);
+    
+    return res.status(200).json({
+      message: 'Test rasmi muvaffaqiyatli yuklandi',
+      imagePath: relativePath
+    });
+  } catch (error) {
+    console.error('Test image upload error:', error);
+    return res.status(500).json({ message: 'Test rasmi yuklash xato' });
+  }
+};
+
+// Upload question image
+export const uploadQuestionImage = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Rasm yuklanmadi' });
+    }
+    
+    if (!req.user) {
+      return res.status(401).json({ message: 'Autentifikatsiya talab etiladi' });
+    }
+    
+    // Get relative path to store in database
+    const relativePath = path.relative(process.cwd(), req.file.path);
+    
+    return res.status(200).json({
+      message: 'Savol rasmi muvaffaqiyatli yuklandi',
+      imagePath: relativePath
+    });
+  } catch (error) {
+    console.error('Question image upload error:', error);
+    return res.status(500).json({ message: 'Savol rasmi yuklash xato' });
+  }
+};

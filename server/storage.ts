@@ -48,6 +48,7 @@ export interface IStorage {
   getTestAttemptById(id: number): Promise<schema.TestAttempt | undefined>;
   updateTestAttempt(id: number, attempt: Partial<schema.TestAttempt>): Promise<schema.TestAttempt | undefined>;
   getTestAttemptsByStudentId(studentId: number): Promise<schema.TestAttempt[]>;
+  getTestAttemptsByTestId(testId: number): Promise<schema.TestAttempt[]>;
   
   // Student answer related methods
   createStudentAnswer(answer: schema.InsertStudentAnswer): Promise<schema.StudentAnswer>;

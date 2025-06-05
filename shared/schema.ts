@@ -105,6 +105,7 @@ export const tests = pgTable("tests", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
+  testImage: text("test_image"), // Test uchun rasm URL yoki fayl yo'li
   teacherId: integer("teacher_id").notNull().references(() => users.id),
   subjectId: integer("subject_id").references(() => subjects.id),
   lessonId: integer("lesson_id").references(() => lessons.id),
@@ -126,6 +127,7 @@ export const questions = pgTable("questions", {
   id: serial("id").primaryKey(),
   testId: integer("test_id").notNull().references(() => tests.id, { onDelete: 'cascade' }),
   questionText: text("question_text").notNull(),
+  questionImage: text("question_image"), // Savol uchun rasm URL yoki fayl yo'li
   questionType: testTypeEnum("question_type").notNull(),
   options: jsonb("options"), // Array of options for multiple choice
   correctAnswer: jsonb("correct_answer").notNull(), // Could be single value or array
