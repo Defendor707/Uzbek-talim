@@ -2889,18 +2889,9 @@ bot.action(/teacher_test_(\d+)/, async (ctx) => {
   }
 });
 
-// Add a catch-all handler to debug callback issues
-bot.on('callback_query', async (ctx, next) => {
-  console.log('Callback received:', ctx.callbackQuery.data);
-  return next();
-});
-
-// Handle direct answer selection for each question (like the screenshot)
+// Optimized answer selection handler
 bot.action(/test_answer_(\d+)_([ABCD])/, async (ctx) => {
-  console.log('Answer handler triggered:', ctx.match);
-  
   if (!ctx.session.testAttempt || !ctx.session.userId) {
-    console.log('Session check failed:', { testAttempt: !!ctx.session.testAttempt, userId: ctx.session.userId });
     await ctx.answerCbQuery('❌ Test sessiyasi topilmadi');
     return;
   }
@@ -2908,53 +2899,38 @@ bot.action(/test_answer_(\d+)_([ABCD])/, async (ctx) => {
   const questionId = parseInt(ctx.match[1]);
   const answer = ctx.match[2];
   
-  console.log('Processing answer:', { questionId, answer });
+  // Update answer in session
+  if (!ctx.session.testAttempt.answers) {
+    ctx.session.testAttempt.answers = [];
+  }
+  
+  // Remove existing answer for this question and add new one
+  ctx.session.testAttempt.answers = ctx.session.testAttempt.answers.filter(a => a.questionId !== questionId);
+  ctx.session.testAttempt.answers.push({ questionId, answer });
+  
+  // Save to database in background
+  storage.createStudentAnswer({
+    attemptId: ctx.session.testAttempt.attemptId!,
+    questionId: questionId,
+    answer: answer
+  }).catch(error => console.error('Database save error:', error));
+  
+  await ctx.answerCbQuery(`✅ ${answer} javobni tanladingiz`);
+  
+  // Update interface with checkmark
+  const text = generateStudentTestText(ctx);
+  const keyboard = generateStudentTestKeyboard(ctx);
   
   try {
-    // Update answer in session
-    if (!ctx.session.testAttempt.answers) {
-      ctx.session.testAttempt.answers = [];
-    }
-    
-    // Remove existing answer for this question
-    ctx.session.testAttempt.answers = ctx.session.testAttempt.answers.filter(a => a.questionId !== questionId);
-    
-    // Add new answer
-    ctx.session.testAttempt.answers.push({ questionId, answer });
-    
-    // Save answer to database
-    try {
-      await storage.createStudentAnswer({
-        attemptId: ctx.session.testAttempt.attemptId!,
-        questionId: questionId,
-        answer: answer
-      });
-    } catch (dbError) {
-      console.error('Database error:', dbError);
-      // Continue with session storage even if DB fails
-    }
-    
-    await ctx.answerCbQuery(`✅ ${answer} javobni tanladingiz`);
-    
-    // Update the interface to show the checkmark
-    try {
-      const text = generateStudentTestText(ctx);
-      const keyboard = generateStudentTestKeyboard(ctx);
-      
-      await ctx.editMessageText(text, {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: keyboard
-        }
-      });
-    } catch (error) {
-      // If message edit fails, send new message
-      await showTestQuestionsPage(ctx);
-    }
-    
+    await ctx.editMessageText(text, {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: keyboard
+      }
+    });
   } catch (error) {
-    console.error('Error saving test answer:', error);
-    await ctx.answerCbQuery('❌ Javobni saqlashda xatolik');
+    // Send new message if edit fails
+    await showTestQuestionsPage(ctx);
   }
 });
 
