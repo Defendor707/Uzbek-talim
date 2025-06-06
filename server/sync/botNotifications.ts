@@ -3,7 +3,7 @@ import { storage } from "../storage";
 export interface BotNotification {
   userId: number;
   message: string;
-  type: 'test_created' | 'lesson_updated' | 'profile_updated' | 'schedule_changed';
+  type: 'test_created' | 'test_completed' | 'lesson_updated' | 'profile_updated' | 'schedule_changed';
   data?: any;
 }
 

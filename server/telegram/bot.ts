@@ -2123,7 +2123,7 @@ async function notifyParentOfTestCompletion(studentId: number, testId: number, s
     // Send notification to bot notification service
     botNotificationService.addNotification({
       userId: studentProfile.parentId,
-      type: 'test_created',
+      type: 'test_completed',
       message: `🎯 Farzandingiz "${student.fullName}" "${test.title}" testini yakunladi.\n\n` +
                `📊 Natija: ${score}/${totalQuestions} (${percentage}%)\n` +
                `📅 Sana: ${new Date().toLocaleDateString('uz-UZ')}`
