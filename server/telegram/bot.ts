@@ -2503,7 +2503,6 @@ bot.hears('📝 Test ishlash', async (ctx) => {
       parse_mode: 'Markdown',
       ...Markup.keyboard([
         ['🔢 Maxsus raqam orqali', '🌐 Ommaviy testlar'],
-        ['📋 Mavjud testlar', '📊 Test natijalari'],
         ['🔙 Orqaga']
       ]).resize()
     }
@@ -2540,6 +2539,7 @@ bot.hears('🌐 Ommaviy testlar', async (ctx) => {
   try {
     // Get all public tests (active status)
     const tests = await storage.getTestsByGradeAndClassroom('10'); // Default grade for now
+    // Filter only active tests for public view
     const publicTests = tests.filter(test => test.status === 'active');
     
     if (!publicTests || publicTests.length === 0) {
@@ -2570,53 +2570,8 @@ bot.hears('🌐 Ommaviy testlar', async (ctx) => {
   }
 });
 
-// O'qituvchilar uchun mavjud testlar
-bot.hears('📋 Mavjud testlar', async (ctx) => {
-  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
-    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun.');
-    return;
-  }
-  
-  try {
-    const user = await storage.getUser(ctx.session.userId);
-    if (!user) {
-      await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
-      return;
-    }
-    
-    const tests = await storage.getTestsByTeacherId(user.id);
-    
-    if (!tests || tests.length === 0) {
-      await ctx.reply('ℹ️ Siz hali test yaratmagansiz.');
-      return;
-    }
-    
-    // Create inline keyboard for tests (max 10)
-    const testButtons = await Promise.all(tests.slice(0, 10).map(async test => {
-      const statusEmoji = test.status === 'active' ? '✅' : test.status === 'draft' ? '📝' : '🔚';
-      return [Markup.button.callback(
-        `${statusEmoji} ${test.title} (${test.totalQuestions} savol)`, 
-        `teacher_test_${test.id}`
-      )];
-    }));
-    
-    await ctx.reply(
-      '📋 *Sizning testlaringiz*\n\n' +
-      'Test haqida batafsil ma\'lumot olish uchun tugmani bosing:',
-      {
-        parse_mode: 'Markdown',
-        ...Markup.inlineKeyboard(testButtons)
-      }
-    );
-    
-    if (tests.length > 10) {
-      await ctx.reply(`... va yana ${tests.length - 10} ta testlar.`);
-    }
-  } catch (error) {
-    console.error('Error fetching teacher tests:', error);
-    await ctx.reply('❌ Testlar ro\'yxatini olishda xatolik yuz berdi.');
-  }
-});
+// O'qituvchilar uchun mavjud testlar (REMOVED - this handler is now disabled)
+// This button has been removed from the teacher test menu as requested
 
 bot.hears('🔍 Qidiruv', async (ctx) => {
   if (!ctx.session.userId) {
