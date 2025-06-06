@@ -2066,6 +2066,35 @@ bot.catch((err, ctx) => {
   ctx.reply('❌ Xatolik yuz berdi. Iltimos, qaytadan urinib ko\'ring.');
 });
 
+// Helper function to notify parent of test completion
+async function notifyParentOfTestCompletion(studentId: number, testId: number, score: number, totalQuestions: number, percentage: number) {
+  try {
+    // Get student profile to find parent
+    const studentProfile = await storage.getStudentProfile(studentId);
+    if (!studentProfile || !studentProfile.parentId) {
+      return; // No parent linked
+    }
+    
+    // Get student and test info
+    const student = await storage.getUser(studentId);
+    const test = await storage.getTestById(testId);
+    
+    if (!student || !test) {
+      return;
+    }
+    
+    // Send notification to bot notification service
+    botNotificationService.addNotification(studentProfile.parentId, {
+      type: 'test_completed',
+      message: `🎯 Farzandingiz "${student.fullName}" "${test.title}" testini yakunladi.\n\n` +
+               `📊 Natija: ${score}/${totalQuestions} (${percentage}%)\n` +
+               `📅 Sana: ${new Date().toLocaleDateString('uz-UZ')}`
+    });
+  } catch (error) {
+    console.error('Error notifying parent:', error);
+  }
+}
+
 // Helper functions
 function getKeyboardByRole(role: string) {
   if (role === 'teacher') {
