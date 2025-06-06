@@ -2946,6 +2946,9 @@ bot.action(/test_submit_(\d+)/, async (ctx) => {
     
     const percentage = Math.round((score / (ctx.session.testAttempt.totalQuestions || 1)) * 100);
     
+    // Send notification to parent if exists
+    await notifyParentOfTestCompletion(ctx.session.userId, ctx.session.testAttempt.testId!, score, ctx.session.testAttempt.totalQuestions || 0, percentage);
+    
     await ctx.reply(
       `🎉 *Test yakunlandi!*\n\n` +
       `✅ To'g'ri javoblar: ${score}/${ctx.session.testAttempt.totalQuestions}\n` +
