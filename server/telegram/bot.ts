@@ -1822,7 +1822,7 @@ function generateQuestionButtonsKeyboard(ctx: BotContext): any[][] {
     ['A', 'B', 'C', 'D'].forEach(option => {
       const isSelected = answers[i] === option;
       const buttonText = isSelected ? `${option} ✅` : option;
-      answerRow.push(Markup.button.callback(buttonText, `answer_${i}_${option}`));
+      answerRow.push(Markup.button.callback(buttonText, `creation_answer_${i}_${option}`));
     });
     keyboard.push(answerRow);
   }
@@ -1869,8 +1869,8 @@ async function showQuestionButtons(ctx: BotContext) {
   });
 }
 
-// Inline tugma bosilganda javobni saqlash
-bot.action(/answer_(\d+)_([ABCD])/, async (ctx) => {
+// Inline tugma bosilganda javobni saqlash (test creation)
+bot.action(/creation_answer_(\d+)_([ABCD])/, async (ctx) => {
   if (!ctx.session.testCreation) return;
   
   const questionIndex = parseInt(ctx.match[1]);
@@ -1884,7 +1884,7 @@ bot.action(/answer_(\d+)_([ABCD])/, async (ctx) => {
   
   await ctx.answerCbQuery(`${questionIndex + 1}-savol: ${answer} tanlandi`);
   
-  // Update the same message with new state - fix the button updating issue
+  // Update the same message with new state
   try {
     const text = generateQuestionButtonsText(ctx);
     const keyboard = generateQuestionButtonsKeyboard(ctx);
@@ -1896,7 +1896,6 @@ bot.action(/answer_(\d+)_([ABCD])/, async (ctx) => {
       }
     });
   } catch (error) {
-    // If message edit fails, send new message
     await showQuestionButtons(ctx);
   }
 });
