@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -19,8 +19,20 @@ import TestsPage from "@/pages/teacher/Tests";
 import StudentsPage from "@/pages/teacher/Students";
 import StudentTestsPage from "@/pages/student/Tests";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import useAuth from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 function Router() {
+  const { user, token, isLoadingUser } = useAuth();
+  const [location, setLocation] = useLocation();
+
+  // Auto-redirect authenticated users from login/register pages
+  useEffect(() => {
+    if (token && user && (location === '/' || location === '/login' || location === '/register')) {
+      setLocation(`/dashboard/${user.role}`);
+    }
+  }, [token, user, location, setLocation]);
+
   return (
     <Switch>
       {/* Public routes */}

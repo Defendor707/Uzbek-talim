@@ -30,15 +30,22 @@ export type RegisterData = {
 };
 
 const useAuth = () => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(() => {
+    // Check if running in browser before accessing localStorage
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('token');
+    }
+    return null;
+  });
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   // Query to fetch current user data
-  const { data: user, isLoading: isLoadingUser, error: userError } = useQuery<User>({
+  const { data: user, isLoading: isLoadingUser, error: userError, refetch: refetchUser } = useQuery<User>({
     queryKey: ['/api/auth/me'],
     enabled: !!token,
     retry: false,
+    staleTime: 0, // Always refetch to ensure fresh data
   });
 
   // Login mutation
@@ -48,22 +55,17 @@ const useAuth = () => {
       return await response.json();
     },
     onSuccess: (data) => {
-      localStorage.setItem('token', data.token);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', data.token);
+      }
       setToken(data.token);
       
-      // Wait for queries to refetch and then redirect
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] }).then(() => {
-        // Redirect based on user role after cache update
-        if (data.user.role === 'teacher') {
-          setLocation('/dashboard/teacher');
-        } else if (data.user.role === 'student') {
-          setLocation('/dashboard/student');
-        } else if (data.user.role === 'parent') {
-          setLocation('/dashboard/parent');
-        } else if (data.user.role === 'center') {
-          setLocation('/dashboard/center');
-        }
-      });
+      // Force refresh of user data with new token
+      queryClient.setQueryData(['/api/auth/me'], data.user);
+      
+      // Redirect based on user role
+      const redirectPath = `/dashboard/${data.user.role}`;
+      setLocation(redirectPath);
       
       toast({
         title: 'Muvaffaqiyatli',
@@ -72,6 +74,12 @@ const useAuth = () => {
       });
     },
     onError: (error: any) => {
+      // Clear invalid token on error
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
+      setToken(null);
+      
       toast({
         title: 'Xatolik',
         description: error.message || 'Login xatosi yuz berdi',
@@ -87,22 +95,17 @@ const useAuth = () => {
       return await response.json();
     },
     onSuccess: (data) => {
-      localStorage.setItem('token', data.token);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', data.token);
+      }
       setToken(data.token);
       
-      // Wait for queries to refetch and then redirect
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] }).then(() => {
-        // Redirect based on user role after cache update
-        if (data.user.role === 'teacher') {
-          setLocation('/dashboard/teacher');
-        } else if (data.user.role === 'student') {
-          setLocation('/dashboard/student');
-        } else if (data.user.role === 'parent') {
-          setLocation('/dashboard/parent');
-        } else if (data.user.role === 'center') {
-          setLocation('/dashboard/center');
-        }
-      });
+      // Force refresh of user data with new token
+      queryClient.setQueryData(['/api/auth/me'], data.user);
+      
+      // Redirect based on user role
+      const redirectPath = `/dashboard/${data.user.role}`;
+      setLocation(redirectPath);
       
       toast({
         title: 'Muvaffaqiyatli',
@@ -111,6 +114,12 @@ const useAuth = () => {
       });
     },
     onError: (error: any) => {
+      // Clear invalid token on error
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
+      setToken(null);
+      
       toast({
         title: 'Xatolik',
         description: error.message || "Ro'yxatdan o'tishda xatolik yuz berdi",
@@ -121,7 +130,9 @@ const useAuth = () => {
 
   // Logout function
   const logout = () => {
-    localStorage.removeItem('token');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+    }
     setToken(null);
     queryClient.clear();
     setLocation('/login');
@@ -133,12 +144,26 @@ const useAuth = () => {
     });
   };
 
-  // Update axios headers when token changes
+  // Handle token validation errors
   useEffect(() => {
-    if (token) {
-      // Update any global headers here if needed
+    if (userError && token) {
+      // If user query fails with token present, likely invalid token
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
+      setToken(null);
+      queryClient.clear();
+      setLocation('/login');
     }
-  }, [token]);
+  }, [userError, token, setLocation]);
+
+  // Auto-login effect for persistent sessions
+  useEffect(() => {
+    if (token && !user && !isLoadingUser && !userError) {
+      // If we have a token but no user data, try to refetch
+      refetchUser();
+    }
+  }, [token, user, isLoadingUser, userError, refetchUser]);
 
   return {
     user,

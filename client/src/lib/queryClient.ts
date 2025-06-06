@@ -3,7 +3,23 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    
+    // Handle authentication errors
+    if (res.status === 401) {
+      // Clear invalid token
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
+      throw new Error('Avtorizatsiya talab qilinadi');
+    }
+    
+    // Try to parse error message from response
+    try {
+      const errorData = JSON.parse(text);
+      throw new Error(errorData.message || `${res.status}: ${res.statusText}`);
+    } catch {
+      throw new Error(text || `${res.status}: ${res.statusText}`);
+    }
   }
 }
 
