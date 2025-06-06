@@ -2132,25 +2132,14 @@ function generateStudentTestText(ctx: BotContext): string {
   const totalQuestions = ctx.session.testAttempt.totalQuestions || 0;
   const answers = ctx.session.testAttempt.answers || [];
   
-  const questionsPerPage = 10;
+  const questionsPerPage = 5;
   const startIndex = currentPage * questionsPerPage;
   const endIndex = Math.min(startIndex + questionsPerPage, totalQuestions);
   const totalPages = Math.ceil(totalQuestions / questionsPerPage);
   const answeredCount = answers.length;
   
-  let text = `📝 *Test ishlash* (Bet ${currentPage + 1}/${totalPages})\n\n`;
-  text += `📊 Javob berilgan: ${answeredCount}/${totalQuestions}\n\n`;
-  text += `Har bir savol uchun to'g'ri javobni belgilang:\n\n`;
-  
-  // Show questions with their answers status - similar to test creation
-  for (let i = startIndex; i < endIndex; i++) {
-    const questionNum = i + 1;
-    const userAnswer = answers.find(a => a.questionId === ctx.session.testAttempt!.questions![i].id)?.answer;
-    const answerText = userAnswer ? ` ✅ (${userAnswer})` : ' ❌';
-    text += `${questionNum}. ${answerText}\n`;
-  }
-  
-  return text;
+  return `📊 *To'plam ${currentPage + 1}/${totalPages} (${startIndex + 1}-${endIndex})*\n\n` +
+    `Javob berilgan: ${answeredCount}/${totalQuestions}`;
 }
 
 function generateStudentTestKeyboard(ctx: BotContext): any[][] {
@@ -2161,38 +2150,35 @@ function generateStudentTestKeyboard(ctx: BotContext): any[][] {
   const questions = ctx.session.testAttempt.questions;
   const answers = ctx.session.testAttempt.answers || [];
   
-  const questionsPerPage = 10;
+  const questionsPerPage = 5;
   const startIndex = currentPage * questionsPerPage;
   const endIndex = Math.min(startIndex + questionsPerPage, totalQuestions);
   const totalPages = Math.ceil(totalQuestions / questionsPerPage);
   
   const keyboard: any[][] = [];
   
-  // Create grid layout exactly like test creation - 5 questions per row
-  const questionsInBatch = endIndex - startIndex;
-  for (let i = 0; i < questionsInBatch; i += 5) {
-    const row: any[] = [];
-    for (let j = 0; j < 5 && (i + j) < questionsInBatch; j++) {
-      const questionIndex = startIndex + i + j;
-      const questionNum = questionIndex + 1;
-      const question = questions[questionIndex];
-      const userAnswer = answers.find(a => a.questionId === question.id)?.answer;
-      
-      const questionText = userAnswer ? `${questionNum}${userAnswer}` : `${questionNum}`;
-      row.push(Markup.button.callback(questionText, `test_question_${question.id}`));
-    }
-    keyboard.push(row);
+  // Show each question with its A, B, C, D buttons below - exactly like the screenshot
+  for (let i = startIndex; i < endIndex; i++) {
+    const questionNum = i + 1;
+    const question = questions[i];
+    const userAnswer = answers.find(a => a.questionId === question.id)?.answer;
+    
+    // Question header
+    keyboard.push([
+      Markup.button.callback(`${questionNum}-savol`, `question_info_${question.id}`)
+    ]);
+    
+    // A, B, C, D buttons for this specific question
+    const answerRow: any[] = [];
+    ['A', 'B', 'C', 'D'].forEach(option => {
+      const isSelected = userAnswer === option;
+      const buttonText = isSelected ? `${option} ✅` : option;
+      answerRow.push(Markup.button.callback(buttonText, `test_answer_${question.id}_${option}`));
+    });
+    keyboard.push(answerRow);
   }
   
-  // Add A, B, C, D answer buttons - exactly like test creation
-  keyboard.push([
-    Markup.button.callback('A', 'test_set_answer_A'),
-    Markup.button.callback('B', 'test_set_answer_B'),
-    Markup.button.callback('C', 'test_set_answer_C'),
-    Markup.button.callback('D', 'test_set_answer_D')
-  ]);
-  
-  // Add navigation buttons like test creation
+  // Add navigation buttons
   const navButtons: any[] = [];
   if (currentPage > 0) {
     navButtons.push(Markup.button.callback('⬅️ Oldingi', `test_prev_page_${currentPage - 1}`));
@@ -2207,7 +2193,7 @@ function generateStudentTestKeyboard(ctx: BotContext): any[][] {
   // Add submit button if all questions are answered
   const answeredCount = answers.length;
   if (answeredCount >= totalQuestions) {
-    keyboard.push([Markup.button.callback('✅ Testni yakunlash', `test_submit_${ctx.session.testAttempt.attemptId}`)]);
+    keyboard.push([Markup.button.callback('✅ Testni saqlash', `test_submit_${ctx.session.testAttempt.attemptId}`)]);
   }
   
   return keyboard;
@@ -2887,35 +2873,15 @@ bot.action(/teacher_test_(\d+)/, async (ctx) => {
   }
 });
 
-// Handle question selection in test-taking (like test creation)
-bot.action(/test_question_(\d+)/, async (ctx) => {
+// Handle direct answer selection for each question (like the screenshot)
+bot.action(/test_answer_(\d+)_([ABCD])/, async (ctx) => {
   if (!ctx.session.testAttempt || !ctx.session.userId) {
     await ctx.answerCbQuery('❌ Test sessiyasi topilmadi');
     return;
   }
   
   const questionId = parseInt(ctx.match[1]);
-  
-  // Store selected question for answer setting
-  ctx.session.testAttempt.selectedQuestionId = questionId;
-  
-  await ctx.answerCbQuery('Savol tanlandi. Javobni belgilang (A, B, C, D)');
-});
-
-// Handle answer setting in test-taking (exactly like test creation)
-bot.action(/test_set_answer_([ABCD])/, async (ctx) => {
-  if (!ctx.session.testAttempt || !ctx.session.userId) {
-    await ctx.answerCbQuery('❌ Test sessiyasi topilmadi');
-    return;
-  }
-  
-  if (!ctx.session.testAttempt.selectedQuestionId) {
-    await ctx.answerCbQuery('❌ Avval savolni tanlang');
-    return;
-  }
-  
-  const questionId = ctx.session.testAttempt.selectedQuestionId;
-  const answer = ctx.match[1];
+  const answer = ctx.match[2];
   
   try {
     // Update answer in session
@@ -2938,7 +2904,7 @@ bot.action(/test_set_answer_([ABCD])/, async (ctx) => {
     
     await ctx.answerCbQuery(`✅ ${answer} javobni tanladingiz`);
     
-    // Update the interface exactly like test creation
+    // Update the interface to show the checkmark
     try {
       const text = generateStudentTestText(ctx);
       const keyboard = generateStudentTestKeyboard(ctx);
