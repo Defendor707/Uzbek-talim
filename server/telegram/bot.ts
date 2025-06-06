@@ -2132,14 +2132,21 @@ function generateStudentTestText(ctx: BotContext): string {
   const totalQuestions = ctx.session.testAttempt.totalQuestions || 0;
   const answers = ctx.session.testAttempt.answers || [];
   
-  const questionsPerPage = 5;
+  const questionsPerPage = 10;
   const startIndex = currentPage * questionsPerPage;
   const endIndex = Math.min(startIndex + questionsPerPage, totalQuestions);
   const totalPages = Math.ceil(totalQuestions / questionsPerPage);
   const answeredCount = answers.length;
   
-  return `📊 *To'plam ${currentPage + 1}/${totalPages} (${startIndex + 1}-${endIndex})*\n\n` +
-    `Javob berilgan: ${answeredCount}/${totalQuestions}`;
+  // Show question range like: 1-10, 11-20, 21-30, 31-34
+  let rangeText = '';
+  if (totalPages > 1) {
+    rangeText = ` (${startIndex + 1}-${endIndex})`;
+  }
+  
+  return `📊 *To'plam ${currentPage + 1}/${totalPages}${rangeText}*\n\n` +
+    `Javob berilgan: ${answeredCount}/${totalQuestions}\n\n` +
+    `Har bir savol uchun A, B, C, D tugmalaridan birini tanlang:`;
 }
 
 function generateStudentTestKeyboard(ctx: BotContext): any[][] {
@@ -2150,20 +2157,20 @@ function generateStudentTestKeyboard(ctx: BotContext): any[][] {
   const questions = ctx.session.testAttempt.questions;
   const answers = ctx.session.testAttempt.answers || [];
   
-  const questionsPerPage = 5;
+  const questionsPerPage = 10; // 10 questions per page as requested
   const startIndex = currentPage * questionsPerPage;
   const endIndex = Math.min(startIndex + questionsPerPage, totalQuestions);
   const totalPages = Math.ceil(totalQuestions / questionsPerPage);
   
   const keyboard: any[][] = [];
   
-  // Show each question with its A, B, C, D buttons below - exactly like the screenshot
+  // Show each question with its A, B, C, D buttons below
   for (let i = startIndex; i < endIndex; i++) {
     const questionNum = i + 1;
     const question = questions[i];
     const userAnswer = answers.find(a => a.questionId === question.id)?.answer;
     
-    // Question header
+    // Question header (non-clickable, just for display)
     keyboard.push([
       Markup.button.callback(`${questionNum}-savol`, `question_info_${question.id}`)
     ]);
@@ -2178,22 +2185,24 @@ function generateStudentTestKeyboard(ctx: BotContext): any[][] {
     keyboard.push(answerRow);
   }
   
-  // Add navigation buttons
+  // Add navigation buttons only if needed
   const navButtons: any[] = [];
-  if (currentPage > 0) {
-    navButtons.push(Markup.button.callback('⬅️ Oldingi', `test_prev_page_${currentPage - 1}`));
-  }
-  if (currentPage < totalPages - 1) {
-    navButtons.push(Markup.button.callback('Keyingi ➡️', `test_next_page_${currentPage + 1}`));
-  }
-  if (navButtons.length > 0) {
-    keyboard.push(navButtons);
+  if (totalPages > 1) {
+    if (currentPage > 0) {
+      navButtons.push(Markup.button.callback('⬅️ Oldingi', `test_prev_page_${currentPage - 1}`));
+    }
+    if (currentPage < totalPages - 1) {
+      navButtons.push(Markup.button.callback('Keyingi ➡️', `test_next_page_${currentPage + 1}`));
+    }
+    if (navButtons.length > 0) {
+      keyboard.push(navButtons);
+    }
   }
   
   // Add submit button if all questions are answered
   const answeredCount = answers.length;
   if (answeredCount >= totalQuestions) {
-    keyboard.push([Markup.button.callback('✅ Testni saqlash', `test_submit_${ctx.session.testAttempt.attemptId}`)]);
+    keyboard.push([Markup.button.callback('✅ Testni yakunlash', `test_submit_${ctx.session.testAttempt.attemptId}`)]);
   }
   
   return keyboard;
