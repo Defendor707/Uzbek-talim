@@ -1436,7 +1436,7 @@ bot.hears('ℹ️ Ma\'lumot', async (ctx) => {
 });
 
 // Statistics command
-bot.hears('📊 Statistika', async (ctx) => {
+bot.hears('📊 Hisobotlar', async (ctx) => {
   try {
     const teacherCount = (await storage.getUsersByRole('teacher')).length;
     const studentCount = (await storage.getUsersByRole('student')).length;
@@ -2071,7 +2071,7 @@ function getKeyboardByRole(role: string) {
   if (role === 'teacher') {
     return [
       ['👤 Profil', '📚 Darslik'],
-      ['📝 Testlar', '📊 Statistika'],
+      ['📝 Testlar', '📊 Hisobotlar'],
       ['⚡ Boshqalar']
     ];
   } else if (role === 'student') {
