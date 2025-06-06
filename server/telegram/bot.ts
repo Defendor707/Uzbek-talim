@@ -2137,12 +2137,19 @@ function generateStudentTestText(ctx: BotContext): string {
   const totalPages = Math.ceil(totalQuestions / questionsPerPage);
   const answeredCount = answers.length;
   
-  const pageInfo = totalPages > 1 ? ` (${currentPage + 1}/${totalPages} bet)` : '';
-  const progressInfo = `Javob berilgan: ${answeredCount}/${totalQuestions}`;
+  let text = `📝 *Test ishlash* (Bet ${currentPage + 1}/${totalPages})\n\n`;
+  text += `📊 Javob berilgan: ${answeredCount}/${totalQuestions}\n\n`;
+  text += `Har bir savol uchun to'g'ri javobni belgilang:\n\n`;
   
-  return `📝 *Test savollari ${startIndex + 1}-${endIndex}*${pageInfo}\n\n` +
-    `${progressInfo}\n\n` +
-    'Har bir savol uchun A, B, C, D tugmalaridan birini tanlang:';
+  // Show questions with their answers status - similar to test creation
+  for (let i = startIndex; i < endIndex; i++) {
+    const questionNum = i + 1;
+    const userAnswer = answers.find(a => a.questionId === ctx.session.testAttempt!.questions![i].id)?.answer;
+    const answerText = userAnswer ? ` ✅ (${userAnswer})` : ' ❌';
+    text += `${questionNum}. ${answerText}\n`;
+  }
+  
+  return text;
 }
 
 function generateStudentTestKeyboard(ctx: BotContext): any[][] {
@@ -2799,14 +2806,38 @@ bot.action(/start_test_(\d+)/, async (ctx) => {
       questions: questions
     };
     
-    await ctx.reply(
-      `📝 *${test.title}*\n\n` +
-      `✅ Test boshlandi!\n` +
-      `📊 Jami savollar: ${test.totalQuestions}\n` +
-      `⏰ Vaqt: Cheklanmagan\n\n` +
-      'Har bir savol uchun A, B, C, D tugmalaridan birini bosing. Javobni almashtirish uchun qaytadan tugmani bosishingiz mumkin.',
-      { parse_mode: 'Markdown' }
-    );
+    // Show test image if available, just like in test creation
+    if (test.testImage) {
+      try {
+        await ctx.replyWithPhoto(test.testImage, {
+          caption: `📝 *${test.title}*\n\n` +
+            `✅ Test boshlandi!\n` +
+            `📊 Jami savollar: ${test.totalQuestions}\n` +
+            `⏰ Vaqt: Cheklanmagan\n\n` +
+            'Har bir savol uchun A, B, C, D tugmalaridan birini bosing. Javobni almashtirish uchun qaytadan tugmani bosishingiz mumkin.',
+          parse_mode: 'Markdown'
+        });
+      } catch (error) {
+        // If image fails, show text only
+        await ctx.reply(
+          `📝 *${test.title}*\n\n` +
+          `✅ Test boshlandi!\n` +
+          `📊 Jami savollar: ${test.totalQuestions}\n` +
+          `⏰ Vaqt: Cheklanmagan\n\n` +
+          'Har bir savol uchun A, B, C, D tugmalaridan birini bosing. Javobni almashtirish uchun qaytadan tugmani bosishingiz mumkin.',
+          { parse_mode: 'Markdown' }
+        );
+      }
+    } else {
+      await ctx.reply(
+        `📝 *${test.title}*\n\n` +
+        `✅ Test boshlandi!\n` +
+        `📊 Jami savollar: ${test.totalQuestions}\n` +
+        `⏰ Vaqt: Cheklanmagan\n\n` +
+        'Har bir savol uchun A, B, C, D tugmalaridan birini bosing. Javobni almashtirish uchun qaytadan tugmani bosishingiz mumkin.',
+        { parse_mode: 'Markdown' }
+      );
+    }
     
     // Show first page of questions
     await showTestQuestionsPage(ctx);
