@@ -2784,13 +2784,20 @@ bot.action(/start_test_(\d+)/, async (ctx) => {
       return;
     }
     
+    // Load existing answers if any
+    const existingAnswers = await storage.getStudentAnswersByAttemptId(attempt.id);
+    const sessionAnswers = existingAnswers.map(answer => ({
+      questionId: answer.questionId,
+      answer: answer.answer as string
+    }));
+
     // Initialize test session
     ctx.session.testAttempt = {
       testId: test.id,
       attemptId: attempt.id,
       currentPage: 0,
       totalQuestions: test.totalQuestions,
-      answers: [],
+      answers: sessionAnswers,
       questions: questions
     };
     
@@ -2896,11 +2903,16 @@ bot.action(/test_answer_(\d+)_([ABCD])/, async (ctx) => {
     ctx.session.testAttempt.answers.push({ questionId, answer });
     
     // Save answer to database
-    await storage.createStudentAnswer({
-      attemptId: ctx.session.testAttempt.attemptId!,
-      questionId: questionId,
-      answer: answer
-    });
+    try {
+      await storage.createStudentAnswer({
+        attemptId: ctx.session.testAttempt.attemptId!,
+        questionId: questionId,
+        answer: answer
+      });
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      // Continue with session storage even if DB fails
+    }
     
     await ctx.answerCbQuery(`✅ ${answer} javobni tanladingiz`);
     

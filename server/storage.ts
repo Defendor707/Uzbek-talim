@@ -302,6 +302,16 @@ export class DatabaseStorage implements IStorage {
   
   // Student answer related methods
   async createStudentAnswer(answer: schema.InsertStudentAnswer): Promise<schema.StudentAnswer> {
+    // First, delete any existing answer for this question in this attempt
+    await db.delete(schema.studentAnswers)
+      .where(
+        and(
+          eq(schema.studentAnswers.attemptId, answer.attemptId),
+          eq(schema.studentAnswers.questionId, answer.questionId)
+        )
+      );
+    
+    // Then insert the new answer
     const [newAnswer] = await db.insert(schema.studentAnswers).values(answer).returning();
     return newAnswer;
   }
