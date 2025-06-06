@@ -2889,15 +2889,26 @@ bot.action(/teacher_test_(\d+)/, async (ctx) => {
   }
 });
 
+// Add a catch-all handler to debug callback issues
+bot.on('callback_query', async (ctx, next) => {
+  console.log('Callback received:', ctx.callbackQuery.data);
+  return next();
+});
+
 // Handle direct answer selection for each question (like the screenshot)
 bot.action(/test_answer_(\d+)_([ABCD])/, async (ctx) => {
+  console.log('Answer handler triggered:', ctx.match);
+  
   if (!ctx.session.testAttempt || !ctx.session.userId) {
+    console.log('Session check failed:', { testAttempt: !!ctx.session.testAttempt, userId: ctx.session.userId });
     await ctx.answerCbQuery('❌ Test sessiyasi topilmadi');
     return;
   }
   
   const questionId = parseInt(ctx.match[1]);
   const answer = ctx.match[2];
+  
+  console.log('Processing answer:', { questionId, answer });
   
   try {
     // Update answer in session
