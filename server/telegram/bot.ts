@@ -32,6 +32,7 @@ interface BotSessionData extends Scenes.SceneSession {
     totalQuestions?: number;
     answers?: { questionId: number, answer: string }[];
     questions?: any[];
+    selectedQuestionId?: number;
   };
   editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience' | 'addChild' | 'testCode';
   testCreation?: {
@@ -2167,30 +2168,31 @@ function generateStudentTestKeyboard(ctx: BotContext): any[][] {
   
   const keyboard: any[][] = [];
   
-  // Add batch header
-  keyboard.push([
-    Markup.button.callback(`📊 Bet ${currentPage + 1}/${totalPages} (${startIndex + 1}-${endIndex})`, 'test_page_info')
-  ]);
-  
-  for (let i = startIndex; i < endIndex; i++) {
-    const questionNum = i + 1;
-    const userAnswer = answers.find(a => a.questionId === questions[i].id)?.answer;
-    
-    // Add question number
-    const questionLabel = `${questionNum}-savol`;
-    keyboard.push([Markup.button.callback(questionLabel, `question_info_${questions[i].id}`)]);
-    
-    // Add A, B, C, D buttons for this question
+  // Create grid layout exactly like test creation - 5 questions per row
+  const questionsInBatch = endIndex - startIndex;
+  for (let i = 0; i < questionsInBatch; i += 5) {
     const row: any[] = [];
-    ['A', 'B', 'C', 'D'].forEach(option => {
-      const isSelected = userAnswer === option;
-      const buttonText = isSelected ? `${option} ✅` : option;
-      row.push(Markup.button.callback(buttonText, `test_answer_${questions[i].id}_${option}`));
-    });
+    for (let j = 0; j < 5 && (i + j) < questionsInBatch; j++) {
+      const questionIndex = startIndex + i + j;
+      const questionNum = questionIndex + 1;
+      const question = questions[questionIndex];
+      const userAnswer = answers.find(a => a.questionId === question.id)?.answer;
+      
+      const questionText = userAnswer ? `${questionNum}${userAnswer}` : `${questionNum}`;
+      row.push(Markup.button.callback(questionText, `test_question_${question.id}`));
+    }
     keyboard.push(row);
   }
   
-  // Add navigation buttons
+  // Add A, B, C, D answer buttons - exactly like test creation
+  keyboard.push([
+    Markup.button.callback('A', 'test_set_answer_A'),
+    Markup.button.callback('B', 'test_set_answer_B'),
+    Markup.button.callback('C', 'test_set_answer_C'),
+    Markup.button.callback('D', 'test_set_answer_D')
+  ]);
+  
+  // Add navigation buttons like test creation
   const navButtons: any[] = [];
   if (currentPage > 0) {
     navButtons.push(Markup.button.callback('⬅️ Oldingi', `test_prev_page_${currentPage - 1}`));
@@ -2885,15 +2887,35 @@ bot.action(/teacher_test_(\d+)/, async (ctx) => {
   }
 });
 
-// Handle test answer selection
-bot.action(/test_answer_(\d+)_([ABCD])/, async (ctx) => {
+// Handle question selection in test-taking (like test creation)
+bot.action(/test_question_(\d+)/, async (ctx) => {
   if (!ctx.session.testAttempt || !ctx.session.userId) {
     await ctx.answerCbQuery('❌ Test sessiyasi topilmadi');
     return;
   }
   
   const questionId = parseInt(ctx.match[1]);
-  const answer = ctx.match[2];
+  
+  // Store selected question for answer setting
+  ctx.session.testAttempt.selectedQuestionId = questionId;
+  
+  await ctx.answerCbQuery('Savol tanlandi. Javobni belgilang (A, B, C, D)');
+});
+
+// Handle answer setting in test-taking (exactly like test creation)
+bot.action(/test_set_answer_([ABCD])/, async (ctx) => {
+  if (!ctx.session.testAttempt || !ctx.session.userId) {
+    await ctx.answerCbQuery('❌ Test sessiyasi topilmadi');
+    return;
+  }
+  
+  if (!ctx.session.testAttempt.selectedQuestionId) {
+    await ctx.answerCbQuery('❌ Avval savolni tanlang');
+    return;
+  }
+  
+  const questionId = ctx.session.testAttempt.selectedQuestionId;
+  const answer = ctx.match[1];
   
   try {
     // Update answer in session
@@ -2916,7 +2938,7 @@ bot.action(/test_answer_(\d+)_([ABCD])/, async (ctx) => {
     
     await ctx.answerCbQuery(`✅ ${answer} javobni tanladingiz`);
     
-    // Update the same message with new state - fix the button updating issue
+    // Update the interface exactly like test creation
     try {
       const text = generateStudentTestText(ctx);
       const keyboard = generateStudentTestKeyboard(ctx);
