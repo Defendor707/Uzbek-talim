@@ -239,11 +239,21 @@ export function TestTaking() {
               </div>
             )}
             
+            {test.testImage && (
+              <div className="text-center mb-4">
+                <img
+                  src={`/${test.testImage}`}
+                  alt="Test rasmi"
+                  className="max-w-full h-auto max-h-64 mx-auto rounded-lg"
+                />
+              </div>
+            )}
+            
             {test.description && (
               <p className="text-gray-600 text-center">{test.description}</p>
             )}
             
-            <div className="grid grid-cols-2 gap-4 text-center">
+            <div className="grid grid-cols-2 gap-4 text-center"></div>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">{test.totalQuestions}</div>
                 <div className="text-sm text-gray-600">Savollar soni</div>
