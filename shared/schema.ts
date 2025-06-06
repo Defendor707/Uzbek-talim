@@ -27,7 +27,7 @@ export const users = pgTable("users", {
   fullName: text("full_name").notNull(),
   profileImage: text("profile_image"),
   phone: text("phone"),
-  bio: text("bio"),
+  telegramId: text("telegram_id").unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -12,6 +12,7 @@ interface BotSessionData extends Scenes.SceneSession {
   userId?: number;
   role?: string;
   token?: string;
+  chatId?: number;</old_str>
   loginStep?: 'username' | 'password';
   registrationStep?: 'role' | 'fullName' | 'email' | 'username' | 'password' | 'confirmPassword';
   registrationData?: {
@@ -64,14 +65,36 @@ if (!process.env.TELEGRAM_BOT_TOKEN) {
 // Initialize the bot
 const bot = new Telegraf<BotContext>(process.env.TELEGRAM_BOT_TOKEN);
 
-// Use session middleware
-bot.use(session());
+// Use session middleware with persistent storage
+bot.use(session({
+  defaultSession: () => ({})
+}));
 
-// Initialize session data
-bot.use((ctx, next) => {
+// Initialize session data and load persistent user data
+bot.use(async (ctx, next) => {
   if (!ctx.session) {
     ctx.session = {};
   }
+  
+  // Store chat ID for session tracking
+  if (ctx.chat?.id) {
+    ctx.session.chatId = ctx.chat.id;
+    
+    // Try to restore user session from database if not logged in
+    if (!ctx.session.userId && ctx.from?.id) {
+      try {
+        const user = await storage.getUserByTelegramId(ctx.from.id.toString());
+        if (user) {
+          ctx.session.userId = user.id;
+          ctx.session.role = user.role;
+          ctx.session.token = generateToken(user.id, user.role);
+        }
+      } catch (error) {
+        // User not found or error, continue without session
+      }
+    }
+  }
+  
   return next();
 });
 
@@ -123,6 +146,13 @@ bot.on('text', async (ctx, next) => {
         ctx.session.token = token;
         ctx.session.loginStep = undefined;
         ctx.session.tempLoginData = undefined;
+        
+        // Save Telegram ID to user for persistent session
+        if (ctx.from?.id) {
+          await storage.updateUser(user.id, { 
+            telegramId: ctx.from.id.toString() 
+          }).catch(err => console.error('Error saving telegram ID:', err));
+        }
         
         await ctx.reply(
           `✅ Xush kelibsiz, ${user.fullName}!\n\n` +
@@ -222,6 +252,13 @@ bot.on('text', async (ctx, next) => {
         ctx.session.token = token;
         ctx.session.registrationStep = undefined;
         ctx.session.registrationData = undefined;
+        
+        // Save Telegram ID to user for persistent session
+        if (ctx.from?.id) {
+          await storage.updateUser(newUser.id, { 
+            telegramId: ctx.from.id.toString() 
+          }).catch(err => console.error('Error saving telegram ID:', err));
+        }
         
         await ctx.reply(
           `🎉 Tabriklaymiz! Siz muvaffaqiyatli ro'yxatdan o'tdingiz.\n\n` +
