@@ -628,7 +628,7 @@ bot.command('lessons', async (ctx) => {
   }
   
   try {
-    let lessons;
+    let lessons: any[] = [];
     const user = await storage.getUser(ctx.session.userId);
     
     if (!user) {
@@ -693,7 +693,7 @@ bot.command('tests', async (ctx) => {
   }
   
   try {
-    let tests;
+    let tests: any[] = [];
     const user = await storage.getUser(ctx.session.userId);
     
     if (!user) {
@@ -707,13 +707,13 @@ bot.command('tests', async (ctx) => {
       if (!teacherProfile) {
         teacherProfile = await storage.createTeacherProfile({
           userId: user.id,
-          phoneNumber: null,
-          specialty: null,
+          phoneNumber: undefined,
+          specialty: undefined,
           subjects: [],
-          bio: null,
-          experience: null,
+          bio: undefined,
+          experience: undefined,
           certificates: [],
-          centerId: null
+          centerId: undefined
         });
       }
       tests = await storage.getTestsByTeacherId(user.id);
@@ -2121,8 +2121,9 @@ async function notifyParentOfTestCompletion(studentId: number, testId: number, s
     }
     
     // Send notification to bot notification service
-    botNotificationService.addNotification(studentProfile.parentId, {
-      type: 'test_completed',
+    botNotificationService.addNotification({
+      userId: studentProfile.parentId,
+      type: 'test_created',
       message: `🎯 Farzandingiz "${student.fullName}" "${test.title}" testini yakunladi.\n\n` +
                `📊 Natija: ${score}/${totalQuestions} (${percentage}%)\n` +
                `📅 Sana: ${new Date().toLocaleDateString('uz-UZ')}`
