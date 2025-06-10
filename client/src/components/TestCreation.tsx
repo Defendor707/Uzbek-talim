@@ -16,7 +16,7 @@ import { Upload, X, Plus, Trash2 } from "lucide-react";
 const testCreationSchema = z.object({
   title: z.string().min(1, "Test nomi kiritilishi kerak"),
   description: z.string().optional(),
-  testImage: z.string().optional(),
+  testImages: z.array(z.string()).max(5, "Maksimal 5 ta rasm yuklash mumkin").optional(),
   grade: z.string().min(1, "Sinf tanlanishi kerak"),
   classroom: z.string().optional(),
   type: z.enum(["simple", "open", "dtm", "certificate", "disciplinary"]),
@@ -36,9 +36,11 @@ interface Question {
 export function TestCreation() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [testImageFile, setTestImageFile] = useState<File | null>(null);
+  const [testImageFiles, setTestImageFiles] = useState<File[]>([]);
+  const [testImagePaths, setTestImagePaths] = useState<string[]>([]);
   const [questionImageFiles, setQuestionImageFiles] = useState<{[key: number]: File}>({});
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showImageConfirmation, setShowImageConfirmation] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -47,6 +49,7 @@ export function TestCreation() {
     defaultValues: {
       title: "",
       description: "",
+      testImages: [],
       grade: "",
       classroom: "",
       type: "simple",
@@ -58,10 +61,7 @@ export function TestCreation() {
 
   const createTestMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("/api/tests", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("POST", "/api/tests", data);
     },
     onSuccess: () => {
       toast({
@@ -121,18 +121,35 @@ export function TestCreation() {
     return result.imagePath;
   };
 
-  const handleTestImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleTestImagesUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
 
+    // Check if adding these files would exceed the limit
+    if (testImageFiles.length + files.length > 5) {
+      toast({
+        title: "Xatolik",
+        description: "Maksimal 5 ta rasm yuklash mumkin",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingImage(true);
     try {
-      const imagePath = await uploadTestImage(file);
-      form.setValue('testImage', imagePath);
-      setTestImageFile(file);
+      const uploadPromises = files.map(file => uploadTestImage(file));
+      const imagePaths = await Promise.all(uploadPromises);
+      
+      const newTestImageFiles = [...testImageFiles, ...files];
+      const newTestImagePaths = [...testImagePaths, ...imagePaths];
+      
+      setTestImageFiles(newTestImageFiles);
+      setTestImagePaths(newTestImagePaths);
+      form.setValue('testImages', newTestImagePaths);
       
       toast({
-        title: "Rasm yuklandi",
-        description: "Test rasmi muvaffaqiyatli yuklandi",
+        title: "Rasmlar yuklandi",
+        description: `${files.length} ta rasm muvaffaqiyatli yuklandi`,
       });
     } catch (error: any) {
       toast({
@@ -140,7 +157,26 @@ export function TestCreation() {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setUploadingImage(false);
     }
+  };
+
+  const removeTestImage = (index: number) => {
+    const newFiles = testImageFiles.filter((_, i) => i !== index);
+    const newPaths = testImagePaths.filter((_, i) => i !== index);
+    
+    setTestImageFiles(newFiles);
+    setTestImagePaths(newPaths);
+    form.setValue('testImages', newPaths);
+  };
+
+  const confirmImages = () => {
+    setShowImageConfirmation(false);
+    toast({
+      title: "Tasdiqlandi",
+      description: "Test rasmlari tasdiqlandi",
+    });
   };
 
   const handleQuestionImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, questionIndex: number) => {
@@ -302,39 +338,72 @@ export function TestCreation() {
                 )}
               />
 
-              {/* Test rasmi yuklash */}
+              {/* Test rasmlari yuklash */}
               <div>
-                <FormLabel>Test rasmi</FormLabel>
-                <div className="mt-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleTestImageUpload}
-                    className="hidden"
-                    id="test-image-upload"
-                  />
-                  <label
-                    htmlFor="test-image-upload"
-                    className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400"
-                  >
-                    {testImageFile ? (
-                      <div className="text-center">
-                        <img
-                          src={URL.createObjectURL(testImageFile)}
-                          alt="Test rasmi"
-                          className="max-h-24 mx-auto mb-2"
-                        />
-                        <p className="text-sm text-gray-500">{testImageFile.name}</p>
-                      </div>
-                    ) : (
-                      <div className="text-center">
-                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                        <p className="mt-2 text-sm text-gray-500">
-                          {uploadingImage ? "Yuklanmoqda..." : "Rasm yuklash uchun bosing"}
-                        </p>
-                      </div>
-                    )}
-                  </label>
+                <FormLabel>Test rasmlari (maksimal 5 ta)</FormLabel>
+                <div className="mt-2 space-y-4">
+                  {/* Yuklangan rasmlar ko'rsatish */}
+                  {testImageFiles.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {testImageFiles.map((file, index) => (
+                        <div key={index} className="relative">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={`Test rasmi ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-lg border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeTestImage(index)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                          <p className="text-xs text-gray-500 mt-1 truncate">{file.name}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Rasm yuklash interfeysi */}
+                  {testImageFiles.length < 5 && (
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleTestImagesUpload}
+                        className="hidden"
+                        id="test-images-upload"
+                      />
+                      <label
+                        htmlFor="test-images-upload"
+                        className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400"
+                      >
+                        <div className="text-center">
+                          <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                          <p className="mt-2 text-sm text-gray-500">
+                            {uploadingImage ? "Yuklanmoqda..." : 
+                             `Rasmlar yuklash uchun bosing (${testImageFiles.length}/5)`}
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  )}
+                  
+                  {/* Tasdiqlash tugmasi */}
+                  {testImageFiles.length > 0 && (
+                    <div className="flex justify-center">
+                      <Button
+                        type="button"
+                        onClick={confirmImages}
+                        variant="outline"
+                        className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                      >
+                        Rasmlarni tasdiqlash ({testImageFiles.length} ta)
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 
