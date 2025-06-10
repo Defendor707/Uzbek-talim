@@ -1182,17 +1182,31 @@ bot.on('photo', async (ctx, next) => {
     }
     ctx.session.testCreation.uploadedImages.push(photo.file_id);
     
-    ctx.session.testCreation.step = 'questionCount';
-    await ctx.reply(
-      '✅ *Test rasmi saqlandi*\n\n' +
-      '📊 *Savollar soni*\n\n' +
-      'Test nechta savoldan iborat bo\'lsin?\n' +
-      '(5 dan 90 tagacha raqam kiriting)',
-      {
-        parse_mode: 'Markdown',
-        ...Markup.keyboard([['🔙 Orqaga']]).resize()
-      }
-    );
+    const imageCount = ctx.session.testCreation.uploadedImages.length;
+    
+    if (imageCount < 5) {
+      await ctx.reply(
+        `✅ *${imageCount}-rasm saqlandi*\n\n` +
+        '📸 Yana rasm yuklashni xohlaysizmi?\n' +
+        '(Maksimal 5 ta rasm yuklash mumkin)',
+        {
+          parse_mode: 'Markdown',
+          ...Markup.keyboard([['➕ Yana rasm yuklash', '✅ Yetarli'], ['🔙 Orqaga']]).resize()
+        }
+      );
+    } else {
+      ctx.session.testCreation.step = 'questionCount';
+      await ctx.reply(
+        '✅ *Maksimal rasm soni yuklandi (5 ta)*\n\n' +
+        '📊 *Savollar soni*\n\n' +
+        'Test nechta savoldan iborat bo\'lsin?\n' +
+        '(5 dan 90 tagacha raqam kiriting)',
+        {
+          parse_mode: 'Markdown',
+          ...Markup.keyboard([['🔙 Orqaga']]).resize()
+        }
+      );
+    }
     return;
   }
   
@@ -1795,6 +1809,40 @@ bot.hears(['🌐 Ommaviy test', '🔢 Maxsus raqamli test'], async (ctx) => {
   );
 });
 
+// Rasm yuklash tugmalarini ishlovchi
+bot.hears(['📸 Ha, rasm yuklash', '⏭️ Yo\'q, o\'tkazib yuborish', '➕ Yana rasm yuklash', '✅ Yetarli'], async (ctx) => {
+  if (!ctx.session.testCreation || ctx.session.testCreation.step !== 'imageUpload') {
+    return;
+  }
+
+  const messageText = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+  
+  if (messageText === '📸 Ha, rasm yuklash' || messageText === '➕ Yana rasm yuklash') {
+    await ctx.reply(
+      '📸 *Rasm yuklash*\n\n' +
+      'Test uchun rasm(lar)ni yuboring:\n\n' +
+      '• JPG, PNG formatlarida\n' +
+      '• Maksimal 5 ta rasm yuklash mumkin\n' +
+      '• Har bir rasm 20MB dan kichik bo\'lishi kerak',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard([['✅ Yetarli', '🔙 Orqaga']]).resize()
+      }
+    );
+  } else if (messageText === '⏭️ Yo\'q, o\'tkazib yuborish' || messageText === '✅ Yetarli') {
+    ctx.session.testCreation.step = 'questionCount';
+    await ctx.reply(
+      '📊 *Savollar soni*\n\n' +
+      'Test nechta savoldan iborat bo\'lsin?\n' +
+      '(5 dan 90 tagacha raqam kiriting)',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard([['🔙 Orqaga']]).resize()
+      }
+    );
+  }
+});
+
 // Javob kiritish usulini tanlash
 bot.hears(['1️⃣ Bitta qatorda', '2️⃣ Har bir savolni alohida', '3️⃣ Tugmalar orqali'], async (ctx) => {
   if (!ctx.session.testCreation || ctx.session.testCreation.step !== 'inputMethod') {
@@ -2062,6 +2110,7 @@ async function saveTest(ctx: BotContext) {
     const testData = {
       title: testTitle,
       description: testDescription,
+      testImages: ctx.session.testCreation.uploadedImages || [], // Yuklangan rasmlarni qo'shish
       teacherId: user.id, // Use user.id instead of teacherProfile.id
       type: 'simple' as const,
       status: 'active' as const,
@@ -2096,6 +2145,11 @@ async function saveTest(ctx: BotContext) {
       `📊 Savollar soni: ${testData.totalQuestions}\n` +
       `⏰ Vaqt: Cheklanmagan\n` +
       `🌐 Turi: ${ctx.session.testCreation.testType === 'public' ? 'Ommaviy' : 'Maxsus raqamli'}\n`;
+    
+    // Yuklangan rasmlar haqida ma'lumot
+    if (ctx.session.testCreation.uploadedImages && ctx.session.testCreation.uploadedImages.length > 0) {
+      successMessage += `📸 Yuklangan rasmlar: ${ctx.session.testCreation.uploadedImages.length} ta\n`;
+    }
     
     if (ctx.session.testCreation.testCode) {
       successMessage += `🔢 Test kodi: *${ctx.session.testCreation.testCode}*\n\n`;
@@ -2853,17 +2907,24 @@ bot.action(/start_test_(\d+)/, async (ctx) => {
       questions: questions
     };
     
-    // Show test image if available, just like in test creation
-    if (test.testImage) {
+    // Show test images if available
+    if (test.testImages && test.testImages.length > 0) {
       try {
-        await ctx.replyWithPhoto(test.testImage, {
+        // Show first image with caption
+        await ctx.replyWithPhoto(test.testImages[0], {
           caption: `📝 *${test.title}*\n\n` +
             `✅ Test boshlandi!\n` +
             `📊 Jami savollar: ${test.totalQuestions}\n` +
             `⏰ Vaqt: Cheklanmagan\n\n` +
+            `📸 Test rasmlari: ${test.testImages.length} ta\n\n` +
             'Har bir savol uchun A, B, C, D tugmalaridan birini bosing. Javobni almashtirish uchun qaytadan tugmani bosishingiz mumkin.',
           parse_mode: 'Markdown'
         });
+        
+        // Show remaining images if any
+        for (let i = 1; i < test.testImages.length; i++) {
+          await ctx.replyWithPhoto(test.testImages[i]);
+        }
       } catch (error) {
         // If image fails, show text only
         await ctx.reply(
