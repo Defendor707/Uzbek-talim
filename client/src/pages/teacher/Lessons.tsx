@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import useAuth from '@/hooks/useAuth';
 
 const LessonsPage: React.FC = () => {
@@ -28,13 +29,30 @@ const LessonsPage: React.FC = () => {
                   Bosh sahifa
                 </Button>
               </Link>
-              <Button 
-                variant="outline" 
-                onClick={logout}
-                className="text-red-600 border-red-600 hover:bg-red-50"
-              >
-                Chiqish
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="text-red-600 border-red-600 hover:bg-red-50"
+                  >
+                    Chiqish
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Tizimdan chiqish</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Haqiqatan ham tizimdan chiqishni xohlaysizmi? Barcha ochilgan sahifalar yopiladi.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+                    <AlertDialogAction onClick={logout} className="bg-red-600 hover:bg-red-700">
+                      Ha, chiqish
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </div>
