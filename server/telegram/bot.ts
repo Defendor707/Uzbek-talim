@@ -804,7 +804,7 @@ bot.action(/view_test_(\d+)/, async (ctx) => {
           const mediaGroup = test.testImages.map((imageId, index) => ({
             type: 'photo' as const,
             media: imageId,
-            caption: index === 0 ? testInfo + `\n\n📸 Test rasmlari: ${test.testImages.length} ta` : undefined,
+            caption: index === 0 ? testInfo + `\n\n📸 Test rasmlari: ${test.testImages!.length} ta` : undefined,
             parse_mode: index === 0 ? 'Markdown' as const : undefined
           }));
           
@@ -2966,7 +2966,7 @@ bot.action(/start_test_(\d+)/, async (ctx) => {
               `✅ Test boshlandi!\n` +
               `📊 Jami savollar: ${test.totalQuestions}\n` +
               `⏰ Vaqt: Cheklanmagan\n` +
-              `📸 Test rasmlari: ${test.testImages?.length || 0} ta\n\n` +
+              `📸 Test rasmlari: ${test.testImages!.length} ta\n\n` +
               'Har bir savol uchun A, B, C, D tugmalaridan birini bosing. Javobni almashtirish uchun qaytadan tugmani bosishingiz mumkin.' : undefined,
             parse_mode: index === 0 ? 'Markdown' as const : undefined
           }));
