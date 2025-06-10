@@ -359,21 +359,14 @@ bot.on('text', async (ctx, next) => {
         'Rasmlar yuklangandan keyin "Saqlash va keyingi" tugmasini bosing.',
         {
           parse_mode: 'Markdown',
+          reply_parameters: {
+            message_id: ctx.message?.message_id || 0
+          },
           ...Markup.keyboard([['💾 Saqlash va keyingi', '⏭️ O\'tkazib yuborish'], ['🔙 Orqaga']]).resize()
         }
       );
       
-      // Bot o'zi avtomatik reply yuboradi
-      const autoReplyMessage = await ctx.reply(
-        '📸 *Rasmlarni bu yerga yuboring*\n\n' +
-        'Ushbu xabarga javob (reply) qilib test uchun rasmlarni yuboring.',
-        {
-          parse_mode: 'Markdown',
-          reply_to_message_id: sentMessage.message_id
-        }
-      );
-      
-      ctx.session.testCreation.replyToMessageId = autoReplyMessage.message_id;
+      ctx.session.testCreation.replyToMessageId = sentMessage.message_id;
       return;
     }
     
