@@ -49,6 +49,7 @@ interface BotSessionData extends Scenes.SceneSession {
       testImages?: string[];
     };
     uploadedImages?: string[];
+    replyToMessageId?: number;
   };
 }
 
@@ -345,33 +346,17 @@ bot.on('text', async (ctx, next) => {
       }
       ctx.session.testCreation.testData.title = title;
       
-      // Maxsus raqamli test uchun rasm yuklash imkoniyati
-      if (ctx.session.testCreation.testType === 'private') {
-        ctx.session.testCreation.step = 'imageUpload';
-        await ctx.reply(
-          '🖼️ *Maxsus raqamli test uchun rasm*\n\n' +
-          'Test uchun rasmlar yuklashni xohlaysizmi?\n\n' +
-          '📸 Rasm yuklash uchun "Ha" tugmasini bosing\n' +
-          '⏭️ Rasm yuklamaslik uchun "Yo\'q" tugmasini bosing',
-          {
-            parse_mode: 'Markdown',
-            ...Markup.keyboard([['📸 Ha, rasm yuklash', '⏭️ Yo\'q, o\'tkazib yuborish'], ['🔙 Orqaga']]).resize()
-          }
-        );
-        return;
-      } else {
-        ctx.session.testCreation.step = 'questionCount';
-        await ctx.reply(
-          '📊 *Savollar soni*\n\n' +
-          'Test nechta savoldan iborat bo\'lsin?\n' +
-          '(5 dan 90 tagacha raqam kiriting)',
-          {
-            parse_mode: 'Markdown',
-            ...Markup.keyboard([['🔙 Orqaga']]).resize()
-          }
-        );
-        return;
-      }
+      // Barcha test turlari uchun rasm yuklash imkoniyati
+      ctx.session.testCreation.step = 'imageUpload';
+      await ctx.reply(
+        '🖼️ *Test rasmlari*\n\n' +
+        'Test uchun rasm yuklang yoki o\'tkazib yuboring.',
+        {
+          parse_mode: 'Markdown',
+          ...Markup.keyboard([['📸 Rasm yuklash', '⏭️ O\'tkazib yuborish'], ['🔙 Orqaga']]).resize()
+        }
+      );
+      return;
     }
     
     if (ctx.session.testCreation.step === 'questionCount') {
@@ -794,21 +779,63 @@ bot.action(/view_test_(\d+)/, async (ctx) => {
       }
     }
 
-    await ctx.reply(
-      `📝 *${test.title}*\n\n` +
+    const testInfo = `📝 *${test.title}*\n\n` +
       `📚 *Fan*: ${subjectName}\n` +
       `🎓 *Sinf*: ${test.grade}\n` +
       `🏫 *Sinf xonasi*: ${test.classroom || 'Barcha sinflar'}\n` +
       `⏱ *Davomiyligi*: ${test.duration} daqiqa\n` +
       `📊 *Holati*: ${getTestStatusInUzbek(test.status)}\n` +
-      `📅 *Yaratilgan sana*: ${new Date(test.createdAt).toLocaleDateString('uz-UZ')}`,
-      {
+      `📅 *Yaratilgan sana*: ${new Date(test.createdAt).toLocaleDateString('uz-UZ')}`;
+
+    // Show test images if available
+    if (test.testImages && test.testImages.length > 0) {
+      try {
+        if (test.testImages.length === 1) {
+          // Single image
+          await ctx.replyWithPhoto(test.testImages[0], {
+            caption: testInfo,
+            parse_mode: 'Markdown',
+            ...Markup.inlineKeyboard([
+              [Markup.button.callback('Testni boshlash', `start_test_${test.id}`)]
+            ])
+          });
+        } else {
+          // Multiple images as media group
+          const mediaGroup = test.testImages.map((imageId, index) => ({
+            type: 'photo' as const,
+            media: imageId,
+            caption: index === 0 ? testInfo + `\n\n📸 Test rasmlari: ${test.testImages.length} ta` : undefined,
+            parse_mode: index === 0 ? 'Markdown' as const : undefined
+          }));
+          
+          await ctx.replyWithMediaGroup(mediaGroup);
+          
+          // Send test start button separately after media group
+          await ctx.reply(
+            'Test haqida ma\'lumot yuqorida ko\'rsatildi.',
+            Markup.inlineKeyboard([
+              [Markup.button.callback('Testni boshlash', `start_test_${test.id}`)]
+            ])
+          );
+        }
+      } catch (error) {
+        console.error('Error sending test preview images:', error);
+        // If image fails, show text only
+        await ctx.reply(testInfo, {
+          parse_mode: 'Markdown',
+          ...Markup.inlineKeyboard([
+            [Markup.button.callback('Testni boshlash', `start_test_${test.id}`)]
+          ])
+        });
+      }
+    } else {
+      await ctx.reply(testInfo, {
         parse_mode: 'Markdown',
         ...Markup.inlineKeyboard([
           [Markup.button.callback('Testni boshlash', `start_test_${test.id}`)]
         ])
-      }
-    );
+      });
+    }
   } catch (error) {
     console.error('Error fetching test details:', error);
     await ctx.reply('❌ Test ma\'lumotlarini olishda xatolik yuz berdi.');
@@ -1171,6 +1198,16 @@ bot.hears('⏭️ O\'tkazib yuborish', async (ctx) => {
 // Handle photo upload for test
 bot.on('photo', async (ctx, next) => {
   if (ctx.session.testCreation && ctx.session.testCreation.step === 'imageUpload') {
+    // Check if this is a reply to our message
+    const isReply = ctx.message.reply_to_message && 
+                   ctx.session.testCreation.replyToMessageId &&
+                   ctx.message.reply_to_message.message_id === ctx.session.testCreation.replyToMessageId;
+    
+    if (!isReply && ctx.session.testCreation.replyToMessageId) {
+      await ctx.reply('❗ Iltimos, yuqoridagi "Rasm yuklash" xabariga javob (reply) qilib rasm yuboring.');
+      return;
+    }
+    
     if (!ctx.session.testCreation.testData) {
       ctx.session.testCreation.testData = {};
     }
@@ -1180,33 +1217,22 @@ bot.on('photo', async (ctx, next) => {
     if (!ctx.session.testCreation.uploadedImages) {
       ctx.session.testCreation.uploadedImages = [];
     }
+    
+    if (ctx.session.testCreation.uploadedImages.length >= 5) {
+      await ctx.reply('❌ Maksimal 5 ta rasm yuklash mumkin. Iltimos, "Saqlash va davom etish" tugmasini bosing.');
+      return;
+    }
+    
     ctx.session.testCreation.uploadedImages.push(photo.file_id);
     
     const imageCount = ctx.session.testCreation.uploadedImages.length;
     
-    if (imageCount < 5) {
-      await ctx.reply(
-        `✅ *${imageCount}-rasm saqlandi*\n\n` +
-        '📸 Yana rasm yuklashni xohlaysizmi?\n' +
-        '(Maksimal 5 ta rasm yuklash mumkin)',
-        {
-          parse_mode: 'Markdown',
-          ...Markup.keyboard([['➕ Yana rasm yuklash', '✅ Yetarli'], ['🔙 Orqaga']]).resize()
-        }
-      );
-    } else {
-      ctx.session.testCreation.step = 'questionCount';
-      await ctx.reply(
-        '✅ *Maksimal rasm soni yuklandi (5 ta)*\n\n' +
-        '📊 *Savollar soni*\n\n' +
-        'Test nechta savoldan iborat bo\'lsin?\n' +
-        '(5 dan 90 tagacha raqam kiriting)',
-        {
-          parse_mode: 'Markdown',
-          ...Markup.keyboard([['🔙 Orqaga']]).resize()
-        }
-      );
-    }
+    await ctx.reply(
+      `✅ *${imageCount}-rasm saqlandi*\n\n` +
+      `📊 Jami yuklangan: ${imageCount}/5\n\n` +
+      'Yana rasm yuklang yoki "Saqlash va davom etish" tugmasini bosing.',
+      { parse_mode: 'Markdown' }
+    );
     return;
   }
   
@@ -1810,28 +1836,39 @@ bot.hears(['🌐 Ommaviy test', '🔢 Maxsus raqamli test'], async (ctx) => {
 });
 
 // Rasm yuklash tugmalarini ishlovchi
-bot.hears(['📸 Ha, rasm yuklash', '⏭️ Yo\'q, o\'tkazib yuborish', '➕ Yana rasm yuklash', '✅ Yetarli'], async (ctx) => {
+bot.hears(['📸 Rasm yuklash', '⏭️ O\'tkazib yuborish', '✅ Saqlash va davom etish'], async (ctx) => {
   if (!ctx.session.testCreation || ctx.session.testCreation.step !== 'imageUpload') {
     return;
   }
 
   const messageText = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
   
-  if (messageText === '📸 Ha, rasm yuklash' || messageText === '➕ Yana rasm yuklash') {
-    await ctx.reply(
+  if (messageText === '📸 Rasm yuklash') {
+    const sentMessage = await ctx.reply(
       '📸 *Rasm yuklash*\n\n' +
-      'Test uchun rasm(lar)ni yuboring:\n\n' +
+      'Bu xabarga javob (reply) qilib, test uchun rasm(lar)ni yuboring:\n\n' +
       '• JPG, PNG formatlarida\n' +
       '• Maksimal 5 ta rasm yuklash mumkin\n' +
-      '• Har bir rasm 20MB dan kichik bo\'lishi kerak',
+      '• Har bir rasm 20MB dan kichik bo\'lishi kerak\n\n' +
+      'Rasmlarni yuborib bo\'lgach "Saqlash va davom etish" tugmasini bosing.',
       {
         parse_mode: 'Markdown',
-        ...Markup.keyboard([['✅ Yetarli', '🔙 Orqaga']]).resize()
+        ...Markup.keyboard([['✅ Saqlash va davom etish', '🔙 Orqaga']]).resize()
       }
     );
-  } else if (messageText === '⏭️ Yo\'q, o\'tkazib yuborish' || messageText === '✅ Yetarli') {
+    // Store message ID for reply detection
+    ctx.session.testCreation.replyToMessageId = sentMessage.message_id;
+  } else if (messageText === '⏭️ O\'tkazib yuborish' || messageText === '✅ Saqlash va davom etish') {
     ctx.session.testCreation.step = 'questionCount';
+    delete ctx.session.testCreation.replyToMessageId;
+    
+    let imageInfo = '';
+    if (ctx.session.testCreation.uploadedImages && ctx.session.testCreation.uploadedImages.length > 0) {
+      imageInfo = `📸 Yuklangan rasmlar: ${ctx.session.testCreation.uploadedImages.length} ta\n\n`;
+    }
+    
     await ctx.reply(
+      imageInfo + 
       '📊 *Savollar soni*\n\n' +
       'Test nechta savoldan iborat bo\'lsin?\n' +
       '(5 dan 90 tagacha raqam kiriting)',
@@ -2910,22 +2947,34 @@ bot.action(/start_test_(\d+)/, async (ctx) => {
     // Show test images if available
     if (test.testImages && test.testImages.length > 0) {
       try {
-        // Show first image with caption
-        await ctx.replyWithPhoto(test.testImages[0], {
-          caption: `📝 *${test.title}*\n\n` +
-            `✅ Test boshlandi!\n` +
-            `📊 Jami savollar: ${test.totalQuestions}\n` +
-            `⏰ Vaqt: Cheklanmagan\n\n` +
-            `📸 Test rasmlari: ${test.testImages.length} ta\n\n` +
-            'Har bir savol uchun A, B, C, D tugmalaridan birini bosing. Javobni almashtirish uchun qaytadan tugmani bosishingiz mumkin.',
-          parse_mode: 'Markdown'
-        });
-        
-        // Show remaining images if any
-        for (let i = 1; i < test.testImages.length; i++) {
-          await ctx.replyWithPhoto(test.testImages[i]);
+        if (test.testImages.length === 1) {
+          // Single image
+          await ctx.replyWithPhoto(test.testImages[0], {
+            caption: `📝 *${test.title}*\n\n` +
+              `✅ Test boshlandi!\n` +
+              `📊 Jami savollar: ${test.totalQuestions}\n` +
+              `⏰ Vaqt: Cheklanmagan\n\n` +
+              'Har bir savol uchun A, B, C, D tugmalaridan birini bosing. Javobni almashtirish uchun qaytadan tugmani bosishingiz mumkin.',
+            parse_mode: 'Markdown'
+          });
+        } else {
+          // Multiple images as media group
+          const mediaGroup = test.testImages.map((imageId, index) => ({
+            type: 'photo' as const,
+            media: imageId,
+            caption: index === 0 ? `📝 *${test.title}*\n\n` +
+              `✅ Test boshlandi!\n` +
+              `📊 Jami savollar: ${test.totalQuestions}\n` +
+              `⏰ Vaqt: Cheklanmagan\n` +
+              `📸 Test rasmlari: ${test.testImages?.length || 0} ta\n\n` +
+              'Har bir savol uchun A, B, C, D tugmalaridan birini bosing. Javobni almashtirish uchun qaytadan tugmani bosishingiz mumkin.' : undefined,
+            parse_mode: index === 0 ? 'Markdown' as const : undefined
+          }));
+          
+          await ctx.replyWithMediaGroup(mediaGroup);
         }
       } catch (error) {
+        console.error('Error sending test images:', error);
         // If image fails, show text only
         await ctx.reply(
           `📝 *${test.title}*\n\n` +
