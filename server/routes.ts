@@ -316,6 +316,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test creation with images
+  app.post("/api/tests/create-with-images", 
+    authenticate, 
+    authorize(["teacher"]), 
+    upload.array('testImages', 5),
+    async (req, res) => {
+      try {
+        const files = req.files as Express.Multer.File[];
+        const imageUrls: string[] = [];
+        
+        // Process uploaded images
+        if (files && files.length > 0) {
+          for (const file of files) {
+            // Store file path or URL (adjust based on your storage strategy)
+            imageUrls.push(`/uploads/${file.filename}`);
+          }
+        }
+
+        // Parse questions from form data
+        let questions = [];
+        try {
+          questions = JSON.parse(req.body.questions || '[]');
+        } catch (e) {
+          questions = [];
+        }
+
+        const testData = schema.insertTestSchema.parse({
+          title: req.body.title,
+          description: req.body.description || '',
+          testImages: imageUrls,
+          teacherId: req.user!.userId,
+          type: 'simple',
+          grade: req.body.grade,
+          classroom: req.body.classroom || null,
+          duration: parseInt(req.body.duration) || 0,
+          totalQuestions: parseInt(req.body.totalQuestions) || 0,
+          status: 'active',
+        });
+
+        const newTest = await storage.createTest(testData);
+        
+        // Create questions
+        for (const question of questions) {
+          await storage.createQuestion({
+            testId: newTest.id,
+            questionText: question.questionText || `${question.order || 1}-savol`,
+            questionType: 'simple',
+            options: question.options || ['A', 'B', 'C', 'D'],
+            correctAnswer: question.correctAnswer,
+            points: question.points || 1,
+            order: question.order || 1
+          });
+        }
+        
+        // Notify bot users and sync with website
+        await botNotificationService.notifyTestCreated(newTest);
+        await syncService.notifyTestCreated(newTest);
+        
+        return res.status(201).json(newTest);
+      } catch (error) {
+        console.error("Error creating test with images:", error);
+        return res.status(500).json({ message: "Failed to create test" });
+      }
+    }
+  );
+
   app.get("/api/tests", authenticate, async (req, res) => {
     try {
       let tests;
