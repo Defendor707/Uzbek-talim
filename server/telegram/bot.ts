@@ -348,14 +348,22 @@ bot.on('text', async (ctx, next) => {
       
       // Barcha test turlari uchun rasm yuklash imkoniyati
       ctx.session.testCreation.step = 'imageUpload';
-      await ctx.reply(
+      ctx.session.testCreation.uploadedImages = [];
+      
+      const sentMessage = await ctx.reply(
         '🖼️ *Test rasmlari*\n\n' +
-        'Test uchun rasm yuklang yoki o\'tkazib yuboring.',
+        'Test uchun rasmlarni yuklang yoki keyingi bo\'limga o\'ting.\n\n' +
+        '📸 Bu xabarga javob (reply) qilib rasmlarni yuboring\n' +
+        '• Maksimal 5 ta rasm yuklash mumkin\n' +
+        '• JPG, PNG formatlarida\n\n' +
+        'Rasmlar yuklangandan keyin "Saqlash va keyingi" tugmasini bosing.',
         {
           parse_mode: 'Markdown',
-          ...Markup.keyboard([['📸 Rasm yuklash', '⏭️ O\'tkazib yuborish'], ['🔙 Orqaga']]).resize()
+          ...Markup.keyboard([['💾 Saqlash va keyingi', '⏭️ O\'tkazib yuborish'], ['🔙 Orqaga']]).resize()
         }
       );
+      
+      ctx.session.testCreation.replyToMessageId = sentMessage.message_id;
       return;
     }
     
@@ -1204,7 +1212,10 @@ bot.on('photo', async (ctx, next) => {
                    ctx.message.reply_to_message.message_id === ctx.session.testCreation.replyToMessageId;
     
     if (!isReply && ctx.session.testCreation.replyToMessageId) {
-      await ctx.reply('❗ Iltimos, yuqoridagi "Rasm yuklash" xabariga javob (reply) qilib rasm yuboring.');
+      await ctx.reply(
+        '❗ Iltimos, yuqoridagi xabarga javob (reply) qilib rasm yuboring.',
+        Markup.keyboard([['💾 Saqlash va keyingi', '⏭️ O\'tkazib yuborish'], ['🔙 Orqaga']]).resize()
+      );
       return;
     }
     
@@ -1219,7 +1230,12 @@ bot.on('photo', async (ctx, next) => {
     }
     
     if (ctx.session.testCreation.uploadedImages.length >= 5) {
-      await ctx.reply('❌ Maksimal 5 ta rasm yuklash mumkin. Iltimos, "Saqlash va davom etish" tugmasini bosing.');
+      await ctx.reply(
+        '❌ Maksimal 5 ta rasm yuklandi. "Saqlash va keyingi" tugmasini bosing.',
+        {
+          ...Markup.keyboard([['💾 Saqlash va keyingi'], ['🔙 Orqaga']]).resize()
+        }
+      );
       return;
     }
     
@@ -1228,10 +1244,12 @@ bot.on('photo', async (ctx, next) => {
     const imageCount = ctx.session.testCreation.uploadedImages.length;
     
     await ctx.reply(
-      `✅ *${imageCount}-rasm saqlandi*\n\n` +
-      `📊 Jami yuklangan: ${imageCount}/5\n\n` +
-      'Yana rasm yuklang yoki "Saqlash va davom etish" tugmasini bosing.',
-      { parse_mode: 'Markdown' }
+      `✅ *${imageCount}-rasm saqlandi* (${imageCount}/5)\n\n` +
+      'Yana rasm yuklang yoki keyingi bo\'limga o\'ting.',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard([['💾 Saqlash va keyingi', '⏭️ O\'tkazib yuborish'], ['🔙 Orqaga']]).resize()
+      }
     );
     return;
   }
@@ -1836,48 +1854,33 @@ bot.hears(['🌐 Ommaviy test', '🔢 Maxsus raqamli test'], async (ctx) => {
 });
 
 // Rasm yuklash tugmalarini ishlovchi
-bot.hears(['📸 Rasm yuklash', '⏭️ O\'tkazib yuborish', '✅ Saqlash va davom etish'], async (ctx) => {
+bot.hears(['💾 Saqlash va keyingi', '⏭️ O\'tkazib yuborish'], async (ctx) => {
   if (!ctx.session.testCreation || ctx.session.testCreation.step !== 'imageUpload') {
     return;
   }
 
   const messageText = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
   
-  if (messageText === '📸 Rasm yuklash') {
-    const sentMessage = await ctx.reply(
-      '📸 *Rasm yuklash*\n\n' +
-      'Bu xabarga javob (reply) qilib, test uchun rasm(lar)ni yuboring:\n\n' +
-      '• JPG, PNG formatlarida\n' +
-      '• Maksimal 5 ta rasm yuklash mumkin\n' +
-      '• Har bir rasm 20MB dan kichik bo\'lishi kerak\n\n' +
-      'Rasmlarni yuborib bo\'lgach "Saqlash va davom etish" tugmasini bosing.',
-      {
-        parse_mode: 'Markdown',
-        ...Markup.keyboard([['✅ Saqlash va davom etish', '🔙 Orqaga']]).resize()
-      }
-    );
-    // Store message ID for reply detection
-    ctx.session.testCreation.replyToMessageId = sentMessage.message_id;
-  } else if (messageText === '⏭️ O\'tkazib yuborish' || messageText === '✅ Saqlash va davom etish') {
-    ctx.session.testCreation.step = 'questionCount';
-    delete ctx.session.testCreation.replyToMessageId;
-    
-    let imageInfo = '';
-    if (ctx.session.testCreation.uploadedImages && ctx.session.testCreation.uploadedImages.length > 0) {
-      imageInfo = `📸 Yuklangan rasmlar: ${ctx.session.testCreation.uploadedImages.length} ta\n\n`;
-    }
-    
-    await ctx.reply(
-      imageInfo + 
-      '📊 *Savollar soni*\n\n' +
-      'Test nechta savoldan iborat bo\'lsin?\n' +
-      '(5 dan 90 tagacha raqam kiriting)',
-      {
-        parse_mode: 'Markdown',
-        ...Markup.keyboard([['🔙 Orqaga']]).resize()
-      }
-    );
+  ctx.session.testCreation.step = 'questionCount';
+  delete ctx.session.testCreation.replyToMessageId;
+  
+  let imageInfo = '';
+  if (ctx.session.testCreation.uploadedImages && ctx.session.testCreation.uploadedImages.length > 0) {
+    imageInfo = `✅ ${ctx.session.testCreation.uploadedImages.length} ta rasm saqlandi\n\n`;
+  } else if (messageText === '⏭️ O\'tkazib yuborish') {
+    imageInfo = `ℹ️ Rasmlar o'tkazib yuborildi\n\n`;
   }
+  
+  await ctx.reply(
+    imageInfo + 
+    '📊 *Savollar soni*\n\n' +
+    'Test nechta savoldan iborat bo\'lsin?\n' +
+    '(5 dan 90 tagacha raqam kiriting)',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([['🔙 Orqaga']]).resize()
+    }
+  );
 });
 
 // Javob kiritish usulini tanlash
