@@ -16,7 +16,7 @@ import ParentProfile from "@/pages/parent/ParentProfile";
 import ChildrenPage from "@/pages/parent/ChildrenPage";
 import LessonsPage from "@/pages/teacher/Lessons";
 import TestsPage from "@/pages/teacher/Tests";
-import CreateTestPage from "@/pages/teacher/CreateTest";
+import CreateTestPage from "@/pages/teacher/CreateTestSimple";
 import StudentsPage from "@/pages/teacher/Students";
 import StudentTestsPage from "@/pages/student/Tests";
 import ProtectedRoute from "@/components/ProtectedRoute";

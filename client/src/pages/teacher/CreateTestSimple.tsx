@@ -11,9 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
 import useAuth from '@/hooks/useAuth';
 
 const testSchema = z.object({
@@ -47,31 +45,6 @@ const CreateTestPage: React.FC = () => {
     },
   });
 
-  const createTestMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return await apiRequest('POST', '/api/tests', data);
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Muvaffaqiyat',
-        description: 'Test muvaffaqiyatli yaratildi!',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
-      // Reset form and go back to tests page
-      form.reset();
-      setStep('info');
-      setUploadedImages([]);
-      setQuestions([]);
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Xatolik',
-        description: error.message || 'Test yaratishda xatolik yuz berdi',
-        variant: 'destructive',
-      });
-    },
-  });
-
   const handleTestInfoSubmit = (data: TestFormData) => {
     if (data.type === 'private') {
       setTestCode(Math.floor(100000 + Math.random() * 900000).toString());
@@ -93,10 +66,15 @@ const CreateTestPage: React.FC = () => {
 
   const proceedToQuestions = () => {
     const formData = form.getValues();
-    setQuestions(Array(formData.totalQuestions).fill(null).map(() => ({
-      questionText: '',
-      correctAnswer: 'A' as const
-    })));
+    const totalQuestions = formData.totalQuestions;
+    
+    // Initialize questions array with empty questions
+    const emptyQuestions: Question[] = Array.from({ length: totalQuestions }, (_, index) => ({
+      questionText: `${index + 1}-savol`,
+      correctAnswer: 'A' as const,
+    }));
+    
+    setQuestions(emptyQuestions);
     setStep('questions');
   };
 
@@ -109,37 +87,35 @@ const CreateTestPage: React.FC = () => {
   const handleCreateTest = async () => {
     const formData = form.getValues();
     
-    // Prepare form data with images
-    const testFormData = new FormData();
-    testFormData.append('title', formData.title);
-    testFormData.append('description', formData.description || '');
-    testFormData.append('type', formData.type === 'public' ? 'public' : 'simple');
-    testFormData.append('grade', '1');
-    testFormData.append('classroom', '');
-    testFormData.append('duration', '0');
-    testFormData.append('totalQuestions', formData.totalQuestions.toString());
-    testFormData.append('status', 'active');
-    
-    if (testCode) {
-      testFormData.append('testCode', testCode);
-    }
-
-    // Add images
-    uploadedImages.forEach((image, index) => {
-      testFormData.append(`testImages`, image);
-    });
-
-    // Add questions
-    testFormData.append('questions', JSON.stringify(questions.map((q, index) => ({
-      questionText: q.questionText || `${index + 1}-savol`,
-      questionType: 'simple',
-      options: ['A', 'B', 'C', 'D'],
-      correctAnswer: q.correctAnswer,
-      points: 1,
-      order: index + 1
-    }))));
-
     try {
+      // Prepare form data with images
+      const testFormData = new FormData();
+      testFormData.append('title', formData.title);
+      testFormData.append('description', formData.description || '');
+      testFormData.append('type', formData.type === 'public' ? 'public' : 'simple');
+      testFormData.append('grade', '1');
+      testFormData.append('classroom', '');
+      testFormData.append('duration', '0');
+      testFormData.append('totalQuestions', formData.totalQuestions.toString());
+      testFormData.append('status', 'active');
+      
+      if (testCode) {
+        testFormData.append('testCode', testCode);
+      }
+
+      // Add images
+      uploadedImages.forEach((image, index) => {
+        testFormData.append(`testImages`, image);
+      });
+
+      // Add questions
+      testFormData.append('questions', JSON.stringify(questions.map((q, index) => ({
+        ...q,
+        order: index + 1,
+        points: 1,
+        options: ['A', 'B', 'C', 'D']
+      }))));
+
       const response = await fetch('/api/tests/create-with-images', {
         method: 'POST',
         body: testFormData,
@@ -252,7 +228,7 @@ const CreateTestPage: React.FC = () => {
                   <Textarea
                     id="description"
                     {...form.register('description')}
-                    placeholder="Test haqida qisqacha ma'lumot"
+                    placeholder="Test haqida qo'shimcha ma'lumot (ixtiyoriy)"
                     rows={3}
                   />
                 </div>
@@ -264,8 +240,8 @@ const CreateTestPage: React.FC = () => {
                       <SelectValue placeholder="Test turini tanlang" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="public">Ommaviy test</SelectItem>
-                      <SelectItem value="private">Maxsus raqamli test</SelectItem>
+                      <SelectItem value="public">Ochiq test</SelectItem>
+                      <SelectItem value="private">Yopiq test</SelectItem>
                     </SelectContent>
                   </Select>
                   {form.formState.errors.type && (
@@ -296,60 +272,63 @@ const CreateTestPage: React.FC = () => {
           </Card>
         )}
 
-        {/* Step 2: Images */}
+        {/* Step 2: Image Upload */}
         {step === 'images' && (
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
-              <CardTitle>Test rasmlari</CardTitle>
-              <p className="text-gray-600">Test uchun rasmlar yuklang (ixtiyoriy)</p>
+              <CardTitle>Rasm yuklash</CardTitle>
+              <p className="text-gray-600">Testga maksimal 5 ta rasm qo'shishingiz mumkin (ixtiyoriy)</p>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label htmlFor="images">Rasmlar yuklash</Label>
-                <Input
-                  id="images"
+                <input
                   type="file"
                   accept="image/*"
                   multiple
                   onChange={handleImageUpload}
                   disabled={uploadedImages.length >= 5}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  Maksimal 5 ta rasm yuklash mumkin. JPG, PNG formatlarida.
+                <p className="text-sm text-gray-500 mt-2">
+                  {uploadedImages.length}/5 rasm yuklandi
                 </p>
               </div>
 
               {uploadedImages.length > 0 && (
-                <div>
-                  <Label>Yuklangan rasmlar ({uploadedImages.length}/5)</Label>
-                  <div className="grid grid-cols-2 gap-4 mt-2">
-                    {uploadedImages.map((image, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={URL.createObjectURL(image)}
-                          alt={`Rasm ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg border"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-2 right-2"
-                          onClick={() => removeImage(index)}
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {uploadedImages.map((image, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={URL.createObjectURL(image)}
+                        alt={`Upload ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
 
               <div className="flex gap-3">
-                <Button type="button" variant="outline" onClick={() => setStep('info')}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setStep('info')}
+                  className="flex-1"
+                >
                   Orqaga
                 </Button>
-                <Button type="button" onClick={proceedToQuestions} className="flex-1">
+                <Button
+                  type="button"
+                  onClick={proceedToQuestions}
+                  className="flex-1"
+                >
                   Keyingi qadam: Savollar
                 </Button>
               </div>
@@ -361,113 +340,88 @@ const CreateTestPage: React.FC = () => {
         {step === 'questions' && (
           <Card className="max-w-4xl mx-auto">
             <CardHeader>
-              <CardTitle>Savollar va javoblar</CardTitle>
-              <p className="text-gray-600">Har bir savol uchun to'g'ri javobni belgilang</p>
+              <CardTitle>Savollar</CardTitle>
+              <p className="text-gray-600">
+                Savol {currentQuestionIndex + 1} / {questions.length}
+              </p>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-5 gap-4">
-                {questions.map((_, index) => (
-                  <Button
-                    key={index}
-                    type="button"
-                    variant={currentQuestionIndex === index ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCurrentQuestionIndex(index)}
-                    className={questions[index].correctAnswer ? "border-green-500" : ""}
-                  >
-                    {index + 1}
-                    {questions[index].correctAnswer && (
-                      <span className="ml-1 text-green-600">✓</span>
-                    )}
-                  </Button>
-                ))}
-              </div>
+              {questions.length > 0 && (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="questionText">Savol matni</Label>
+                    <Input
+                      id="questionText"
+                      value={questions[currentQuestionIndex]?.questionText || ''}
+                      onChange={(e) => updateQuestion(currentQuestionIndex, 'questionText', e.target.value)}
+                      placeholder="Savolni kiriting"
+                    />
+                  </div>
 
-              {questions[currentQuestionIndex] && (
-                <div className="border rounded-lg p-6">
-                  <h3 className="text-lg font-medium mb-4">
-                    {currentQuestionIndex + 1}-savol
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="questionText">Savol matni</Label>
-                      <Input
-                        id="questionText"
-                        value={questions[currentQuestionIndex].questionText}
-                        onChange={(e) => updateQuestion(currentQuestionIndex, 'questionText', e.target.value)}
-                        placeholder={`${currentQuestionIndex + 1}-savol`}
-                      />
+                  <div>
+                    <Label>To'g'ri javob</Label>
+                    <div className="grid grid-cols-4 gap-2 mt-2">
+                      {['A', 'B', 'C', 'D'].map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => updateQuestion(currentQuestionIndex, 'correctAnswer', option as 'A' | 'B' | 'C' | 'D')}
+                          className={`p-3 border rounded-lg text-center font-medium transition-colors ${
+                            questions[currentQuestionIndex]?.correctAnswer === option
+                              ? 'bg-green-500 text-white border-green-500'
+                              : 'bg-gray-50 hover:bg-gray-100 border-gray-200'
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      ))}
                     </div>
+                  </div>
 
-                    <div>
-                      <Label>To'g'ri javob</Label>
-                      <div className="flex gap-4 mt-2">
-                        {['A', 'B', 'C', 'D'].map((option) => (
-                          <label key={option} className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name={`question-${currentQuestionIndex}`}
-                              value={option}
-                              checked={questions[currentQuestionIndex].correctAnswer === option}
-                              onChange={(e) => updateQuestion(currentQuestionIndex, 'correctAnswer', e.target.value)}
-                              className="text-blue-600"
-                            />
-                            <span className="font-medium">{option}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
+                  {/* Question Navigation */}
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
+                      disabled={currentQuestionIndex === 0}
+                    >
+                      Oldingi savol
+                    </Button>
+
+                    <span className="text-sm text-gray-500">
+                      {currentQuestionIndex + 1} / {questions.length}
+                    </span>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCurrentQuestionIndex(Math.min(questions.length - 1, currentQuestionIndex + 1))}
+                      disabled={currentQuestionIndex === questions.length - 1}
+                    >
+                      Keyingi savol
+                    </Button>
                   </div>
                 </div>
               )}
 
-              <div className="flex justify-between">
-                <Button type="button" variant="outline" onClick={() => setStep('images')}>
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setStep('images')}
+                  className="flex-1"
+                >
                   Orqaga
                 </Button>
-                
-                <div className="flex gap-3">
-                  {currentQuestionIndex > 0 && (
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={() => setCurrentQuestionIndex(currentQuestionIndex - 1)}
-                    >
-                      Oldingi savol
-                    </Button>
-                  )}
-                  
-                  {currentQuestionIndex < questions.length - 1 ? (
-                    <Button 
-                      type="button"
-                      onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
-                    >
-                      Keyingi savol
-                    </Button>
-                  ) : (
-                    <Button 
-                      type="button"
-                      onClick={handleCreateTest}
-                      disabled={createTestMutation.isPending}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      {createTestMutation.isPending ? 'Yaratilmoqda...' : 'Testni yaratish'}
-                    </Button>
-                  )}
-                </div>
+                <Button
+                  type="button"
+                  onClick={handleCreateTest}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  Testni yaratish
+                </Button>
               </div>
-
-              {testCode && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-blue-800 font-medium">
-                    Maxsus test kodi: <span className="font-mono text-lg">{testCode}</span>
-                  </p>
-                  <p className="text-blue-600 text-sm mt-1">
-                    O'quvchilar ushbu kod orqali testni topa olishadi.
-                  </p>
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
