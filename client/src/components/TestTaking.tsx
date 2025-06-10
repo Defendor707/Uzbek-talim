@@ -22,7 +22,7 @@ interface Test {
   id: number;
   title: string;
   description?: string;
-  testImage?: string;
+  testImages?: string[];
   duration: number;
   totalQuestions: number;
   status: string;
@@ -229,23 +229,21 @@ export function TestTaking() {
             <CardTitle className="text-center">{test.title}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {test.testImage && (
-              <div className="text-center">
-                <img
-                  src={`/${test.testImage}`}
-                  alt="Test rasmi"
-                  className="max-w-full h-auto max-h-64 mx-auto rounded-lg"
-                />
-              </div>
-            )}
-            
-            {test.testImage && (
-              <div className="text-center mb-4">
-                <img
-                  src={`/${test.testImage}`}
-                  alt="Test rasmi"
-                  className="max-w-full h-auto max-h-64 mx-auto rounded-lg"
-                />
+            {test.testImages && test.testImages.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-center">Test rasmlari</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {test.testImages.map((image, index) => (
+                    <div key={index} className="text-center">
+                      <img
+                        src={`/${image}`}
+                        alt={`Test rasmi ${index + 1}`}
+                        className="max-w-full h-auto max-h-48 mx-auto rounded-lg border"
+                      />
+                      <p className="text-sm text-gray-500 mt-2">Rasm {index + 1}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
             
@@ -253,7 +251,7 @@ export function TestTaking() {
               <p className="text-gray-600 text-center">{test.description}</p>
             )}
             
-            <div className="grid grid-cols-2 gap-4 text-center"></div>
+            <div className="grid grid-cols-2 gap-4 text-center">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">{test.totalQuestions}</div>
                 <div className="text-sm text-gray-600">Savollar soni</div>

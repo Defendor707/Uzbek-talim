@@ -72,6 +72,8 @@ export function TestCreation() {
       form.reset();
       setQuestions([]);
       setCurrentQuestionIndex(0);
+      setTestImageFiles([]);
+      setTestImagePaths([]);
     },
     onError: (error: any) => {
       toast({
