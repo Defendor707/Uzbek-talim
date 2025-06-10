@@ -846,6 +846,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user!.userId,
       });
 
+      // Update user fullName if provided
+      if (req.body.fullName) {
+        await storage.updateUser(req.user!.userId, { fullName: req.body.fullName });
+      }
+
       const newProfile = await storage.createTeacherProfile(profileData);
       
       // Notify bot users and sync with website
@@ -875,7 +880,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const profileData = schema.insertTeacherProfileSchema.partial().parse(req.body);
       
-      // Update profile through storage (we'll need to add this method)
+      // Update user fullName if provided
+      if (req.body.fullName) {
+        await storage.updateUser(req.user!.userId, { fullName: req.body.fullName });
+      }
+      
+      // Update profile through storage
       const updatedProfile = await storage.updateTeacherProfile(req.user!.userId, profileData);
       
       // Notify bot users and sync with website
