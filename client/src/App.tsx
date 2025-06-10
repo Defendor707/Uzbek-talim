@@ -16,6 +16,7 @@ import ParentProfile from "@/pages/parent/ParentProfile";
 import ChildrenPage from "@/pages/parent/ChildrenPage";
 import LessonsPage from "@/pages/teacher/Lessons";
 import TestsPage from "@/pages/teacher/Tests";
+import CreateTestPage from "@/pages/teacher/CreateTest";
 import StudentsPage from "@/pages/teacher/Students";
 import StudentTestsPage from "@/pages/student/Tests";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -76,6 +77,11 @@ function Router() {
       <Route path="/teacher/tests">
         <ProtectedRoute allowedRoles={["teacher"]}>
           <TestsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/teacher/tests/create">
+        <ProtectedRoute allowedRoles={["teacher"]}>
+          <CreateTestPage />
         </ProtectedRoute>
       </Route>
       <Route path="/teacher/students">

@@ -45,12 +45,14 @@ const TestsPage: React.FC = () => {
         
         {/* Actions */}
         <div className="mb-8">
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Yangi test yaratish
-          </Button>
+          <Link href="/teacher/tests/create">
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Yangi test yaratish
+            </Button>
+          </Link>
         </div>
 
         {/* Tests List */}
@@ -105,12 +107,14 @@ const TestsPage: React.FC = () => {
                 </svg>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Testlar topilmadi</h3>
                 <p className="text-gray-600 mb-4">Hozircha sizda test mavjud emas. Birinchi testingizni yarating.</p>
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Yangi test yaratish
-                </Button>
+                <Link href="/teacher/tests/create">
+                  <Button className="bg-blue-600 hover:bg-blue-700">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Yangi test yaratish
+                  </Button>
+                </Link>
               </div>
             )}
           </div>
