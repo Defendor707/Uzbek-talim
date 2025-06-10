@@ -3078,7 +3078,8 @@ bot.hears('👤 Profil', async (ctx) => {
       profileInfo = `👨‍👩‍👧‍👦 *Ota-ona profili*\n\n` +
                    `👤 Ism-familya: ${user.fullName}\n` +
                    `📧 Email: ${user.email}\n` +
-                   `👤 Foydalanuvchi nomi: ${user.username}\n\n` +
+                   `👤 Foydalanuvchi nomi: ${user.username}\n` +
+                   `📞 Telefon: ${user.phone || 'Kiritilmagan'}\n\n` +
                    `Profil ma'lumotlarini o'zgartirish uchun /parent_edit buyrug'idan foydalaning.`;
     } else if (user.role === 'center') {
       profileInfo = `🏫 *O'quv markaz profili*\n\n` +
