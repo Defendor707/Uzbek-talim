@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Link } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import useAuth from '@/hooks/useAuth';
@@ -35,13 +36,30 @@ const TeacherDashboard: React.FC = () => {
               <h1 className="text-2xl font-bold text-gray-900">Ustoz paneli</h1>
               <p className="text-gray-600">Xush kelibsiz, {user?.fullName}</p>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={logout}
-              className="text-red-600 border-red-600 hover:bg-red-50"
-            >
-              Chiqish
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="text-red-600 border-red-600 hover:bg-red-50"
+                >
+                  Chiqish
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Tizimdan chiqish</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Haqiqatan ham tizimdan chiqishni xohlaysizmi? Barcha ochilgan sahifalar yopiladi.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+                  <AlertDialogAction onClick={logout} className="bg-red-600 hover:bg-red-700">
+                    Ha, chiqish
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </div>
