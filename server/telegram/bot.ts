@@ -363,7 +363,17 @@ bot.on('text', async (ctx, next) => {
         }
       );
       
-      ctx.session.testCreation.replyToMessageId = sentMessage.message_id;
+      // Bot o'zi avtomatik reply yuboradi
+      const autoReplyMessage = await ctx.reply(
+        '📸 *Rasmlarni bu yerga yuboring*\n\n' +
+        'Ushbu xabarga javob (reply) qilib test uchun rasmlarni yuboring.',
+        {
+          parse_mode: 'Markdown',
+          reply_to_message_id: sentMessage.message_id
+        }
+      );
+      
+      ctx.session.testCreation.replyToMessageId = autoReplyMessage.message_id;
       return;
     }
     
