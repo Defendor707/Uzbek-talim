@@ -123,6 +123,25 @@ export function TestCreation() {
     return result.imagePath;
   };
 
+  const uploadMultipleTestImages = async (files: File[]): Promise<string[]> => {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('testImages', file);
+    });
+    
+    const response = await fetch('/api/upload/test-images', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error('Rasmlar yuklashda xatolik');
+    }
+    
+    const result = await response.json();
+    return result.imagePaths;
+  };
+
   const handleTestImagesUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
@@ -139,8 +158,7 @@ export function TestCreation() {
 
     setUploadingImage(true);
     try {
-      const uploadPromises = files.map(file => uploadTestImage(file));
-      const imagePaths = await Promise.all(uploadPromises);
+      const imagePaths = await uploadMultipleTestImages(files);
       
       const newTestImageFiles = [...testImageFiles, ...files];
       const newTestImagePaths = [...testImagePaths, ...imagePaths];

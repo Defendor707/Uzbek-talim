@@ -10,6 +10,7 @@ import express from "express";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import * as schema from "@shared/schema";
+import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth Routes
@@ -1138,6 +1139,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Image Upload Routes
   app.post("/api/upload/test-image", authenticate, authorize(["teacher"]), upload.single('testImage'), uploadTestImage);
+  app.post("/api/upload/test-images", authenticate, authorize(["teacher"]), upload.array('testImages', 5), async (req, res) => {
+    try {
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ message: 'Rasmlar yuklanmadi' });
+      }
+      
+      if (!req.user) {
+        return res.status(401).json({ message: 'Autentifikatsiya talab etiladi' });
+      }
+      
+      const files = req.files as Express.Multer.File[];
+      const imagePaths = files.map(file => {
+        const relativePath = file.path.replace(process.cwd() + '/', '');
+        return relativePath;
+      });
+      
+      return res.status(200).json({
+        message: 'Test rasmlari muvaffaqiyatli yuklandi',
+        imagePaths: imagePaths
+      });
+    } catch (error) {
+      console.error('Test images upload error:', error);
+      return res.status(500).json({ message: 'Test rasmlari yuklash xato' });
+    }
+  });
   app.post("/api/upload/question-image", authenticate, authorize(["teacher"]), upload.single('questionImage'), uploadQuestionImage);
 
   // Excel Export Routes

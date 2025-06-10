@@ -329,6 +329,29 @@ export function TestTaking() {
         </div>
       )}
 
+      {/* Test images display */}
+      {test.testImages && test.testImages.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Test rasmlari</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {test.testImages.map((image, index) => (
+                <div key={index} className="text-center">
+                  <img
+                    src={`/${image}`}
+                    alt={`Test rasmi ${index + 1}`}
+                    className="max-w-full h-auto max-h-48 mx-auto rounded-lg border"
+                  />
+                  <p className="text-sm text-gray-500 mt-2">Rasm {index + 1}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Questions batch display */}
       <Card className="mb-6">
         <CardHeader>
