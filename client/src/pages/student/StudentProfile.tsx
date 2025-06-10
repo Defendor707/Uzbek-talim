@@ -52,6 +52,7 @@ const StudentProfile: React.FC = () => {
       apiRequest('POST', '/api/profile/student', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profile/student'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] }); // Refresh user data
       toast({
         title: 'Muvaffaqiyat',
         description: 'Profil muvaffaqiyatli yaratildi',
@@ -72,6 +73,7 @@ const StudentProfile: React.FC = () => {
       apiRequest('PUT', '/api/profile/student', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profile/student'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] }); // Refresh user data
       toast({
         title: 'Muvaffaqiyat',
         description: 'Profil muvaffaqiyatli yangilandi',

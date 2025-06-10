@@ -1396,6 +1396,23 @@ bot.hears('👤 Profil', async (ctx) => {
       } else {
         profileDetails = `❗ O'quvchi profili yaratilmagan.\n`;
       }
+    } else if (user.role === 'parent') {
+      // For parent, show phone from user table and children count
+      if (user.phone) {
+        profileDetails += `📞 Telefon: ${user.phone}\n`;
+      }
+      
+      // Get children count
+      try {
+        const children = await storage.getChildrenByParentId(user.id);
+        profileDetails += `👶 Farzandlar soni: ${children.length} ta\n`;
+      } catch (error) {
+        console.error('Error getting children:', error);
+      }
+      
+      if (!profileDetails) {
+        profileDetails = `❗ Telefon raqam kiritilmagan.\n`;
+      }
     }
     
     let keyboard;

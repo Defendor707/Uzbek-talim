@@ -46,6 +46,7 @@ const ParentProfile: React.FC = () => {
       apiRequest('POST', '/api/profile/parent', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profile/parent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] }); // Refresh user data
       toast({
         title: 'Muvaffaqiyat',
         description: 'Profil muvaffaqiyatli yaratildi',
@@ -66,6 +67,7 @@ const ParentProfile: React.FC = () => {
       apiRequest('PUT', '/api/profile/parent', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profile/parent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] }); // Refresh user data
       toast({
         title: 'Muvaffaqiyat',
         description: 'Profil muvaffaqiyatli yangilandi',
