@@ -107,7 +107,7 @@ export const tests = pgTable("tests", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
-  testImage: text("test_image"), // Test uchun rasm URL yoki fayl yo'li
+  testImages: text("test_images").array(), // Test uchun rasmlar (maksimal 5 ta)
   teacherId: integer("teacher_id").notNull().references(() => users.id),
   subjectId: integer("subject_id").references(() => subjects.id),
   lessonId: integer("lesson_id").references(() => lessons.id),
@@ -223,7 +223,10 @@ export const insertLessonSchema = createInsertSchema(lessons)
 
 // Schema for inserting tests
 export const insertTestSchema = createInsertSchema(tests)
-  .omit({ id: true, createdAt: true, updatedAt: true });
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    testImages: z.array(z.string()).max(5, 'Maksimal 5 ta rasm yuklash mumkin').optional(),
+  });
 
 // Schema for inserting questions
 export const insertQuestionSchema = createInsertSchema(questions)
