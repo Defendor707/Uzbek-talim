@@ -71,9 +71,8 @@ export function TestTaking() {
   // Start test attempt mutation
   const startAttemptMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/tests/${testId}/attempts`, {
-        method: "POST",
-      });
+      const response = await apiRequest("POST", `/api/tests/${testId}/attempts`);
+      return await response.json();
     },
     onSuccess: (data: TestAttempt) => {
       setAttemptId(data.id);
@@ -91,23 +90,19 @@ export function TestTaking() {
   // Submit answer mutation
   const submitAnswerMutation = useMutation({
     mutationFn: async (answerData: StudentAnswer) => {
-      return await apiRequest(`/api/tests/attempts/${attemptId}/answers`, {
-        method: "POST",
-        body: JSON.stringify(answerData),
-      });
+      const response = await apiRequest("POST", `/api/tests/attempts/${attemptId}/answers`, answerData);
+      return await response.json();
     },
   });
 
   // Submit test mutation
   const submitTestMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/tests/attempts/${attemptId}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          status: "completed",
-          endTime: new Date().toISOString(),
-        }),
+      const response = await apiRequest("PUT", `/api/tests/attempts/${attemptId}`, {
+        status: "completed",
+        endTime: new Date().toISOString(),
       });
+      return await response.json();
     },
     onSuccess: () => {
       toast({
