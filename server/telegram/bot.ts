@@ -46,8 +46,9 @@ interface BotSessionData extends Scenes.SceneSession {
     testData?: {
       title?: string;
       description?: string;
-      imageUrl?: string;
+      testImages?: string[];
     };
+    uploadedImages?: string[];
   };
 }
 
@@ -344,16 +345,17 @@ bot.on('text', async (ctx, next) => {
       }
       ctx.session.testCreation.testData.title = title;
       
-      // Ommaviy test uchun rasm yuklash talab qilish
-      if (ctx.session.testCreation.testType === 'public') {
+      // Maxsus raqamli test uchun rasm yuklash imkoniyati
+      if (ctx.session.testCreation.testType === 'private') {
         ctx.session.testCreation.step = 'imageUpload';
         await ctx.reply(
-          '🖼️ *Test rasmi*\n\n' +
-          'Ommaviy test uchun test rasmini yuklang:\n\n' +
-          '📸 Rasm yuklash uchun rasmni bu chatga yuboring.',
+          '🖼️ *Maxsus raqamli test uchun rasm*\n\n' +
+          'Test uchun rasmlar yuklashni xohlaysizmi?\n\n' +
+          '📸 Rasm yuklash uchun "Ha" tugmasini bosing\n' +
+          '⏭️ Rasm yuklamaslik uchun "Yo\'q" tugmasini bosing',
           {
             parse_mode: 'Markdown',
-            ...Markup.keyboard([['⏭️ O\'tkazib yuborish', '🔙 Orqaga']]).resize()
+            ...Markup.keyboard([['📸 Ha, rasm yuklash', '⏭️ Yo\'q, o\'tkazib yuborish'], ['🔙 Orqaga']]).resize()
           }
         );
         return;
@@ -1175,7 +1177,10 @@ bot.on('photo', async (ctx, next) => {
     
     // Store photo file_id for later use
     const photo = ctx.message.photo[ctx.message.photo.length - 1];
-    ctx.session.testCreation.testData.imageUrl = photo.file_id;
+    if (!ctx.session.testCreation.uploadedImages) {
+      ctx.session.testCreation.uploadedImages = [];
+    }
+    ctx.session.testCreation.uploadedImages.push(photo.file_id);
     
     ctx.session.testCreation.step = 'questionCount';
     await ctx.reply(
