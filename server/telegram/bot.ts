@@ -830,8 +830,7 @@ bot.action(/more_tests_(\d+)/, async (ctx) => {
   }
   
   try {
-    const offset = parseInt(ctx.match[1]);
-    const page = Math.floor(offset / 5) + 1;
+    const page = parseInt(ctx.match[1]) + 1;
     
     // Get next 5 tests
     const tests = await db.select()
@@ -839,7 +838,7 @@ bot.action(/more_tests_(\d+)/, async (ctx) => {
       .where(eq(schema.tests.type, 'public'))
       .orderBy(desc(schema.tests.createdAt))
       .limit(5)
-      .offset((page) * 5);
+      .offset(page * 5);
     
     if (!tests || tests.length === 0) {
       await ctx.reply('📝 Boshqa testlar topilmadi.');
@@ -867,11 +866,11 @@ bot.action(/more_tests_(\d+)/, async (ctx) => {
     
     // Add navigation buttons
     const navigationButtons = [];
-    if (hasMore) {
-      navigationButtons.push(Markup.button.callback('📄 Davomi...', `more_tests_${page}`));
-    }
     if (page > 0) {
       navigationButtons.push(Markup.button.callback('🔙 Orqaga', `more_tests_${page - 2}`));
+    }
+    if (hasMore) {
+      navigationButtons.push(Markup.button.callback('📄 Davomi...', `more_tests_${page}`));
     }
     
     if (navigationButtons.length > 0) {

@@ -86,6 +86,8 @@ const CreateTestPage: React.FC = () => {
   };
 
   const handleCreateTest = async () => {
+    if (isCreating) return; // Prevent multiple submissions
+    
     const formData = form.getValues();
     
     // Validate all questions have correct answers
@@ -98,6 +100,8 @@ const CreateTestPage: React.FC = () => {
       });
       return;
     }
+
+    setIsCreating(true);
     
     try {
       // Prepare form data with images
@@ -165,6 +169,8 @@ const CreateTestPage: React.FC = () => {
         description: error.message || 'Test yaratishda xatolik yuz berdi',
         variant: 'destructive',
       });
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -460,9 +466,10 @@ const CreateTestPage: React.FC = () => {
                         <Button
                           type="button"
                           onClick={handleCreateTest}
+                          disabled={isCreating}
                           className="bg-green-600 hover:bg-green-700"
                         >
-                          Saqlash
+                          {isCreating ? 'Saqlanmoqda...' : 'Saqlash'}
                         </Button>
                       )}
                     </div>
