@@ -860,7 +860,7 @@ bot.command('tests', async (ctx) => {
     }));
     
     // Add pagination button for students if there might be more tests
-    if (user.role === 'student' && tests.length === 5) {
+    if (user.role === 'student') {
       const totalPublicTests = await db.select({ count: sql<number>`count(*)` })
         .from(schema.tests)
         .where(and(
@@ -868,9 +868,13 @@ bot.command('tests', async (ctx) => {
           eq(schema.tests.status, 'active')
         ));
       
-      if (totalPublicTests[0] && totalPublicTests[0].count > 5) {
-        testButtons.push([Markup.button.callback('📄 Davomi...', 'more_tests_0')]);
+      const totalCount = totalPublicTests[0]?.count || 0;
+      if (totalCount > 5) {
+        testButtons.push([Markup.button.callback('📄 Keyingi 5 ta test →', 'more_tests_1')]);
       }
+      
+      // Add main menu button for students
+      testButtons.push([Markup.button.callback('🏠 Bosh menyu', 'main_menu')]);
     }
     
     const headerMessage = user.role === 'student'
@@ -895,9 +899,9 @@ bot.action(/more_tests_(\d+)/, async (ctx) => {
   }
   
   try {
-    const page = parseInt(ctx.match[1]) + 1;
+    const page = parseInt(ctx.match[1]);
     
-    // Get next 5 tests
+    // Get tests for current page
     const tests = await db.select()
       .from(schema.tests)
       .where(and(
@@ -925,7 +929,7 @@ bot.action(/more_tests_(\d+)/, async (ctx) => {
       return [Markup.button.callback(`${test.title} (${subjectName})`, `view_test_${test.id}`)];
     }));
     
-    // Check if there are more tests
+    // Check total tests count
     const totalTests = await db.select({ count: sql<number>`count(*)` })
       .from(schema.tests)
       .where(and(
@@ -933,20 +937,24 @@ bot.action(/more_tests_(\d+)/, async (ctx) => {
         eq(schema.tests.status, 'active')
       ));
     
-    const hasMore = totalTests[0] && totalTests[0].count > (page + 1) * 5;
+    const totalCount = totalTests[0]?.count || 0;
+    const hasMore = totalCount > (page + 1) * 5;
     
     // Add navigation buttons
     const navigationButtons = [];
     if (page > 0) {
-      navigationButtons.push(Markup.button.callback('🔙 Orqaga', `more_tests_${page - 2}`));
+      navigationButtons.push(Markup.button.callback('← Oldingi 5 ta', `more_tests_${page - 1}`));
     }
     if (hasMore) {
-      navigationButtons.push(Markup.button.callback('📄 Davomi...', `more_tests_${page}`));
+      navigationButtons.push(Markup.button.callback('Keyingi 5 ta →', `more_tests_${page + 1}`));
     }
     
     if (navigationButtons.length > 0) {
       testButtons.push(navigationButtons);
     }
+    
+    // Add main menu button
+    testButtons.push([Markup.button.callback('🏠 Bosh menyu', 'main_menu')]);
     
     await ctx.editMessageText(
       `📝 *Ommaviy testlar ro'yxati* (${page + 1}-sahifa)\n\n💡 Maxsus raqamli test ishlatish uchun 6 xonali test kodini yuboring.\n\nTest haqida batafsil ma'lumot olish uchun tugmani bosing:`,
