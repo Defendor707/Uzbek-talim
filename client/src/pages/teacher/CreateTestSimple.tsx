@@ -25,7 +25,7 @@ type TestFormData = z.infer<typeof testSchema>;
 
 interface Question {
   questionText: string;
-  correctAnswer: 'A' | 'B' | 'C' | 'D';
+  correctAnswer?: 'A' | 'B' | 'C' | 'D';
 }
 
 const CreateTestPage: React.FC = () => {
@@ -73,7 +73,7 @@ const CreateTestPage: React.FC = () => {
     // Initialize questions array with empty questions
     const emptyQuestions: Question[] = Array.from({ length: totalQuestions }, (_, index) => ({
       questionText: `${index + 1}-savol`,
-      correctAnswer: 'A' as const,
+      correctAnswer: undefined,
     }));
     
     setQuestions(emptyQuestions);
@@ -88,6 +88,17 @@ const CreateTestPage: React.FC = () => {
 
   const handleCreateTest = async () => {
     const formData = form.getValues();
+    
+    // Validate all questions have correct answers
+    const incompleteQuestions = questions.filter(q => !q.correctAnswer);
+    if (incompleteQuestions.length > 0) {
+      toast({
+        title: 'Xatolik',
+        description: 'Barcha savollar uchun to\'g\'ri javobni belgilang',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     try {
       // Prepare form data with images
@@ -130,9 +141,11 @@ const CreateTestPage: React.FC = () => {
         throw new Error('Test yaratishda xatolik');
       }
 
+      const result = await response.json();
+      
       toast({
         title: 'Muvaffaqiyat',
-        description: 'Test muvaffaqiyatli yaratildi!',
+        description: `Test muvaffaqiyatli yaratildi! ${testCode ? `Kod: ${testCode}` : ''}`,
       });
       
       queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
@@ -142,6 +155,7 @@ const CreateTestPage: React.FC = () => {
       setStep('info');
       setUploadedImages([]);
       setQuestions([]);
+      setTestCode('');
       window.location.href = '/teacher/tests';
     } catch (error: any) {
       toast({
@@ -265,6 +279,15 @@ const CreateTestPage: React.FC = () => {
                     <p className="text-red-500 text-sm mt-1">{form.formState.errors.totalQuestions.message}</p>
                   )}
                 </div>
+
+                {/* Show test code for numerical tests */}
+                {form.watch('type') === 'numerical' && testCode && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <Label className="text-blue-800 font-medium">Test kodi</Label>
+                    <div className="text-2xl font-bold text-blue-600 mt-1">{testCode}</div>
+                    <p className="text-blue-600 text-sm mt-1">Bu kodni o'quvchilar botga yozib test topishadi</p>
+                  </div>
+                )}
 
                 <Button type="submit" className="w-full">
                   Keyingi qadam: Rasmlar
@@ -390,6 +413,9 @@ const CreateTestPage: React.FC = () => {
                                   </button>
                                 ))}
                               </div>
+                              {!question.correctAnswer && (
+                                <p className="text-red-500 text-xs mt-1">To'g'ri javobni tanlang</p>
+                              )}
                             </div>
                           </div>
                         </div>

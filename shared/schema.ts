@@ -116,6 +116,7 @@ export const tests = pgTable("tests", {
   grade: text("grade").notNull(),
   classroom: text("classroom"),
   type: testTypeEnum("type").notNull(),
+  testCode: text("test_code").unique(), // Maxsus raqamli testlar uchun 6 xonali kod
   duration: integer("duration").notNull(), // in minutes
   totalQuestions: integer("total_questions").notNull(),
   passingScore: integer("passing_score"), // percentage
