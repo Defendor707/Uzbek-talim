@@ -17,6 +17,7 @@ import ChildrenPage from "@/pages/parent/ChildrenPage";
 import LessonsPage from "@/pages/teacher/Lessons";
 import TestsPage from "@/pages/teacher/Tests";
 import CreateTestPage from "@/pages/teacher/CreateTestSimple";
+import TestTypeSelection from "@/pages/teacher/TestTypeSelection";
 import StudentsPage from "@/pages/teacher/Students";
 import StudentTestsPage from "@/pages/student/Tests";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -79,7 +80,12 @@ function Router() {
           <TestsPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/teacher/tests/create">
+      <Route path="/teacher/test-types">
+        <ProtectedRoute allowedRoles={["teacher"]}>
+          <TestTypeSelection />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/teacher/create-test">
         <ProtectedRoute allowedRoles={["teacher"]}>
           <CreateTestPage />
         </ProtectedRoute>

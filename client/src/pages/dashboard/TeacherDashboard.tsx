@@ -113,11 +113,18 @@ const TeacherDashboard: React.FC = () => {
             <h3 className="text-lg font-semibold mb-2">Testlar</h3>
             <p className="text-gray-600 text-sm mb-1">Jami: {tests?.length || 0}</p>
             <p className="text-gray-500 text-xs mb-4">Test yarating va boshqaring</p>
-            <Link href="/teacher/tests">
-              <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                Ko'rish
-              </Button>
-            </Link>
+            <div className="space-y-2">
+              <Link href="/teacher/tests" className="block">
+                <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                  Ko'rish
+                </Button>
+              </Link>
+              <Link href="/teacher/test-types" className="block">
+                <Button variant="outline" className="w-full border-purple-600 text-purple-600 hover:bg-purple-50">
+                  Yangi test yaratish
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* 4. Boshqalar */}

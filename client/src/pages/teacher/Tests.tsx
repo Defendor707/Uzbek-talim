@@ -105,7 +105,7 @@ const TestsPage: React.FC = () => {
         
         {/* Actions */}
         <div className="mb-6 sm:mb-8">
-          <Link href="/teacher/tests/create" className="w-full sm:w-auto">
+          <Link href="/teacher/test-types" className="w-full sm:w-auto">
             <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
