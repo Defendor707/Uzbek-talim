@@ -721,15 +721,21 @@ bot.command('tests', async (ctx) => {
         await ctx.reply('❌ O\'quvchi profili topilmadi.');
         return;
       }
-      // O'quvchi uchun barcha testlarni ko'rsatish
-      tests = [];
+      // O'quvchi uchun ommaviy testlarni ko'rsatish
+      tests = await db.select()
+        .from(schema.tests)
+        .where(eq(schema.tests.type, 'public'))
+        .orderBy(schema.tests.createdAt);
     } else {
       await ctx.reply('❌ Sizning rolingiz testlarni ko\'rishga ruxsat bermaydi.');
       return;
     }
     
     if (!tests || tests.length === 0) {
-      await ctx.reply('ℹ️ Hozircha testlar mavjud emas.');
+      const message = user.role === 'student' 
+        ? 'ℹ️ Hozircha ommaviy testlar mavjud emas.\n\n💡 Maxsus raqamli test ishlatish uchun 6 xonali test kodini yuboring.'
+        : 'ℹ️ Hozircha testlar mavjud emas.';
+      await ctx.reply(message);
       return;
     }
     
@@ -746,14 +752,14 @@ bot.command('tests', async (ctx) => {
       return [Markup.button.callback(`${test.title} (${subjectName})`, `view_test_${test.id}`)];
     }));
     
-    await ctx.reply(
-      '📝 *Mavjud testlar ro\'yxati*\n\n' +
-      'Test haqida batafsil ma\'lumot olish uchun tugmani bosing:',
-      {
-        parse_mode: 'Markdown',
-        ...Markup.inlineKeyboard(testButtons)
-      }
-    );
+    const headerMessage = user.role === 'student'
+      ? '📝 *Ommaviy testlar ro\'yxati*\n\n💡 Maxsus raqamli test ishlatish uchun 6 xonali test kodini yuboring.\n\nTest haqida batafsil ma\'lumot olish uchun tugmani bosing:'
+      : '📝 *Mavjud testlar ro\'yxati*\n\nTest haqida batafsil ma\'lumot olish uchun tugmani bosing:';
+    
+    await ctx.reply(headerMessage, {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard(testButtons)
+    });
     
     if (tests.length > 10) {
       await ctx.reply(`... va yana ${tests.length - 10} ta testlar. To'liq ro'yxatni ko'rish uchun veb-saytdan foydalaning.`);
@@ -790,12 +796,28 @@ bot.action(/view_test_(\d+)/, async (ctx) => {
       }
     }
 
-    const testInfo = `📝 *${test.title}*\n\n` +
-      `📚 *Fan*: ${subjectName}\n` +
-      `🎓 *Sinf*: ${test.grade}\n` +
-      `🏫 *Sinf xonasi*: ${test.classroom || 'Barcha sinflar'}\n` +
-      `⏱ *Davomiyligi*: ${test.duration} daqiqa\n` +
-      `📊 *Holati*: ${getTestStatusInUzbek(test.status)}\n` +
+    let testInfo = `📝 *${test.title}*\n\n`;
+    
+    if (test.description) {
+      testInfo += `📄 *Tavsif*: ${test.description}\n`;
+    }
+    
+    testInfo += `📚 *Fan*: ${subjectName}\n` +
+      `🎓 *Sinf*: ${test.grade}\n`;
+    
+    if (test.classroom) {
+      testInfo += `🏫 *Sinf xonasi*: ${test.classroom}\n`;
+    }
+    
+    testInfo += `🌐 *Turi*: ${test.type === 'public' ? 'Ommaviy' : test.type === 'numerical' ? 'Maxsus raqamli' : 'Oddiy'}\n`;
+    
+    if (test.testCode) {
+      testInfo += `🔢 *Test kodi*: ${test.testCode}\n`;
+    }
+    
+    testInfo += `⏱ *Davomiyligi*: ${test.duration} daqiqa\n` +
+      `📊 *Savollar soni*: ${test.totalQuestions}\n` +
+      `📈 *Holati*: ${getTestStatusInUzbek(test.status)}\n` +
       `📅 *Yaratilgan sana*: ${new Date(test.createdAt).toLocaleDateString('uz-UZ')}`;
 
     // Show test images if available
