@@ -186,21 +186,21 @@ const CreateTestPage: React.FC = () => {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 gap-4 sm:gap-0">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Test yaratish</h1>
-              <p className="text-gray-600">Yangi test yarating va savollarni qo'shing</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Test yaratish</h1>
+              <p className="text-sm sm:text-base text-gray-600">Yangi test yarating va savollarni qo'shing</p>
             </div>
-            <div className="flex gap-3">
-              <Link href="/teacher/tests">
-                <Button variant="outline">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+              <Link href="/teacher/tests" className="w-full sm:w-auto">
+                <Button variant="outline" className="w-full sm:w-auto">
                   Orqaga
                 </Button>
               </Link>
               <Button 
                 variant="outline" 
                 onClick={logout}
-                className="text-red-600 border-red-600 hover:bg-red-50"
+                className="text-red-600 border-red-600 hover:bg-red-50 w-full sm:w-auto"
               >
                 Chiqish
               </Button>
@@ -211,26 +211,26 @@ const CreateTestPage: React.FC = () => {
 
       {/* Progress Steps */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center justify-center space-x-4 mb-8">
+        <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-8">
           <div className={`flex items-center space-x-2 ${step === 'info' ? 'text-blue-600' : step === 'images' || step === 'questions' ? 'text-green-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'info' ? 'border-blue-600 bg-blue-50' : step === 'images' || step === 'questions' ? 'border-green-600 bg-green-50' : 'border-gray-300'}`}>
               1
             </div>
-            <span className="font-medium">Test ma'lumotlari</span>
+            <span className="font-medium text-sm sm:text-base">Test ma'lumotlari</span>
           </div>
-          <div className={`w-8 h-0.5 ${step === 'images' || step === 'questions' ? 'bg-green-600' : 'bg-gray-300'}`}></div>
+          <div className={`hidden sm:block w-8 h-0.5 ${step === 'images' || step === 'questions' ? 'bg-green-600' : 'bg-gray-300'}`}></div>
           <div className={`flex items-center space-x-2 ${step === 'images' ? 'text-blue-600' : step === 'questions' ? 'text-green-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'images' ? 'border-blue-600 bg-blue-50' : step === 'questions' ? 'border-green-600 bg-green-50' : 'border-gray-300'}`}>
               2
             </div>
-            <span className="font-medium">Rasmlar</span>
+            <span className="font-medium text-sm sm:text-base">Rasmlar</span>
           </div>
-          <div className={`w-8 h-0.5 ${step === 'questions' ? 'bg-green-600' : 'bg-gray-300'}`}></div>
+          <div className={`hidden sm:block w-8 h-0.5 ${step === 'questions' ? 'bg-green-600' : 'bg-gray-300'}`}></div>
           <div className={`flex items-center space-x-2 ${step === 'questions' ? 'text-blue-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'questions' ? 'border-blue-600 bg-blue-50' : 'border-gray-300'}`}>
               3
             </div>
-            <span className="font-medium">Savollar</span>
+            <span className="font-medium text-sm sm:text-base">Savollar</span>
           </div>
         </div>
 

@@ -863,7 +863,10 @@ bot.command('tests', async (ctx) => {
     if (user.role === 'student' && tests.length === 5) {
       const totalPublicTests = await db.select({ count: sql<number>`count(*)` })
         .from(schema.tests)
-        .where(eq(schema.tests.type, 'public'));
+        .where(and(
+          eq(schema.tests.type, 'public'),
+          eq(schema.tests.status, 'active')
+        ));
       
       if (totalPublicTests[0] && totalPublicTests[0].count > 5) {
         testButtons.push([Markup.button.callback('📄 Davomi...', 'more_tests_0')]);
@@ -897,7 +900,10 @@ bot.action(/more_tests_(\d+)/, async (ctx) => {
     // Get next 5 tests
     const tests = await db.select()
       .from(schema.tests)
-      .where(eq(schema.tests.type, 'public'))
+      .where(and(
+        eq(schema.tests.type, 'public'),
+        eq(schema.tests.status, 'active')
+      ))
       .orderBy(desc(schema.tests.createdAt))
       .limit(5)
       .offset(page * 5);
@@ -922,7 +928,10 @@ bot.action(/more_tests_(\d+)/, async (ctx) => {
     // Check if there are more tests
     const totalTests = await db.select({ count: sql<number>`count(*)` })
       .from(schema.tests)
-      .where(eq(schema.tests.type, 'public'));
+      .where(and(
+        eq(schema.tests.type, 'public'),
+        eq(schema.tests.status, 'active')
+      ));
     
     const hasMore = totalTests[0] && totalTests[0].count > (page + 1) * 5;
     
