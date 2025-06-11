@@ -475,8 +475,9 @@ bot.on('text', async (ctx, next) => {
     }
   }
   
-  // Check if it's a 6-digit test code for numerical tests
-  if (/^\d{6}$/.test(messageText) && ctx.session.userId && ctx.session.role === 'student') {
+  // Check if it's a 6-digit test code for numerical tests (only when specifically looking for test codes)
+  if (/^\d{6}$/.test(messageText) && ctx.session.userId && ctx.session.role === 'student' && 
+      ctx.session.editingField && ctx.session.editingField === 'testCode') {
     try {
       const test = await db.select()
         .from(schema.tests)
@@ -499,11 +500,14 @@ bot.on('text', async (ctx, next) => {
           `📊 *Savollar soni*: ${foundTest.totalQuestions}\n` +
           `📈 *Holati*: Faol`;
         
+        // Clear editing field
+        ctx.session.editingField = undefined;
+        
         await ctx.reply(testInfo, {
           parse_mode: 'Markdown',
           ...Markup.inlineKeyboard([
             [Markup.button.callback('Testni boshlash', `start_test_${foundTest.id}`)],
-            [Markup.button.callback('🔙 Bosh menyu', 'back_to_menu')]
+            [Markup.button.callback('🔙 Bosh menyu', 'main_menu')]
           ])
         });
         return;
