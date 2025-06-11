@@ -1,16 +1,76 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import useAuth from '@/hooks/useAuth';
 
 const TestsPage: React.FC = () => {
   const { user, logout } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [testToDelete, setTestToDelete] = useState<any>(null);
   
   // Fetch tests
   const { data: tests } = useQuery<any[]>({
     queryKey: ['/api/tests'],
   });
+
+  // Delete test mutation
+  const deleteTestMutation = useMutation({
+    mutationFn: async (testId: number) => {
+      const response = await fetch(`/api/tests/${testId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Test o\'chirishda xatolik');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Muvaffaqiyat',
+        description: 'Test muvaffaqiyatli o\'chirildi',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
+      setDeleteDialogOpen(false);
+      setTestToDelete(null);
+    },
+    onError: () => {
+      toast({
+        title: 'Xatolik',
+        description: 'Test o\'chirishda xatolik yuz berdi',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleDeleteTest = (test: any) => {
+    setTestToDelete(test);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (testToDelete) {
+      deleteTestMutation.mutate(testToDelete.id);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -78,7 +138,7 @@ const TestsPage: React.FC = () => {
                             </span>
                           )}
                           <span>Savollar: {test.totalQuestions || 0}</span>
-                          <span>Vaqt: {test.duration || 0} daqiqa</span>
+
                           <span className={`px-2 py-1 rounded text-xs ${
                             test.status === 'active' ? 'bg-green-100 text-green-800' :
                             test.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
@@ -95,7 +155,13 @@ const TestsPage: React.FC = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </Button>
-                        <Button variant="outline" size="sm" className="text-red-600 hover:bg-red-50">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-red-600 hover:bg-red-50"
+                          onClick={() => handleDeleteTest(test)}
+                          disabled={deleteTestMutation.isPending}
+                        >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
@@ -176,6 +242,30 @@ const TestsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Testni o'chirish</AlertDialogTitle>
+            <AlertDialogDescription>
+              Haqiqatan ham "{testToDelete?.title}" testini o'chirmoqchimisiz? Bu amalni bekor qilib bo'lmaydi.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteTestMutation.isPending}>
+              Bekor qilish
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              disabled={deleteTestMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteTestMutation.isPending ? 'O\'chirilmoqda...' : 'O\'chirish'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

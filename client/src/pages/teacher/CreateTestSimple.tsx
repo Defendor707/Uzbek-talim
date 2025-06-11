@@ -36,6 +36,7 @@ const CreateTestPage: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionGroup, setCurrentQuestionGroup] = useState(0);
   const [testCode, setTestCode] = useState<string>('');
+  const [isCreating, setIsCreating] = useState(false);
   
   const questionsPerGroup = 5;
 
