@@ -1,4 +1,4 @@
-import { eq, and, inArray, like } from "drizzle-orm";
+import { eq, and, inArray, like, desc } from "drizzle-orm";
 import { db } from "./db";
 import * as schema from "@shared/schema";
 import bcrypt from 'bcrypt';
@@ -220,7 +220,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTestsByTeacherId(teacherId: number): Promise<schema.Test[]> {
-    return await db.select().from(schema.tests).where(eq(schema.tests.teacherId, teacherId));
+    return await db.select().from(schema.tests)
+      .where(eq(schema.tests.teacherId, teacherId))
+      .orderBy(desc(schema.tests.createdAt));
   }
 
   async getTestsByGradeAndClassroom(grade: string, classroom?: string): Promise<schema.Test[]> {

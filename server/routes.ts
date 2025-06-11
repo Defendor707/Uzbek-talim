@@ -342,13 +342,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           questions = [];
         }
 
+        // Generate unique test code for numerical tests
+        let testCode = null;
+        if (req.body.type === 'numerical') {
+          let attempts = 0;
+          while (attempts < 10) {
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            const existingTest = await storage.getTestByCode(code);
+            
+            if (!existingTest || existingTest.length === 0) {
+              testCode = code;
+              break;
+            }
+            attempts++;
+          }
+          
+          if (!testCode) {
+            return res.status(500).json({ error: "Test kodi generatsiya qilishda xatolik" });
+          }
+        }
+
         const testData = schema.insertTestSchema.parse({
           title: req.body.title,
           description: req.body.description || '',
           testImages: imageUrls,
           teacherId: req.user!.userId,
           type: req.body.type === 'public' ? 'public' : 'numerical',
-          testCode: req.body.testCode || null,
+          testCode: testCode,
           grade: req.body.grade,
           classroom: req.body.classroom || null,
           duration: parseInt(req.body.duration) || 0,

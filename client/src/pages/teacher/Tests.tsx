@@ -71,7 +71,12 @@ const TestsPage: React.FC = () => {
                           <p className="text-gray-600 text-sm mt-1">{test.description}</p>
                         )}
                         <div className="flex gap-4 mt-2 text-sm text-gray-500">
-                          <span>Sinf: {test.grade}</span>
+                          <span>Turi: {test.type === 'public' ? 'Ommaviy' : 'Maxsus raqamli'}</span>
+                          {test.type === 'numerical' && test.testCode && (
+                            <span className="font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                              Kod: {test.testCode}
+                            </span>
+                          )}
                           <span>Savollar: {test.totalQuestions || 0}</span>
                           <span>Vaqt: {test.duration || 0} daqiqa</span>
                           <span className={`px-2 py-1 rounded text-xs ${
