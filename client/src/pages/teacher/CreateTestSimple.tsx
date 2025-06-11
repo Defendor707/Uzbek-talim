@@ -48,9 +48,7 @@ const CreateTestPage: React.FC = () => {
   });
 
   const handleTestInfoSubmit = (data: TestFormData) => {
-    if (data.type === 'numerical') {
-      setTestCode(Math.floor(100000 + Math.random() * 900000).toString());
-    }
+    // Test kodi backend tomonida generatsiya qilinadi
     setStep('images');
   };
 
@@ -143,9 +141,12 @@ const CreateTestPage: React.FC = () => {
 
       const result = await response.json();
       
+      // Backend tomonidan generatsiya qilingan test kodini olish
+      const generatedTestCode = result.testCode;
+      
       toast({
         title: 'Muvaffaqiyat',
-        description: `Test muvaffaqiyatli yaratildi! ${testCode ? `Kod: ${testCode}` : ''}`,
+        description: `Test muvaffaqiyatli yaratildi! ${generatedTestCode ? `Test kodi: ${generatedTestCode}` : ''}`,
       });
       
       queryClient.invalidateQueries({ queryKey: ['/api/tests'] });

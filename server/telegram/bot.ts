@@ -822,6 +822,75 @@ bot.command('tests', async (ctx) => {
   }
 });
 
+// Pagination callback for more tests
+bot.action(/more_tests_(\d+)/, async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'student') {
+    await ctx.reply('❌ Siz tizimga kirmagansiz yoki sizning rolingiz bu amalni bajarishga ruxsat bermaydi.');
+    return;
+  }
+  
+  try {
+    const offset = parseInt(ctx.match[1]);
+    const page = Math.floor(offset / 5) + 1;
+    
+    // Get next 5 tests
+    const tests = await db.select()
+      .from(schema.tests)
+      .where(eq(schema.tests.type, 'public'))
+      .orderBy(desc(schema.tests.createdAt))
+      .limit(5)
+      .offset((page) * 5);
+    
+    if (!tests || tests.length === 0) {
+      await ctx.reply('📝 Boshqa testlar topilmadi.');
+      return;
+    }
+    
+    // Create test buttons
+    const testButtons = await Promise.all(tests.map(async test => {
+      let subjectName = "Mavjud emas";
+      if (test.subjectId) {
+        const subject = await db.select().from(schema.subjects).where(eq(schema.subjects.id, test.subjectId)).limit(1);
+        if (subject && subject.length > 0) {
+          subjectName = subject[0].name;
+        }
+      }
+      return [Markup.button.callback(`${test.title} (${subjectName})`, `view_test_${test.id}`)];
+    }));
+    
+    // Check if there are more tests
+    const totalTests = await db.select({ count: sql<number>`count(*)` })
+      .from(schema.tests)
+      .where(eq(schema.tests.type, 'public'));
+    
+    const hasMore = totalTests[0] && totalTests[0].count > (page + 1) * 5;
+    
+    // Add navigation buttons
+    const navigationButtons = [];
+    if (hasMore) {
+      navigationButtons.push(Markup.button.callback('📄 Davomi...', `more_tests_${page}`));
+    }
+    if (page > 0) {
+      navigationButtons.push(Markup.button.callback('🔙 Orqaga', `more_tests_${page - 2}`));
+    }
+    
+    if (navigationButtons.length > 0) {
+      testButtons.push(navigationButtons);
+    }
+    
+    await ctx.editMessageText(
+      `📝 *Ommaviy testlar ro'yxati* (${page + 1}-sahifa)\n\n💡 Maxsus raqamli test ishlatish uchun 6 xonali test kodini yuboring.\n\nTest haqida batafsil ma'lumot olish uchun tugmani bosing:`,
+      {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard(testButtons)
+      }
+    );
+  } catch (error) {
+    console.error('Error in pagination:', error);
+    await ctx.reply('❌ Testlarni yuklashda xatolik yuz berdi.');
+  }
+});
+
 // Test view callback
 bot.action(/view_test_(\d+)/, async (ctx) => {
   if (!ctx.session.userId) {
