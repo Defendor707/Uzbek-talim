@@ -17,7 +17,7 @@ import useAuth from '@/hooks/useAuth';
 const testSchema = z.object({
   title: z.string().min(1, 'Test nomini kiriting'),
   description: z.string().optional(),
-  type: z.enum(['public', 'private']),
+  type: z.enum(['public', 'numerical']),
   totalQuestions: z.number().min(5, 'Kamida 5 ta savol bo\'lishi kerak').max(90, 'Maksimal 90 ta savol'),
 });
 
@@ -34,8 +34,10 @@ const CreateTestPage: React.FC = () => {
   const [step, setStep] = useState<'info' | 'images' | 'questions'>('info');
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentQuestionGroup, setCurrentQuestionGroup] = useState(0);
   const [testCode, setTestCode] = useState<string>('');
+  
+  const questionsPerGroup = 5;
 
   const form = useForm<TestFormData>({
     resolver: zodResolver(testSchema),
@@ -46,7 +48,7 @@ const CreateTestPage: React.FC = () => {
   });
 
   const handleTestInfoSubmit = (data: TestFormData) => {
-    if (data.type === 'private') {
+    if (data.type === 'numerical') {
       setTestCode(Math.floor(100000 + Math.random() * 900000).toString());
     }
     setStep('images');
@@ -92,7 +94,7 @@ const CreateTestPage: React.FC = () => {
       const testFormData = new FormData();
       testFormData.append('title', formData.title);
       testFormData.append('description', formData.description || '');
-      testFormData.append('type', formData.type === 'public' ? 'public' : 'simple');
+      testFormData.append('type', formData.type === 'public' ? 'public' : 'numerical');
       testFormData.append('grade', '1');
       testFormData.append('classroom', '');
       testFormData.append('duration', '0');
@@ -235,13 +237,13 @@ const CreateTestPage: React.FC = () => {
 
                 <div>
                   <Label htmlFor="type">Test turi *</Label>
-                  <Select onValueChange={(value) => form.setValue('type', value as 'public' | 'private')}>
+                  <Select onValueChange={(value) => form.setValue('type', value as 'public' | 'numerical')}>
                     <SelectTrigger>
                       <SelectValue placeholder="Test turini tanlang" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="public">Ochiq test</SelectItem>
-                      <SelectItem value="private">Yopiq test</SelectItem>
+                      <SelectItem value="public">Ommaviy test</SelectItem>
+                      <SelectItem value="numerical">Maxsus raqamli test</SelectItem>
                     </SelectContent>
                   </Select>
                   {form.formState.errors.type && (
@@ -342,86 +344,103 @@ const CreateTestPage: React.FC = () => {
             <CardHeader>
               <CardTitle>Savollar</CardTitle>
               <p className="text-gray-600">
-                Savol {currentQuestionIndex + 1} / {questions.length}
+                Guruh {currentQuestionGroup + 1} / {Math.ceil(questions.length / questionsPerGroup)} 
+                (Savollar {currentQuestionGroup * questionsPerGroup + 1} - {Math.min((currentQuestionGroup + 1) * questionsPerGroup, questions.length)})
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
               {questions.length > 0 && (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="questionText">Savol matni</Label>
-                    <Input
-                      id="questionText"
-                      value={questions[currentQuestionIndex]?.questionText || ''}
-                      onChange={(e) => updateQuestion(currentQuestionIndex, 'questionText', e.target.value)}
-                      placeholder="Savolni kiriting"
-                    />
-                  </div>
+                <div className="space-y-8">
+                  {/* Current group questions */}
+                  {questions
+                    .slice(currentQuestionGroup * questionsPerGroup, (currentQuestionGroup + 1) * questionsPerGroup)
+                    .map((question, index) => {
+                      const actualIndex = currentQuestionGroup * questionsPerGroup + index;
+                      return (
+                        <div key={actualIndex} className="border rounded-lg p-4 bg-gray-50">
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor={`question-${actualIndex}`} className="text-lg font-medium">
+                                {actualIndex + 1}-savol
+                              </Label>
+                              <Input
+                                id={`question-${actualIndex}`}
+                                value={question.questionText}
+                                onChange={(e) => updateQuestion(actualIndex, 'questionText', e.target.value)}
+                                placeholder="Savolni kiriting"
+                                className="mt-2"
+                              />
+                            </div>
 
-                  <div>
-                    <Label>To'g'ri javob</Label>
-                    <div className="grid grid-cols-4 gap-2 mt-2">
-                      {['A', 'B', 'C', 'D'].map((option) => (
-                        <button
-                          key={option}
-                          type="button"
-                          onClick={() => updateQuestion(currentQuestionIndex, 'correctAnswer', option as 'A' | 'B' | 'C' | 'D')}
-                          className={`p-3 border rounded-lg text-center font-medium transition-colors ${
-                            questions[currentQuestionIndex]?.correctAnswer === option
-                              ? 'bg-green-500 text-white border-green-500'
-                              : 'bg-gray-50 hover:bg-gray-100 border-gray-200'
-                          }`}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                            <div>
+                              <Label className="text-sm text-gray-600">To'g'ri javob</Label>
+                              <div className="grid grid-cols-4 gap-2 mt-2">
+                                {['A', 'B', 'C', 'D'].map((option) => (
+                                  <button
+                                    key={option}
+                                    type="button"
+                                    onClick={() => updateQuestion(actualIndex, 'correctAnswer', option as 'A' | 'B' | 'C' | 'D')}
+                                    className={`p-2 border rounded-lg text-center font-medium transition-colors ${
+                                      question.correctAnswer === option
+                                        ? 'bg-green-500 text-white border-green-500'
+                                        : 'bg-white hover:bg-gray-100 border-gray-200'
+                                    }`}
+                                  >
+                                    {option}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  }
 
-                  {/* Question Navigation */}
+                  {/* Navigation */}
                   <div className="flex items-center justify-between pt-4 border-t">
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
-                      disabled={currentQuestionIndex === 0}
+                      onClick={() => setStep('images')}
                     >
-                      Oldingi savol
+                      Orqaga
                     </Button>
 
-                    <span className="text-sm text-gray-500">
-                      {currentQuestionIndex + 1} / {questions.length}
-                    </span>
+                    <div className="flex gap-2">
+                      {/* Previous group */}
+                      {currentQuestionGroup > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setCurrentQuestionGroup(currentQuestionGroup - 1)}
+                        >
+                          Oldingi
+                        </Button>
+                      )}
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setCurrentQuestionIndex(Math.min(questions.length - 1, currentQuestionIndex + 1))}
-                      disabled={currentQuestionIndex === questions.length - 1}
-                    >
-                      Keyingi savol
-                    </Button>
+                      {/* Next group or Save */}
+                      {currentQuestionGroup < Math.ceil(questions.length / questionsPerGroup) - 1 ? (
+                        <Button
+                          type="button"
+                          onClick={() => setCurrentQuestionGroup(currentQuestionGroup + 1)}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          Keyingi
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          onClick={handleCreateTest}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          Saqlash
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
-
-              <div className="flex gap-3 pt-4 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setStep('images')}
-                  className="flex-1"
-                >
-                  Orqaga
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleCreateTest}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                >
-                  Testni yaratish
-                </Button>
-              </div>
             </CardContent>
           </Card>
         )}

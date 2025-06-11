@@ -11,7 +11,9 @@ export const testTypeEnum = pgEnum('test_type', [
   'open',   // Ochiq test
   'dtm',    // DTM test
   'certificate', // Sertifikat test
-  'disciplinary' // Intizomli test
+  'disciplinary', // Intizomli test
+  'public', // Ommaviy test
+  'numerical' // Maxsus raqamli test
 ]);
 
 // Define test statuses enum
