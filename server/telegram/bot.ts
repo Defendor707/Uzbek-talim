@@ -482,7 +482,6 @@ bot.on('text', async (ctx, next) => {
         .from(schema.tests)
         .where(and(
           eq(schema.tests.testCode, messageText),
-          eq(schema.tests.type, 'numerical'),
           eq(schema.tests.status, 'active')
         ))
         .limit(1);
@@ -509,9 +508,9 @@ bot.on('text', async (ctx, next) => {
         });
         return;
       } else {
-        await ctx.reply(`❌ Test kodi "${messageText}" topilmadi yoki test faol emas.\n\n🔙 /start - Bosh menyuga qaytish`, {
+        await ctx.reply(`❌ Test kodi "${messageText}" topilmadi yoki test faol emas.\n\n💡 6 xonali kod to'g'ri kiritilganligini tekshiring.`, {
           ...Markup.inlineKeyboard([
-            [Markup.button.callback('🔙 Bosh menyu', 'back_to_menu')]
+            [Markup.button.callback('🔙 Bosh menyu', 'main_menu')]
           ])
         });
         return;
@@ -2944,36 +2943,66 @@ bot.hears('🌐 Ommaviy testlar', async (ctx) => {
   }
   
   try {
-    // Get all public tests (active status)
-    const tests = await storage.getTestsByGradeAndClassroom('10'); // Default grade for now
-    // Filter only active tests for public view
-    const publicTests = tests.filter(test => test.status === 'active');
+    const user = await storage.getUser(ctx.session.userId);
+    if (!user || user.role !== 'student') {
+      await ctx.reply('❌ Sizning rolingiz testlarni ko\'rishga ruxsat bermaydi.');
+      return;
+    }
+
+    // O'quvchi uchun ommaviy testlarni ko'rsatish (eng yangi 5 ta)
+    const tests = await db.select()
+      .from(schema.tests)
+      .where(and(
+        eq(schema.tests.type, 'public'),
+        eq(schema.tests.status, 'active')
+      ))
+      .orderBy(desc(schema.tests.createdAt))
+      .limit(5);
     
-    if (!publicTests || publicTests.length === 0) {
-      await ctx.reply('ℹ️ Hozircha ommaviy testlar mavjud emas.');
+    if (!tests || tests.length === 0) {
+      const message = 'ℹ️ Hozircha ommaviy testlar mavjud emas.\n\n💡 Maxsus raqamli test ishlatish uchun 6 xonali test kodini yuboring.';
+      await ctx.reply(message);
       return;
     }
     
-    // Create inline keyboard for public tests (max 10)
-    const testButtons = await Promise.all(publicTests.slice(0, 10).map(async test => {
-      return [Markup.button.callback(`📝 ${test.title} (${test.totalQuestions} savol)`, `start_test_${test.id}`)];
+    // Create inline keyboard for tests
+    const testButtons = await Promise.all(tests.map(async test => {
+      // Get subject name if subjectId is available
+      let subjectName = "Mavjud emas";
+      if (test.subjectId) {
+        const subject = await db.select().from(schema.subjects).where(eq(schema.subjects.id, test.subjectId)).limit(1);
+        if (subject && subject.length > 0) {
+          subjectName = subject[0].name;
+        }
+      }
+      return [Markup.button.callback(`${test.title} (${subjectName})`, `view_test_${test.id}`)];
     }));
     
-    await ctx.reply(
-      '🌐 *Ommaviy testlar*\n\n' +
-      'Quyidagi testlardan birini tanlang:',
-      {
-        parse_mode: 'Markdown',
-        ...Markup.inlineKeyboard(testButtons)
-      }
-    );
+    // Add pagination button if there might be more tests
+    const totalPublicTests = await db.select({ count: sql<number>`count(*)` })
+      .from(schema.tests)
+      .where(and(
+        eq(schema.tests.type, 'public'),
+        eq(schema.tests.status, 'active')
+      ));
     
-    if (publicTests.length > 10) {
-      await ctx.reply(`... va yana ${publicTests.length - 10} ta testlar.`);
+    const totalCount = totalPublicTests[0]?.count || 0;
+    if (totalCount > 5) {
+      testButtons.push([Markup.button.callback('📄 Keyingi 5 ta test →', 'more_tests_1')]);
     }
+    
+    // Add main menu button
+    testButtons.push([Markup.button.callback('🏠 Bosh menyu', 'main_menu')]);
+    
+    const headerMessage = '📝 *Ommaviy testlar ro\'yxati*\n\n💡 Maxsus raqamli test ishlatish uchun 6 xonali test kodini yuboring.\n\nTest haqida batafsil ma\'lumot olish uchun tugmani bosing:';
+    
+    await ctx.reply(headerMessage, {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard(testButtons)
+    });
   } catch (error) {
-    console.error('Error fetching public tests:', error);
-    await ctx.reply('❌ Ommaviy testlarni olishda xatolik yuz berdi.');
+    console.error('Error fetching tests:', error);
+    await ctx.reply('❌ Testlar ro\'yxatini olishda xatolik yuz berdi.');
   }
 });
 
