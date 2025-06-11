@@ -350,7 +350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const code = Math.floor(100000 + Math.random() * 900000).toString();
             const existingTest = await storage.getTestByCode(code);
             
-            if (!existingTest || existingTest.length === 0) {
+            if (!existingTest) {
               testCode = code;
               break;
             }

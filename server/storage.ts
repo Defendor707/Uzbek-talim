@@ -33,6 +33,7 @@ export interface IStorage {
   // Test related methods
   createTest(test: schema.InsertTest): Promise<schema.Test>;
   getTestById(id: number): Promise<schema.Test | undefined>;
+  getTestByCode(testCode: string): Promise<schema.Test | undefined>;
   updateTest(id: number, test: Partial<schema.InsertTest>): Promise<schema.Test | undefined>;
   deleteTestById(id: number): Promise<boolean>;
   getTestsByTeacherId(teacherId: number): Promise<schema.Test[]>;
@@ -201,6 +202,11 @@ export class DatabaseStorage implements IStorage {
 
   async getTestById(id: number): Promise<schema.Test | undefined> {
     const [test] = await db.select().from(schema.tests).where(eq(schema.tests.id, id));
+    return test;
+  }
+
+  async getTestByCode(testCode: string): Promise<schema.Test | undefined> {
+    const [test] = await db.select().from(schema.tests).where(eq(schema.tests.testCode, testCode));
     return test;
   }
 

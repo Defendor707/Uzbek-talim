@@ -5,7 +5,7 @@ import { botNotificationService } from '../sync/botNotifications';
 import bcrypt from 'bcrypt';
 import * as schema from '@shared/schema';
 import { db } from '../db';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, desc } from 'drizzle-orm';
 
 // Type for our session data
 interface BotSessionData extends Scenes.SceneSession {
@@ -765,11 +765,12 @@ bot.command('tests', async (ctx) => {
         await ctx.reply('❌ O\'quvchi profili topilmadi.');
         return;
       }
-      // O'quvchi uchun ommaviy testlarni ko'rsatish
+      // O'quvchi uchun ommaviy testlarni ko'rsatish (oxirgi 5 ta)
       tests = await db.select()
         .from(schema.tests)
         .where(eq(schema.tests.type, 'public'))
-        .orderBy(schema.tests.createdAt);
+        .orderBy(desc(schema.tests.createdAt))
+        .limit(5);
     } else {
       await ctx.reply('❌ Sizning rolingiz testlarni ko\'rishga ruxsat bermaydi.');
       return;
@@ -784,7 +785,7 @@ bot.command('tests', async (ctx) => {
     }
     
     // Create inline keyboard for tests
-    const testButtons = await Promise.all(tests.slice(0, 10).map(async test => {
+    const testButtons = await Promise.all(tests.map(async test => {
       // Get subject name if subjectId is available
       let subjectName = "Mavjud emas";
       if (test.subjectId) {
@@ -796,6 +797,17 @@ bot.command('tests', async (ctx) => {
       return [Markup.button.callback(`${test.title} (${subjectName})`, `view_test_${test.id}`)];
     }));
     
+    // Add pagination button for students if there might be more tests
+    if (user.role === 'student' && tests.length === 5) {
+      const totalPublicTests = await db.select({ count: sql<number>`count(*)` })
+        .from(schema.tests)
+        .where(eq(schema.tests.type, 'public'));
+      
+      if (totalPublicTests[0] && totalPublicTests[0].count > 5) {
+        testButtons.push([Markup.button.callback('📄 Davomi...', 'more_tests_0')]);
+      }
+    }
+    
     const headerMessage = user.role === 'student'
       ? '📝 *Ommaviy testlar ro\'yxati*\n\n💡 Maxsus raqamli test ishlatish uchun 6 xonali test kodini yuboring.\n\nTest haqida batafsil ma\'lumot olish uchun tugmani bosing:'
       : '📝 *Mavjud testlar ro\'yxati*\n\nTest haqida batafsil ma\'lumot olish uchun tugmani bosing:';
@@ -804,10 +816,6 @@ bot.command('tests', async (ctx) => {
       parse_mode: 'Markdown',
       ...Markup.inlineKeyboard(testButtons)
     });
-    
-    if (tests.length > 10) {
-      await ctx.reply(`... va yana ${tests.length - 10} ta testlar. To'liq ro'yxatni ko'rish uchun veb-saytdan foydalaning.`);
-    }
   } catch (error) {
     console.error('Error fetching tests:', error);
     await ctx.reply('❌ Testlar ro\'yxatini olishda xatolik yuz berdi.');
