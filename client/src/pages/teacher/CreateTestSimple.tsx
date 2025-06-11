@@ -49,7 +49,14 @@ const CreateTestPage: React.FC = () => {
   });
 
   const handleTestInfoSubmit = (data: TestFormData) => {
-    // Test kodi backend tomonida generatsiya qilinadi
+    if (!data.type) {
+      toast({
+        title: 'Xatolik',
+        description: 'Test turini tanlang',
+        variant: 'destructive',
+      });
+      return;
+    }
     setStep('images');
   };
 

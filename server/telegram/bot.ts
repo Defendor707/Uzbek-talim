@@ -498,28 +498,87 @@ bot.on('text', async (ctx, next) => {
         
         testInfo += `🔢 *Test kodi*: ${foundTest.testCode}\n` +
           `📊 *Savollar soni*: ${foundTest.totalQuestions}\n` +
-          `⏱ *Davomiyligi*: ${foundTest.duration} daqiqa\n` +
-          `📈 *Holati*: ${getTestStatusInUzbek(foundTest.status)}`;
+          `📈 *Holati*: Faol`;
         
         await ctx.reply(testInfo, {
           parse_mode: 'Markdown',
           ...Markup.inlineKeyboard([
-            [Markup.button.callback('Testni boshlash', `start_test_${foundTest.id}`)]
+            [Markup.button.callback('Testni boshlash', `start_test_${foundTest.id}`)],
+            [Markup.button.callback('🔙 Bosh menyu', 'back_to_menu')]
           ])
         });
         return;
       } else {
-        await ctx.reply(`❌ Test kodi "${messageText}" topilmadi yoki test faol emas.`);
+        await ctx.reply(`❌ Test kodi "${messageText}" topilmadi yoki test faol emas.\n\n🔙 /start - Bosh menyuga qaytish`, {
+          ...Markup.inlineKeyboard([
+            [Markup.button.callback('🔙 Bosh menyu', 'back_to_menu')]
+          ])
+        });
         return;
       }
     } catch (error) {
       console.error('Error searching test by code:', error);
-      await ctx.reply('❌ Test qidirishda xatolik yuz berdi.');
+      await ctx.reply('❌ Test qidirishda xatolik yuz berdi.\n\n🔙 /start - Bosh menyuga qaytish', {
+        ...Markup.inlineKeyboard([
+          [Markup.button.callback('🔙 Bosh menyu', 'back_to_menu')]
+        ])
+      });
       return;
     }
   }
   
   return next();
+});
+
+// Back to menu callback
+bot.action('back_to_menu', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring.');
+    return;
+  }
+
+  const user = await storage.getUser(ctx.session.userId);
+  if (!user) {
+    await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
+    return;
+  }
+
+  let roleButtons;
+  if (user.role === 'teacher') {
+    roleButtons = [
+      ['📝 Testlar', '📚 Darslar'],
+      ['👤 Profil', '📊 Statistika'],
+      ['⚙️ Sozlamalar', '❓ Yordam']
+    ];
+  } else if (user.role === 'student') {
+    roleButtons = [
+      ['📝 Testlar', '📚 Darslar'],
+      ['👤 Profil', '📊 Natijalar'],
+      ['⚙️ Sozlamalar', '❓ Yordam']
+    ];
+  } else if (user.role === 'parent') {
+    roleButtons = [
+      ['👶 Farzandlar', '📊 Natijalar'],
+      ['👤 Profil', '📞 Bog\'lanish'],
+      ['⚙️ Sozlamalar', '❓ Yordam']
+    ];
+  } else {
+    roleButtons = [
+      ['📝 Testlar', '📚 Darslar'],
+      ['👤 Profil', '📊 Hisobotlar'],
+      ['⚙️ Sozlamalar', '❓ Yordam']
+    ];
+  }
+
+  await ctx.editMessageText(
+    `🏠 *Bosh menyu*\n\nXush kelibsiz, ${user.username}!\n\nKerakli bo'limni tanlang:`,
+    {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard(roleButtons.map(row => 
+        row.map(text => Markup.button.callback(text, `menu_${text.split(' ')[1] || text}`))
+      ))
+    }
+  );
 });
 
 // Role selection handlers for registration
@@ -765,10 +824,13 @@ bot.command('tests', async (ctx) => {
         await ctx.reply('❌ O\'quvchi profili topilmadi.');
         return;
       }
-      // O'quvchi uchun ommaviy testlarni ko'rsatish (oxirgi 5 ta)
+      // O'quvchi uchun ommaviy testlarni ko'rsatish (eng yangi 5 ta)
       tests = await db.select()
         .from(schema.tests)
-        .where(eq(schema.tests.type, 'public'))
+        .where(and(
+          eq(schema.tests.type, 'public'),
+          eq(schema.tests.status, 'active')
+        ))
         .orderBy(desc(schema.tests.createdAt))
         .limit(5);
     } else {
