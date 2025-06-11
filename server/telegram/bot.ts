@@ -477,7 +477,7 @@ bot.on('text', async (ctx, next) => {
   
   // Check if it's a 6-digit test code for numerical tests (only when specifically looking for test codes)
   if (/^\d{6}$/.test(messageText) && ctx.session.userId && ctx.session.role === 'student' && 
-      ctx.session.editingField && ctx.session.editingField === 'testCode') {
+      (ctx.session as any).editingField === 'testCode') {
     try {
       const test = await db.select()
         .from(schema.tests)
@@ -513,9 +513,7 @@ bot.on('text', async (ctx, next) => {
         return;
       } else {
         await ctx.reply(`❌ Test kodi "${messageText}" topilmadi yoki test faol emas.\n\n💡 6 xonali kod to'g'ri kiritilganligini tekshiring.`, {
-          ...Markup.inlineKeyboard([
-            [Markup.button.callback('🔙 Bosh menyu', 'main_menu')]
-          ])
+          ...Markup.keyboard([['🔙 Orqaga']]).resize()
         });
         return;
       }
