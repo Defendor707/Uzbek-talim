@@ -475,6 +475,50 @@ bot.on('text', async (ctx, next) => {
     }
   }
   
+  // Check if it's a 6-digit test code for numerical tests
+  if (/^\d{6}$/.test(messageText) && ctx.session.userId && ctx.session.role === 'student') {
+    try {
+      const test = await db.select()
+        .from(schema.tests)
+        .where(and(
+          eq(schema.tests.testCode, messageText),
+          eq(schema.tests.type, 'numerical'),
+          eq(schema.tests.status, 'active')
+        ))
+        .limit(1);
+      
+      if (test && test.length > 0) {
+        const foundTest = test[0];
+        
+        let testInfo = `📝 *${foundTest.title}* topildi!\n\n`;
+        
+        if (foundTest.description) {
+          testInfo += `📄 *Tavsif*: ${foundTest.description}\n`;
+        }
+        
+        testInfo += `🔢 *Test kodi*: ${foundTest.testCode}\n` +
+          `📊 *Savollar soni*: ${foundTest.totalQuestions}\n` +
+          `⏱ *Davomiyligi*: ${foundTest.duration} daqiqa\n` +
+          `📈 *Holati*: ${getTestStatusInUzbek(foundTest.status)}`;
+        
+        await ctx.reply(testInfo, {
+          parse_mode: 'Markdown',
+          ...Markup.inlineKeyboard([
+            [Markup.button.callback('Testni boshlash', `start_test_${foundTest.id}`)]
+          ])
+        });
+        return;
+      } else {
+        await ctx.reply(`❌ Test kodi "${messageText}" topilmadi yoki test faol emas.`);
+        return;
+      }
+    } catch (error) {
+      console.error('Error searching test by code:', error);
+      await ctx.reply('❌ Test qidirishda xatolik yuz berdi.');
+      return;
+    }
+  }
+  
   return next();
 });
 
