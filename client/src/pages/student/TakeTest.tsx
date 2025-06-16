@@ -64,17 +64,18 @@ const TakeTestPage: React.FC = () => {
   // Start test attempt mutation
   const startAttemptMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/test-attempts`, {
+      const response = await apiRequest(`/api/test-attempts`, {
         method: 'POST',
         body: {
           testId,
           studentId: user?.id,
         },
       });
+      return response;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: TestAttempt) => {
       setTestAttempt(data);
-      setTimeLeft(test?.duration * 60 || 0); // Convert minutes to seconds
+      setTimeLeft((test as any)?.duration * 60 || 0); // Convert minutes to seconds
     },
     onError: (error) => {
       toast({

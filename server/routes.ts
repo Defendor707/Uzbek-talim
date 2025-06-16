@@ -511,6 +511,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // Public tests endpoint
+  app.get("/api/tests/public", authenticate, async (req, res) => {
+    try {
+      const tests = await storage.getTestsByGradeAndClassroom("", "");
+      const publicTests = tests.filter(test => test.type === 'public' && test.status === 'active');
+      return res.status(200).json(publicTests);
+    } catch (error) {
+      console.error("Error fetching public tests:", error);
+      return res.status(500).json({ message: "Failed to fetch public tests" });
+    }
+  });
+
+  // Search test by code endpoint
+  app.get("/api/tests/search/:code", authenticate, async (req, res) => {
+    try {
+      const testCode = req.params.code;
+      const test = await storage.getTestByCode(testCode);
+      
+      if (!test) {
+        return res.status(404).json({ message: "Test not found with this code" });
+      }
+
+      if (test.status !== 'active') {
+        return res.status(400).json({ message: "Test is not active" });
+      }
+
+      return res.status(200).json(test);
+    } catch (error) {
+      console.error("Error searching test by code:", error);
+      return res.status(500).json({ message: "Failed to search test" });
+    }
+  });
+
   // Question Routes
   app.post(
     "/api/tests/:testId/questions",
@@ -585,6 +618,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Test Attempt Routes
+  app.post(
+    "/api/test-attempts",
+    authenticate,
+    authorize(["student"]),
+    async (req, res) => {
+      try {
+        const { testId, studentId } = req.body;
+        
+        if (!testId || !studentId) {
+          return res.status(400).json({ message: "Test ID and Student ID are required" });
+        }
+
+        // Check if test exists and is active
+        const test = await storage.getTestById(testId);
+        if (!test) {
+          return res.status(404).json({ message: "Test not found" });
+        }
+
+        if (test.status !== "active") {
+          return res.status(400).json({ message: "Test is not active" });
+        }
+
+        // Create test attempt
+        const attemptData = schema.insertTestAttemptSchema.parse({
+          testId,
+          studentId: req.user!.userId,
+          totalQuestions: test.totalQuestions,
+          status: "in_progress",
+        });
+
+        const newAttempt = await storage.createTestAttempt(attemptData);
+        return res.status(201).json(newAttempt);
+      } catch (error) {
+        if (error instanceof ZodError) {
+          return res.status(400).json({
+            message: "Validation error",
+            errors: fromZodError(error).details,
+          });
+        }
+        console.error("Error starting test attempt:", error);
+        return res.status(500).json({ message: "Failed to start test attempt" });
+      }
+    }
+  );
+
   app.post(
     "/api/tests/:testId/attempts",
     authenticate,
@@ -679,7 +757,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // Student Answer Routes
+  // Student Answer Routes  
+  app.post(
+    "/api/student-answers",
+    authenticate,
+    authorize(["student"]),
+    async (req, res) => {
+      try {
+        const { attemptId, questionId, answer } = req.body;
+        
+        if (!attemptId || !questionId) {
+          return res.status(400).json({ message: "Attempt ID and Question ID are required" });
+        }
+
+        // Check if attempt exists and belongs to the student
+        const attempt = await storage.getTestAttemptById(attemptId);
+        if (!attempt) {
+          return res.status(404).json({ message: "Test attempt not found" });
+        }
+
+        if (attempt.studentId !== req.user!.userId) {
+          return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        // Create student answer
+        const answerData = schema.insertStudentAnswerSchema.parse({
+          attemptId,
+          questionId,
+          answer,
+        });
+
+        const newAnswer = await storage.createStudentAnswer(answerData);
+        return res.status(201).json(newAnswer);
+      } catch (error) {
+        if (error instanceof ZodError) {
+          return res.status(400).json({
+            message: "Validation error",
+            errors: fromZodError(error).details,
+          });
+        }
+        console.error("Error saving student answer:", error);
+        return res.status(500).json({ message: "Failed to save answer" });
+      }
+    }
+  );
+
   app.post(
     "/api/attempts/:attemptId/answers",
     authenticate,
@@ -718,6 +840,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         console.error("Error saving student answer:", error);
         return res.status(500).json({ message: "Failed to save answer" });
+      }
+    }
+  );
+
+  // Test submission endpoint
+  app.post(
+    "/api/test-attempts/:attemptId/submit",
+    authenticate,
+    authorize(["student"]),
+    async (req, res) => {
+      try {
+        const attemptId = parseInt(req.params.attemptId);
+        if (isNaN(attemptId)) {
+          return res.status(400).json({ message: "Invalid attempt ID" });
+        }
+
+        // Check if attempt exists and belongs to the student
+        const attempt = await storage.getTestAttemptById(attemptId);
+        if (!attempt) {
+          return res.status(404).json({ message: "Test attempt not found" });
+        }
+
+        if (attempt.studentId !== req.user!.userId) {
+          return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        // Calculate score and update attempt
+        const test = await storage.getTestById(attempt.testId);
+        const questions = await storage.getQuestionsByTestId(attempt.testId);
+        const answers = await storage.getStudentAnswersByAttemptId(attemptId);
+
+        let score = 0;
+        let totalPoints = 0;
+
+        for (const question of questions) {
+          totalPoints += question.points;
+          const studentAnswer = answers.find(a => a.questionId === question.id);
+          
+          if (studentAnswer && studentAnswer.answer === question.correctAnswer) {
+            score += question.points;
+          }
+        }
+
+        const scorePercentage = totalPoints > 0 ? (score / totalPoints) * 100 : 0;
+
+        // Update attempt with final score and end time
+        const updatedAttempt = await storage.updateTestAttempt(attemptId, {
+          endTime: new Date(),
+          score: scorePercentage.toString(),
+          status: "completed",
+        });
+
+        return res.status(200).json(updatedAttempt);
+      } catch (error) {
+        console.error("Error submitting test:", error);
+        return res.status(500).json({ message: "Failed to submit test" });
       }
     }
   );
