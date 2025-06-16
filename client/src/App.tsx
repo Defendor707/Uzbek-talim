@@ -20,6 +20,7 @@ import CreateTestPage from "@/pages/teacher/CreateTestSimple";
 import TestTypeSelection from "@/pages/teacher/TestTypeSelection";
 import StudentsPage from "@/pages/teacher/Students";
 import StudentTestsPage from "@/pages/student/Tests";
+import TakeTestPage from "@/pages/student/TakeTest";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import useAuth from "@/hooks/useAuth";
 import { useEffect } from "react";
@@ -105,6 +106,11 @@ function Router() {
       <Route path="/student/tests">
         <ProtectedRoute allowedRoles={["student"]}>
           <StudentTestsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/student/test/:id">
+        <ProtectedRoute allowedRoles={["student"]}>
+          <TakeTestPage />
         </ProtectedRoute>
       </Route>
       
