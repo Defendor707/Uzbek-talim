@@ -50,7 +50,7 @@ const TakeTestPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch test details
-  const { data: test, isLoading: testLoading } = useQuery({
+  const { data: test, isLoading: testLoading } = useQuery<any>({
     queryKey: ['/api/tests', testId],
     enabled: testId > 0,
   });
@@ -62,20 +62,29 @@ const TakeTestPage: React.FC = () => {
   });
 
   // Start test attempt mutation
-  const startAttemptMutation = useMutation({
+  const startAttemptMutation = useMutation<TestAttempt, Error, void>({
     mutationFn: async () => {
-      const response = await apiRequest(`/api/test-attempts`, {
+      const response = await fetch('/api/test-attempts', {
         method: 'POST',
-        body: {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           testId,
           studentId: user?.id,
-        },
+        }),
+        credentials: 'include',
       });
-      return response;
+      
+      if (!response.ok) {
+        throw new Error('Failed to start test');
+      }
+      
+      return response.json();
     },
     onSuccess: (data: TestAttempt) => {
       setTestAttempt(data);
-      setTimeLeft((test as any)?.duration * 60 || 0); // Convert minutes to seconds
+      setTimeLeft(test?.duration * 60 || 0); // Convert minutes to seconds
     },
     onError: (error) => {
       toast({
@@ -89,24 +98,44 @@ const TakeTestPage: React.FC = () => {
   // Submit answer mutation
   const submitAnswerMutation = useMutation({
     mutationFn: async ({ questionId, answer }: { questionId: number; answer: any }) => {
-      return apiRequest(`/api/student-answers`, {
+      const response = await fetch('/api/student-answers', {
         method: 'POST',
-        body: {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           attemptId: testAttempt?.id,
           questionId,
           answer,
-        },
+        }),
+        credentials: 'include',
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save answer');
+      }
+      
+      return response.json();
     },
   });
 
   // Submit test mutation
   const submitTestMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/test-attempts/${testAttempt?.id}/submit`, {
+      const response = await fetch(`/api/test-attempts/${testAttempt?.id}/submit`, {
         method: 'POST',
-        body: { answers },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ answers }),
+        credentials: 'include',
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to submit test');
+      }
+      
+      return response.json();
     },
     onSuccess: (data) => {
       toast({
@@ -214,15 +243,15 @@ const TakeTestPage: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="w-full max-w-2xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">{test.title}</CardTitle>
-            <CardDescription>{test.description}</CardDescription>
+            <CardTitle className="text-2xl">{test?.title || 'Test'}</CardTitle>
+            <CardDescription>{test?.description || ''}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <Clock className="h-8 w-8 text-blue-600 mx-auto mb-2" />
                 <p className="font-semibold">Vaqt</p>
-                <p className="text-sm text-gray-600">{test.duration} daqiqa</p>
+                <p className="text-sm text-gray-600">{test?.duration || 0} daqiqa</p>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <Flag className="h-8 w-8 text-green-600 mx-auto mb-2" />
@@ -271,7 +300,7 @@ const TakeTestPage: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{test.title}</h1>
+              <h1 className="text-xl font-bold text-gray-900">{test?.title || 'Test'}</h1>
               <p className="text-sm text-gray-600">
                 Savol {currentQuestionIndex + 1} / {questions?.length || 0}
               </p>
