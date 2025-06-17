@@ -2996,8 +2996,15 @@ bot.hears('🌐 Ommaviy testlar', async (ctx) => {
       .limit(5);
     
     if (!tests || tests.length === 0) {
-      const message = 'ℹ️ Hozircha ommaviy testlar mavjud emas.\n\n💡 Maxsus raqamli test ishlatish uchun 6 xonali test kodini yuboring.';
-      await ctx.reply(message);
+      await ctx.reply(
+        'ℹ️ *Ommaviy testlar*\n\n' +
+        'Hozircha ommaviy testlar mavjud emas.\n\n' +
+        'O\'qituvchilar tomonidan ommaviy testlar yaratilganida bu yerda ko\'rishingiz mumkin.',
+        {
+          parse_mode: 'Markdown',
+          ...Markup.keyboard([['🔙 Orqaga']]).resize()
+        }
+      );
       return;
     }
     
@@ -3030,7 +3037,7 @@ bot.hears('🌐 Ommaviy testlar', async (ctx) => {
     // Add main menu button
     testButtons.push([Markup.button.callback('🏠 Bosh menyu', 'main_menu')]);
     
-    const headerMessage = '📝 *Ommaviy testlar ro\'yxati*\n\n💡 Maxsus raqamli test ishlatish uchun 6 xonali test kodini yuboring.\n\nTest haqida batafsil ma\'lumot olish uchun tugmani bosing:';
+    const headerMessage = '📝 *Ommaviy testlar ro\'yxati*\n\nBarcha o\'quvchilar uchun ochiq testlar. Test haqida batafsil ma\'lumot olish uchun tugmani bosing:';
     
     await ctx.reply(headerMessage, {
       parse_mode: 'Markdown',
