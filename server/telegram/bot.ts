@@ -477,7 +477,7 @@ bot.on('text', async (ctx, next) => {
   
   // Check if it's a 6-digit test code for numerical tests (only when specifically looking for test codes)
   if (/^\d{6}$/.test(messageText) && ctx.session.userId && ctx.session.role === 'student' && 
-      ctx.session.editingField === 'testCode') {
+      (ctx.session.editingField as string) === 'testCode') {
     try {
       const test = await storage.getTestByCode(messageText);
       
@@ -2457,31 +2457,42 @@ bot.catch((err, ctx) => {
   ctx.reply('❌ Xatolik yuz berdi. Iltimos, qaytadan urinib ko\'ring.');
 });
 
+
+
 // Helper function to notify parent of test completion
 async function notifyParentOfTestCompletion(studentId: number, testId: number, score: number, totalQuestions: number, percentage: number) {
   try {
     // Get student profile to find parent
     const studentProfile = await storage.getStudentProfile(studentId);
-    if (!studentProfile || !studentProfile.parentId) {
-      return; // No parent linked
+    if (!studentProfile?.parentId) {
+      return; // No parent assigned
+    }
+    
+    // Get parent user
+    const parent = await storage.getUser(studentProfile.parentId);
+    if (!parent || !parent.telegramId) {
+      return; // Parent not found or no telegram
     }
     
     // Get student and test info
     const student = await storage.getUser(studentId);
     const test = await storage.getTestById(testId);
+    if (!student || !test) return;
     
-    if (!student || !test) {
-      return;
-    }
+    // Send notification to parent
+    const parentMessage = `👶 *Farzandingiz test yakunladi!*\n\n` +
+      `👤 *O'quvchi*: ${student.fullName}\n` +
+      `📝 *Test*: ${test.title}\n` +
+      `✅ *Natija*: ${score}/${totalQuestions} (${percentage}%)\n` +
+      `🎯 *Holat*: ${percentage >= 60 ? 'Muvaffaqiyatli o\'tdi! 🎊' : 'Qayta ishlash tavsiya etiladi 💪'}\n` +
+      `📅 *Sana*: ${new Date().toLocaleDateString('uz-UZ')}\n\n` +
+      `Batafsil ma'lumot uchun veb-saytga tashrif buyuring.`;
     
-    // Send notification to bot notification service
-    botNotificationService.addNotification({
-      userId: studentProfile.parentId,
-      type: 'test_completed',
-      message: `🎯 Farzandingiz "${student.fullName}" "${test.title}" testini yakunladi.\n\n` +
-               `📊 Natija: ${score}/${totalQuestions} (${percentage}%)\n` +
-               `📅 Sana: ${new Date().toLocaleDateString('uz-UZ')}`
+    // Send message to parent's telegram
+    await bot.telegram.sendMessage(parent.telegramId, parentMessage, {
+      parse_mode: 'Markdown'
     });
+    
   } catch (error) {
     console.error('Error notifying parent:', error);
   }
@@ -3765,7 +3776,9 @@ bot.action(/test_submit_(\d+)/, async (ctx) => {
     });
     
     // Send notification to parent if exists
-    await notifyParentOfTestCompletion(ctx.session.userId, test, correctAnswers, attempt.totalQuestions, percentage);
+    if (test) {
+      await notifyParentOfTestCompletion(ctx.session.userId, test.id, correctAnswers, attempt.totalQuestions, percentage);
+    }
     
     // Clear test session
     ctx.session.testAttempt = undefined;
@@ -3778,48 +3791,7 @@ bot.action(/test_submit_(\d+)/, async (ctx) => {
   }
 });
 
-// Function to notify parent about test completion
-async function notifyParentOfTestCompletion(studentId: number, test: any, score: number, totalQuestions: number, percentage: number) {
-  try {
-    // Get student profile to find parent
-    const studentProfile = await storage.getStudentProfile(studentId);
-    if (!studentProfile?.parentId) {
-      return; // No parent assigned
-    }
-    
-    // Get parent user
-    const parent = await storage.getUser(studentProfile.parentId);
-    if (!parent || !parent.telegramId) {
-      return; // Parent not found or no telegram
-    }
-    
-    // Get student info
-    const student = await storage.getUser(studentId);
-    if (!student) return;
-    
-    // Send notification to parent
-    const parentMessage = `👶 *Farzandingiz test yakunladi!*\n\n` +
-      `👤 *O'quvchi*: ${student.fullName}\n` +
-      `📝 *Test*: ${test?.title || 'Test'}\n` +
-      `✅ *Natija*: ${score}/${totalQuestions} (${percentage}%)\n` +
-      `🎯 *Holat*: ${percentage >= 60 ? 'Muvaffaqiyatli o\'tdi! 🎊' : 'Qayta ishlash tavsiya etiladi 💪'}\n` +
-      `📅 *Sana*: ${new Date().toLocaleDateString('uz-UZ')}\n\n` +
-      `Batafsil ma'lumot uchun veb-saytga tashrif buyuring.`;
-    
-    // Send message to parent's telegram
-    await bot.telegram.sendMessage(parent.telegramId, parentMessage, {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [Markup.button.url('🌐 Veb-saytga o\'tish', 'https://your-domain.replit.app')]
-        ]
-      }
-    });
-    
-  } catch (error) {
-    console.error('Error notifying parent:', error);
-  }
-}
+
 
 // 🚪 Hisobdan chiqish handler
 bot.hears('🚪 Hisobdan chiqish', async (ctx) => {
