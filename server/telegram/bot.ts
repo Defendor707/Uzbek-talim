@@ -477,27 +477,20 @@ bot.on('text', async (ctx, next) => {
   
   // Check if it's a 6-digit test code for numerical tests (only when specifically looking for test codes)
   if (/^\d{6}$/.test(messageText) && ctx.session.userId && ctx.session.role === 'student' && 
-      (ctx.session as any).editingField === 'testCode') {
+      ctx.session.editingField === 'testCode') {
     try {
-      const test = await db.select()
-        .from(schema.tests)
-        .where(and(
-          eq(schema.tests.testCode, messageText),
-          eq(schema.tests.status, 'active')
-        ))
-        .limit(1);
+      const test = await storage.getTestByCode(messageText);
       
-      if (test && test.length > 0) {
-        const foundTest = test[0];
+      if (test && test.status === 'active') {
+        let testInfo = `📝 *${test.title}* topildi!\n\n`;
         
-        let testInfo = `📝 *${foundTest.title}* topildi!\n\n`;
-        
-        if (foundTest.description) {
-          testInfo += `📄 *Tavsif*: ${foundTest.description}\n`;
+        if (test.description) {
+          testInfo += `📄 *Tavsif*: ${test.description}\n`;
         }
         
-        testInfo += `🔢 *Test kodi*: ${foundTest.testCode}\n` +
-          `📊 *Savollar soni*: ${foundTest.totalQuestions}\n` +
+        testInfo += `🔢 *Test kodi*: ${test.testCode}\n` +
+          `📊 *Savollar soni*: ${test.totalQuestions}\n` +
+          `🎓 *Sinf*: ${test.grade}\n` +
           `📈 *Holati*: Faol`;
         
         // Clear editing field
@@ -506,24 +499,34 @@ bot.on('text', async (ctx, next) => {
         await ctx.reply(testInfo, {
           parse_mode: 'Markdown',
           ...Markup.inlineKeyboard([
-            [Markup.button.callback('Testni boshlash', `start_test_${foundTest.id}`)],
+            [Markup.button.callback('▶️ Testni boshlash', `start_test_${test.id}`)],
             [Markup.button.callback('🔙 Bosh menyu', 'main_menu')]
           ])
         });
         return;
       } else {
-        await ctx.reply(`❌ Test kodi "${messageText}" topilmadi yoki test faol emas.\n\n💡 6 xonali kod to'g'ri kiritilganligini tekshiring.`, {
-          ...Markup.keyboard([['🔙 Orqaga']]).resize()
-        });
+        await ctx.reply(
+          `❌ Test kodi "${messageText}" topilmadi yoki test faol emas.\n\n` +
+          `💡 Quyidagi holatlarga e'tibor bering:\n` +
+          `• Kod 6 ta raqamdan iborat bo'lishi kerak\n` +
+          `• Test faol holatda bo'lishi kerak\n` +
+          `• O'qituvchi tomonidan berilgan to'g'ri kodni kiriting`,
+          {
+            parse_mode: 'Markdown',
+            ...Markup.keyboard([['🔙 Orqaga']]).resize()
+          }
+        );
         return;
       }
     } catch (error) {
       console.error('Error searching test by code:', error);
-      await ctx.reply('❌ Test qidirishda xatolik yuz berdi.\n\n🔙 /start - Bosh menyuga qaytish', {
-        ...Markup.inlineKeyboard([
-          [Markup.button.callback('🔙 Bosh menyu', 'back_to_menu')]
-        ])
-      });
+      await ctx.reply(
+        '❌ Test qidirishda xatolik yuz berdi.\n\n' +
+        'Iltimos, qaytadan urinib ko\'ring yoki bosh menyuga qaytaring.',
+        {
+          ...Markup.keyboard([['🔙 Orqaga']]).resize()
+        }
+      );
       return;
     }
   }
@@ -609,6 +612,16 @@ bot.hears(['👨‍🏫 O\'qituvchi', '👨‍🎓 O\'quvchi', '👨‍👩‍�
 
 // Back button handler
 bot.hears('🔙 Orqaga', async (ctx) => {
+  // Clear any editing fields when going back
+  if (ctx.session.editingField) {
+    ctx.session.editingField = undefined;
+  }
+  
+  // Clear test creation session if going back
+  if (ctx.session.testCreation) {
+    ctx.session.testCreation = undefined;
+  }
+  
   // Check if user is logged in - return to their dashboard
   if (ctx.session.userId && ctx.session.role) {
     await ctx.reply(
@@ -2875,6 +2888,27 @@ bot.hears('👥 O\'quvchilarim', async (ctx) => {
         ['📊 O\'quvchi statistikasi', '🔐 Login/Parol berish'],
         ['🔙 Orqaga']
       ]).resize()
+    }
+  );
+});
+
+// Handler for numeric test search
+bot.hears('🔢 Maxsus raqam orqali', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'student') {
+    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun.');
+    return;
+  }
+  
+  // Set editing field to enable test code search
+  ctx.session.editingField = 'testCode';
+  
+  await ctx.reply(
+    '🔢 *Maxsus raqamli test qidirish*\n\n' +
+    'O\'qituvchi bergan 6 xonali test kodini kiriting:\n\n' +
+    'Misol: 123456',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([['🔙 Orqaga']]).resize()
     }
   );
 });
