@@ -2913,6 +2913,87 @@ bot.hears('🔢 Maxsus raqam orqali', async (ctx) => {
   );
 });
 
+// Student results handler
+bot.hears(['📊 Test natijalari', '📊 Natijalarim'], async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'student') {
+    await ctx.reply('❌ Bu funksiya faqat o\'quvchilar uchun.');
+    return;
+  }
+  
+  try {
+    // Get student's test attempts
+    const attempts = await storage.getTestAttemptsByStudentId(ctx.session.userId);
+    
+    if (!attempts || attempts.length === 0) {
+      await ctx.reply(
+        '📊 *Test natijalari*\n\n' +
+        'Sizda hali test natijalari mavjud emas.\n\n' +
+        'Testlar ishlagandan so\'ng natijalar bu yerda ko\'rinadi.',
+        {
+          parse_mode: 'Markdown',
+          ...Markup.keyboard([['🔙 Orqaga']]).resize()
+        }
+      );
+      return;
+    }
+    
+    // Group attempts by status
+    const completedAttempts = attempts.filter(a => a.status === 'completed');
+    const inProgressAttempts = attempts.filter(a => a.status === 'in_progress');
+    
+    // Calculate statistics
+    const totalAttempts = attempts.length;
+    const completedCount = completedAttempts.length;
+    
+    let avgScore = 0;
+    if (completedAttempts.length > 0) {
+      const totalPercentage = completedAttempts.reduce((sum, attempt) => {
+        const score = Number(attempt.score) || 0;
+        const percentage = (score / attempt.totalQuestions) * 100;
+        return sum + percentage;
+      }, 0);
+      avgScore = Math.round(totalPercentage / completedAttempts.length);
+    }
+    
+    let resultText = `📊 *Test natijalari*\n\n` +
+      `📈 *Umumiy statistika:*\n` +
+      `• Jami urinishlar: ${totalAttempts}\n` +
+      `• Tugallangan: ${completedCount}\n` +
+      `• Jarayonda: ${inProgressAttempts.length}\n` +
+      `• O'rtacha ball: ${avgScore}%\n\n`;
+    
+    if (completedAttempts.length > 0) {
+      resultText += `🏆 *So'nggi natijalar:*\n`;
+      
+      // Show last 5 completed attempts
+      const recentAttempts = completedAttempts
+        .sort((a, b) => new Date(b.endTime || '').getTime() - new Date(a.endTime || '').getTime())
+        .slice(0, 5);
+      
+      for (const attempt of recentAttempts) {
+        const test = await storage.getTestById(attempt.testId);
+        const score = Number(attempt.score) || 0;
+        const percentage = Math.round((score / attempt.totalQuestions) * 100);
+        const date = new Date(attempt.endTime || '').toLocaleDateString('uz-UZ');
+        
+        resultText += `• ${test?.title || 'Test'}: ${score}/${attempt.totalQuestions} (${percentage}%) - ${date}\n`;
+      }
+    }
+    
+    await ctx.reply(resultText, {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback('📄 Batafsil natijalar', `detailed_results_${ctx.session.userId}`)],
+        [Markup.button.callback('🔙 Orqaga', 'back_to_menu')]
+      ])
+    });
+    
+  } catch (error) {
+    console.error('Error fetching student results:', error);
+    await ctx.reply('❌ Natijalarni olishda xatolik yuz berdi.');
+  }
+});
+
 // Student menu handlers
 bot.hears('📚 Darsliklarim', async (ctx) => {
   if (!ctx.session.userId || ctx.session.role !== 'student') {
@@ -3624,6 +3705,121 @@ bot.hears('📞 Aloqa', async (ctx) => {
     'Sizning savollaringiz bizga muhim!'
   );
 });
+
+// Test submission handler
+bot.action(/test_submit_(\d+)/, async (ctx) => {
+  if (!ctx.session.testAttempt || !ctx.session.userId) {
+    await ctx.answerCbQuery('❌ Test sessiyasi topilmadi');
+    return;
+  }
+  
+  const attemptId = parseInt(ctx.match[1]);
+  
+  try {
+    // Get current test attempt
+    const attempt = await storage.getTestAttemptById(attemptId);
+    if (!attempt || attempt.studentId !== ctx.session.userId) {
+      await ctx.answerCbQuery('❌ Test topilmadi');
+      return;
+    }
+    
+    // Calculate score
+    const answers = await storage.getStudentAnswersByAttemptId(attemptId);
+    const questions = await storage.getQuestionsByTestId(attempt.testId);
+    
+    let correctAnswers = 0;
+    for (const answer of answers) {
+      const question = questions.find(q => q.id === answer.questionId);
+      if (question && question.correctAnswer === answer.answer) {
+        correctAnswers++;
+      }
+    }
+    
+    // Update attempt with completion
+    await storage.updateTestAttempt(attemptId, {
+      status: 'completed',
+      score: correctAnswers.toString(),
+      totalCorrect: correctAnswers,
+      endTime: new Date()
+    });
+    
+    // Get test details
+    const test = await storage.getTestById(attempt.testId);
+    const percentage = Math.round((correctAnswers / attempt.totalQuestions) * 100);
+    
+    // Send result to student
+    const resultMessage = `🎉 *Test yakunlandi!*\n\n` +
+      `📝 *Test*: ${test?.title}\n` +
+      `✅ *Natija*: ${correctAnswers}/${attempt.totalQuestions} (${percentage}%)\n` +
+      `🎯 *Holat*: ${percentage >= 60 ? 'O\'tdingiz! 🎊' : 'Qayta urinib ko\'ring 💪'}\n\n` +
+      `📊 Batafsil natijalarni "📊 Natijalarim" bo'limidan ko'rishingiz mumkin.`;
+    
+    await ctx.editMessageText(resultMessage, {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [Markup.button.callback('📊 Natijalarim', `detailed_results_${ctx.session.userId}`)],
+          [Markup.button.callback('🔙 Bosh menyu', 'main_menu')]
+        ]
+      }
+    });
+    
+    // Send notification to parent if exists
+    await notifyParentOfTestCompletion(ctx.session.userId, test, correctAnswers, attempt.totalQuestions, percentage);
+    
+    // Clear test session
+    ctx.session.testAttempt = undefined;
+    
+    await ctx.answerCbQuery('✅ Test muvaffaqiyatli yakunlandi!');
+    
+  } catch (error) {
+    console.error('Error submitting test:', error);
+    await ctx.answerCbQuery('❌ Test yakunlashda xatolik yuz berdi');
+  }
+});
+
+// Function to notify parent about test completion
+async function notifyParentOfTestCompletion(studentId: number, test: any, score: number, totalQuestions: number, percentage: number) {
+  try {
+    // Get student profile to find parent
+    const studentProfile = await storage.getStudentProfile(studentId);
+    if (!studentProfile?.parentId) {
+      return; // No parent assigned
+    }
+    
+    // Get parent user
+    const parent = await storage.getUser(studentProfile.parentId);
+    if (!parent || !parent.telegramId) {
+      return; // Parent not found or no telegram
+    }
+    
+    // Get student info
+    const student = await storage.getUser(studentId);
+    if (!student) return;
+    
+    // Send notification to parent
+    const parentMessage = `👶 *Farzandingiz test yakunladi!*\n\n` +
+      `👤 *O'quvchi*: ${student.fullName}\n` +
+      `📝 *Test*: ${test?.title || 'Test'}\n` +
+      `✅ *Natija*: ${score}/${totalQuestions} (${percentage}%)\n` +
+      `🎯 *Holat*: ${percentage >= 60 ? 'Muvaffaqiyatli o\'tdi! 🎊' : 'Qayta ishlash tavsiya etiladi 💪'}\n` +
+      `📅 *Sana*: ${new Date().toLocaleDateString('uz-UZ')}\n\n` +
+      `Batafsil ma'lumot uchun veb-saytga tashrif buyuring.`;
+    
+    // Send message to parent's telegram
+    await bot.telegram.sendMessage(parent.telegramId, parentMessage, {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [Markup.button.url('🌐 Veb-saytga o\'tish', 'https://your-domain.replit.app')]
+        ]
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error notifying parent:', error);
+  }
+}
 
 // 🚪 Hisobdan chiqish handler
 bot.hears('🚪 Hisobdan chiqish', async (ctx) => {
