@@ -6,12 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, Clock, FileText, Users, Filter } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import useAuth from '@/hooks/useAuth';
 
 const StudentTestsPage: React.FC = () => {
   const { user, logout } = useAuth();
+  const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [searchCode, setSearchCode] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [filterType, setFilterType] = useState<string>('all');
   
   // Fetch all available tests
@@ -24,17 +27,45 @@ const StudentTestsPage: React.FC = () => {
     queryKey: ['/api/tests/public'],
   });
 
-  // Handle numerical search
-  const handleCodeSearch = (code: string) => {
-    if (!code.trim()) return;
+  // Handle universal search (both code and name)
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) return;
     
-    // Exact match search for test codes
-    const foundTest = tests?.find(test => 
-      test.testCode && test.testCode.toLowerCase() === code.toLowerCase()
-    );
-    
-    if (foundTest && foundTest.status === 'active') {
-      setLocation(`/student/test/${foundTest.id}`);
+    try {
+      const response = await fetch(`/api/tests/search/${encodeURIComponent(query)}`, {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const foundTests = await response.json();
+        if (foundTests && foundTests.length > 0) {
+          // If only one test found, navigate directly
+          if (foundTests.length === 1) {
+            setLocation(`/student/test/${foundTests[0].id}`);
+          } else {
+            // Show multiple results
+            setSearchResults(foundTests);
+          }
+        } else {
+          toast({
+            title: "Test topilmadi",
+            description: "Bu kod yoki nom bilan test mavjud emas",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Test topilmadi",
+          description: "Bu kod yoki nom bilan test mavjud emas",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Xato",
+        description: "Qidiruvda xato yuz berdi",
+        variant: "destructive",
+      });
     }
   };
 
@@ -114,24 +145,28 @@ const StudentTestsPage: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Search className="h-5 w-5" />
-              Test kodini qidirish
+              Test qidirish
             </CardTitle>
             <CardDescription>
-              6 xonali test kodini kiritib, testni toping va ishlang
+              Test nomini yozing (masalan: "Matematika") yoki 6 xonali test kodini kiriting (masalan: 123456)
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex gap-4">
               <Input
-                placeholder="Test kodini kiriting (masalan: 123456)"
-                value={searchCode}
-                onChange={(e) => setSearchCode(e.target.value)}
+                placeholder="Test nomi yoki kod kiriting..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1"
-                maxLength={6}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch(searchQuery);
+                  }
+                }}
               />
               <Button 
-                onClick={() => handleCodeSearch(searchCode)}
-                disabled={!searchCode.trim()}
+                onClick={() => handleSearch(searchQuery)}
+                disabled={!searchQuery.trim()}
                 className="bg-purple-600 hover:bg-purple-700"
               >
                 <Search className="h-4 w-4 mr-2" />
@@ -140,6 +175,66 @@ const StudentTestsPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Search Results */}
+        {searchResults.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Qidiruv natijalari</CardTitle>
+              <CardDescription>
+                "{searchQuery}" uchun {searchResults.length} ta test topildi
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {searchResults.map((test) => (
+                  <Card key={test.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-semibold text-lg">{test.title}</h3>
+                          {test.testCode && (
+                            <p className="text-sm text-gray-600">
+                              Kod: <span className="font-mono font-bold">{test.testCode}</span>
+                            </p>
+                          )}
+                        </div>
+                        <Badge className={getTestTypeColor(test.type)}>
+                          {getTestTypeLabel(test.type)}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4" />
+                          <span>{test.grade} sinf</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          <span>{test.duration || 0} daqiqa</span>
+                        </div>
+                      </div>
+                      
+                      <Button
+                        onClick={() => setLocation(`/student/test/${test.id}`)}
+                        className="w-full bg-purple-600 hover:bg-purple-700"
+                      >
+                        Testni boshlash
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setSearchResults([])}
+                className="mt-4"
+              >
+                Natijalarni yashirish
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Filter Section */}
         <div className="flex gap-4 mb-6">

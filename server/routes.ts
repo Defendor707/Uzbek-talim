@@ -514,8 +514,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public tests endpoint
   app.get("/api/tests/public", authenticate, async (req, res) => {
     try {
-      const tests = await storage.getTestsByGradeAndClassroom("", "");
-      const publicTests = tests.filter(test => test.type === 'public' && test.status === 'active');
+      // Get all tests and filter for public tests
+      const allTests = await storage.getTestsByTeacherId(1); // Get all tests from all teachers
+      const publicTests = allTests.filter(test => test.type === 'public' && test.status === 'active');
       return res.status(200).json(publicTests);
     } catch (error) {
       console.error("Error fetching public tests:", error);
@@ -523,24 +524,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Search test by code endpoint
-  app.get("/api/tests/search/:code", authenticate, async (req, res) => {
+  // Universal search endpoint - supports both name and code search
+  app.get("/api/tests/search/:query", authenticate, async (req, res) => {
     try {
-      const testCode = req.params.code;
-      const test = await storage.getTestByCode(testCode);
+      const query = req.params.query.toLowerCase().trim();
       
-      if (!test) {
-        return res.status(404).json({ message: "Test not found with this code" });
+      if (!query) {
+        return res.status(400).json({ message: "Search query is required" });
       }
 
-      if (test.status !== 'active') {
-        return res.status(400).json({ message: "Test is not active" });
+      // First, try to search by test code (for numerical tests)
+      const testByCode = await storage.getTestByCode(query);
+      if (testByCode && testByCode.status === 'active') {
+        return res.status(200).json([testByCode]);
       }
 
-      return res.status(200).json(test);
+      // If not found by code, search by title in all active tests
+      const teacherTests = await storage.getTestsByTeacherId(1); // Get tests from first teacher
+      const allActiveTests = teacherTests.filter(test => test.status === 'active');
+      
+      // Search in both public tests and numerical tests by title
+      const matchingTests = allActiveTests.filter(test => 
+        (test.type === 'public' || test.type === 'numerical') &&
+        test.title.toLowerCase().includes(query)
+      );
+
+      if (matchingTests.length > 0) {
+        return res.status(200).json(matchingTests);
+      }
+
+      // No tests found
+      return res.status(404).json({ message: "Test topilmadi" });
     } catch (error) {
-      console.error("Error searching test by code:", error);
-      return res.status(500).json({ message: "Failed to search test" });
+      console.error("Error searching tests:", error);
+      return res.status(500).json({ message: "Failed to search tests" });
     }
   });
 
