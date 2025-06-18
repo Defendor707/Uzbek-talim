@@ -71,16 +71,12 @@ app.use((req, res, next) => {
   }, async () => {
     log(`serving on port ${port}`);
     
-    // Start the Telegram bot if token is available
-    if (process.env.TELEGRAM_BOT_TOKEN) {
-      try {
-        await startTelegramBot();
-        log('Telegram bot integration active', 'telegram');
-      } catch (error) {
-        log(`Failed to start Telegram bot: ${error}`, 'telegram');
-      }
-    } else {
-      log('Telegram bot not started: TELEGRAM_BOT_TOKEN not set', 'telegram');
+    // Start the Telegram bot
+    try {
+      await startTelegramBot();
+      log('Telegram bot integration active', 'telegram');
+    } catch (error) {
+      log(`Failed to start Telegram bot: ${error}`, 'telegram');
     }
   });
 })();

@@ -3392,7 +3392,14 @@ bot.action(/start_test_(\d+)/, async (ctx) => {
     await showTestQuestionsPage(ctx);
   } catch (error) {
     console.error('Error starting test:', error);
-    await ctx.reply('❌ Testni boshlashda xatolik yuz berdi.');
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      testId,
+      userId: ctx.session.userId,
+      sessionData: ctx.session
+    });
+    await ctx.reply('❌ Testni boshlashda xatolik yuz berdi. Iltimos, qaytadan urinib ko\'ring.');
   }
 });
 
