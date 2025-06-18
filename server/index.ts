@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-// import { startTelegramBot } from "./telegram";
+import { startTelegramBot } from "./telegram";
 
 const app = express();
 app.use(express.json());
@@ -71,7 +71,16 @@ app.use((req, res, next) => {
   }, async () => {
     log(`serving on port ${port}`);
     
-    // Telegram bot temporarily disabled
-    log('Telegram bot features temporarily disabled', 'telegram');
+    // Start the Telegram bot if token is available
+    if (process.env.TELEGRAM_BOT_TOKEN) {
+      try {
+        await startTelegramBot();
+        log('Telegram bot integration active', 'telegram');
+      } catch (error) {
+        log(`Failed to start Telegram bot: ${error}`, 'telegram');
+      }
+    } else {
+      log('Telegram bot not started: TELEGRAM_BOT_TOKEN not set', 'telegram');
+    }
   });
 })();
