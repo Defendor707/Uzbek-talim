@@ -3807,4 +3807,6 @@ bot.hears('🚪 Hisobdan chiqish', async (ctx) => {
   );
 });
 
+} // End of bot conditional block
+
 export { bot };
