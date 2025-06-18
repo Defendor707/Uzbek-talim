@@ -538,13 +538,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(200).json([testByCode]);
       }
 
-      // If not found by code, search by title in all active tests
-      const teacherTests = await storage.getTestsByTeacherId(1); // Get tests from first teacher
-      const allActiveTests = teacherTests.filter(test => test.status === 'active');
+      // If not found by code, search by title in all public tests
+      const publicTests = await storage.getAllPublicTests();
       
-      // Search in both public tests and numerical tests by title
-      const matchingTests = allActiveTests.filter(test => 
-        (test.type === 'public' || test.type === 'numerical') &&
+      // Search in public tests by title
+      const matchingTests = publicTests.filter(test => 
         test.title.toLowerCase().includes(query)
       );
 

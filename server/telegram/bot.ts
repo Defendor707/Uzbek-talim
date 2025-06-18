@@ -60,19 +60,20 @@ interface BotContext extends Scenes.SceneContext {
 
 // Check for Telegram bot token
 if (!process.env.TELEGRAM_BOT_TOKEN) {
-  console.error('TELEGRAM_BOT_TOKEN environment variable is not set');
-  process.exit(1);
+  console.warn('TELEGRAM_BOT_TOKEN environment variable is not set - bot features will be disabled');
 }
 
-// Initialize the bot
-const bot = new Telegraf<BotContext>(process.env.TELEGRAM_BOT_TOKEN);
+// Initialize the bot only if token is available
+const bot = process.env.TELEGRAM_BOT_TOKEN ? new Telegraf<BotContext>(process.env.TELEGRAM_BOT_TOKEN) : null;
 
-// Use session middleware with persistent storage
-bot.use(session({
-  defaultSession: () => ({})
-}));
+// Only set up bot features if bot is available
+if (bot) {
+  // Use session middleware with persistent storage
+  bot.use(session({
+    defaultSession: () => ({})
+  }));
 
-// Initialize session data and load persistent user data
+  // Initialize session data and load persistent user data
 bot.use(async (ctx, next) => {
   if (!ctx.session) {
     ctx.session = {};
