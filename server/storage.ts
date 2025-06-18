@@ -39,6 +39,7 @@ export interface IStorage {
   getTestsByTeacherId(teacherId: number): Promise<schema.Test[]>;
   getTestsByGradeAndClassroom(grade: string, classroom?: string): Promise<schema.Test[]>;
   getActiveTestsForStudent(grade: string, classroom?: string): Promise<schema.Test[]>;
+  getAllPublicTests(): Promise<schema.Test[]>;
 
   // Question related methods
   createQuestion(question: schema.InsertQuestion): Promise<schema.Question>;
@@ -401,6 +402,17 @@ export class DatabaseStorage implements IStorage {
   async getUserByTelegramId(telegramId: string): Promise<schema.User | undefined> {
     const [user] = await db.select().from(schema.users).where(eq(schema.users.telegramId, telegramId));
     return user;
+  }
+
+  async getAllPublicTests(): Promise<schema.Test[]> {
+    const tests = await db.select()
+      .from(schema.tests)
+      .where(and(
+        eq(schema.tests.type, 'public'),
+        eq(schema.tests.status, 'active')
+      ))
+      .orderBy(desc(schema.tests.createdAt));
+    return tests;
   }
 }
 

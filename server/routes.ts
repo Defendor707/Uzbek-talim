@@ -514,9 +514,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public tests endpoint
   app.get("/api/tests/public", authenticate, async (req, res) => {
     try {
-      // Get all tests and filter for public tests
-      const allTests = await storage.getTestsByTeacherId(1); // Get all tests from all teachers
-      const publicTests = allTests.filter(test => test.type === 'public' && test.status === 'active');
+      // Get all public tests from all teachers
+      const publicTests = await storage.getAllPublicTests();
       return res.status(200).json(publicTests);
     } catch (error) {
       console.error("Error fetching public tests:", error);
