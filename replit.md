@@ -136,8 +136,11 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 - June 20, 2025: Complete responsive design system with 100% mobile/PC optimization
   - Created unified ResponsiveDashboard component replacing all separate mobile/desktop components
-  - Desktop layout: Full sidebar navigation with user profile and logout functionality
-  - Mobile layout: Sticky header with profile dropdown + bottom navigation (4 main sections)
+  - Desktop layout: Full sidebar navigation with user profile section
+  - Mobile layout: Sticky header with profile dropdown + bottom navigation (3 main sections)
+  - Moved profile and logout functionality to header dropdown menu only
+  - Removed all separate logout buttons from sidebar and other locations
+  - Bottom navigation now contains only 3 essential sections per user role
   - Added comprehensive CSS utility classes for responsive grids and layouts
   - Implemented touch-friendly interactive elements with proper sizing (44px minimum)
   - Enhanced mobile navigation with visual feedback and smooth transitions
@@ -146,7 +149,7 @@ Dashboard design: User requested improved navigation without dropdown menus for 
   - Applied responsive-grid-2-4 pattern: 2 columns mobile, 4 columns desktop
   - All user roles (Teacher, Student, Parent, Center) now use unified responsive system
   - Eliminated code duplication and improved maintainability
-  - Added dropdown menu component with proper mobile optimization
+  - Centralized user account management in profile dropdown
 
 ## Changelog
 
