@@ -44,6 +44,7 @@ export interface IStorage {
   // Question related methods
   createQuestion(question: schema.InsertQuestion): Promise<schema.Question>;
   getQuestionsByTestId(testId: number): Promise<schema.Question[]>;
+  deleteQuestionById(id: number): Promise<boolean>;
 
   // Test attempt related methods
   createTestAttempt(attempt: schema.InsertTestAttempt): Promise<schema.TestAttempt>;
@@ -294,6 +295,16 @@ export class DatabaseStorage implements IStorage {
       .from(schema.questions)
       .where(eq(schema.questions.testId, testId))
       .orderBy(schema.questions.order);
+  }
+
+  async deleteQuestionById(id: number): Promise<boolean> {
+    try {
+      await db.delete(schema.questions).where(eq(schema.questions.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting question:", error);
+      return false;
+    }
   }
 
   // Test attempt related methods

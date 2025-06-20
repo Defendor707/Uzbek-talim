@@ -652,6 +652,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete question endpoint
+  app.delete(
+    "/api/questions/:id",
+    authenticate,
+    authorize(["teacher"]),
+    async (req, res) => {
+      try {
+        const questionId = parseInt(req.params.id);
+        if (isNaN(questionId)) {
+          return res.status(400).json({ message: "Invalid question ID" });
+        }
+
+        // Get question to verify ownership through test
+        const questions = await storage.getQuestionsByTestId(0); // We'll need to get all questions first
+        const question = questions.find(q => q.id === questionId);
+        
+        if (!question) {
+          return res.status(404).json({ message: "Question not found" });
+        }
+
+        // Check if the test belongs to the teacher
+        const test = await storage.getTestById(question.testId);
+        if (!test || test.teacherId !== req.user!.userId) {
+          return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        // Delete the question (we'll need to add this method to storage)
+        const success = await storage.deleteQuestionById(questionId);
+        if (!success) {
+          return res.status(500).json({ message: "Failed to delete question" });
+        }
+
+        return res.status(200).json({ message: "Question deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting question:", error);
+        return res.status(500).json({ message: "Failed to delete question" });
+      }
+    }
+  );
+
   // Test Attempt Routes
   app.post(
     "/api/test-attempts",

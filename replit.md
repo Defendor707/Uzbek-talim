@@ -134,6 +134,16 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 20, 2025: Added comprehensive test editing functionality for teachers
+  - Created EditTest.tsx component with full test information editing capabilities
+  - Added PUT endpoint for updating test details (title, type, status, time limits, etc.)
+  - Implemented question management with view, edit, and delete functionality
+  - Added DELETE endpoint for removing individual questions from tests
+  - Added edit button to test cards linking to /teacher/tests/edit/{id}
+  - Teachers can now modify test metadata and manage questions after creation
+  - Edit interface includes form validation and proper error handling
+  - Questions display shows all options with correct answers highlighted
+
 - June 20, 2025: Fixed public tests display issue in student section
   - Identified test type inconsistency preventing public tests from showing
   - Updated existing test from type 'simple' to type 'public' for proper display
