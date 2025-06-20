@@ -134,14 +134,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
-- June 20, 2025: Redesigned login page with stunning modern aesthetic
-  - Created beautiful gradient background with animated floating elements
-  - Implemented glassmorphism design with backdrop blur effects
-  - Added elegant brand section with feature cards and improved typography
-  - Enhanced form design with modern input styling, icons, and improved UX
-  - Applied gradient buttons with hover animations and enhanced visual feedback
-  - Optimized for both mobile and desktop with responsive layout
-  - Maintained full functionality while dramatically improving visual appeal
+- June 20, 2025: Simplified login page design for better usability
+  - User feedback: Previous design was beautiful but inconvenient to use
+  - Created clean, practical two-column layout with blue brand section
+  - Simplified form design with standard inputs and clear typography
+  - Removed complex animations and effects that hindered usability
+  - Maintained professional appearance while prioritizing convenience
+  - Applied simple, clean styling that focuses on functionality
+  - Kept responsive design for both mobile and desktop users
 
 - June 20, 2025: Added educational centers count to platform statistics
   - Enhanced Telegram bot statistics to include O'quv markazlari (educational centers) count
