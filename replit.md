@@ -134,13 +134,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
-- June 20, 2025: Major dashboard redesign completed
-  - Replaced card-based navigation with professional sidebar navigation
-  - Eliminated dropdown "Boshqalar" menu for better UX
-  - Implemented ImprovedDashboard component with consistent layout
-  - Added role-specific sidebar sections with badges and counts
-  - Enhanced visual design with gradient cards and improved stats
-  - Applied changes to all user roles: Teacher, Student, Parent, Center
+- June 20, 2025: Complete mobile navigation system implemented
+  - Replaced sidebar navigation with mobile-first bottom navigation
+  - Moved profile to top header with dropdown menu containing logout
+  - Reduced bottom navigation to 3 main buttons (smaller and more appealing)
+  - Applied MobileDashboard component to all user roles: Teacher, Student, Parent, Center
+  - Bottom navigation now persists across all pages (dashboard, tests, lessons, etc.)
+  - Implemented Yandex Music-style navigation for consistent mobile UX
+  - Profile and logout moved to header dropdown for better space utilization
 
 ## Changelog
 
