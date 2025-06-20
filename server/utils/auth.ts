@@ -110,7 +110,7 @@ export const register = async (req: Request, res: Response) => {
     const token = generateToken(newUser.id, newUser.role);
     
     // Return user info (without password) and token
-    const { password, ...userInfo } = newUser;
+    const { passwordHash, ...userInfo } = newUser;
     
     return res.status(201).json({
       user: userInfo,

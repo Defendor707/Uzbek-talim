@@ -135,7 +135,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         {/* Mobile Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50">
           <div className="flex items-center justify-around max-w-sm mx-auto">
-            {sections.slice(0, 4).map((section) => {
+            {sections.slice(0, 3).map((section) => {
               const isActive = location === section.href || location.startsWith(section.href + '/');
               return (
                 <Link key={section.id} href={section.href}>
