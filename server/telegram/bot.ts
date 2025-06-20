@@ -3641,52 +3641,31 @@ bot.hears('👤 Profil', async (ctx) => {
   }
 });
 
-// Statistics handler - shows user information
+// Statistics handler - shows platform-wide statistics (for non-logged users) or reports (for logged users)
 bot.hears('📊 Statistika', async (ctx) => {
   if (!ctx.session.userId) {
-    try {
-      // Get platform statistics for non-logged users
-      const totalUsers = await db.select({ count: sql`count(*)` }).from(schema.users);
-      const totalTeachers = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'teacher'));
-      const totalStudents = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'student'));
-      const totalTests = await db.select({ count: sql`count(*)` }).from(schema.tests);
-      
-      await ctx.reply(
-        `📊 *O'zbek Talim platformasi statistikasi*\n\n` +
-        `👥 Jami foydalanuvchilar: ${totalUsers[0]?.count || 0}\n` +
-        `👨‍🏫 O'qituvchilar: ${totalTeachers[0]?.count || 0}\n` +
-        `👨‍🎓 O'quvchilar: ${totalStudents[0]?.count || 0}\n` +
-        `📝 Jami testlar: ${totalTests[0]?.count || 0}\n\n` +
-        `Batafsil ma'lumot olish uchun tizimga kiring!`,
-        { parse_mode: 'Markdown' }
-      );
-    } catch (error) {
-      console.error('Error fetching platform statistics:', error);
-      await ctx.reply('📊 Platformamizda minglab foydalanuvchilar faol harakat qilmoqda. Batafsil ma\'lumot olish uchun tizimga kiring!');
-    }
+    await ctx.reply('ℹ️ Tizimga kirmagansiz. Avval ro\'yxatdan o\'ting yoki tizimga kiring.');
     return;
   }
 
   try {
-    // Get user-specific statistics
+    // This is actually a reports function for logged-in users
     const user = await storage.getUser(ctx.session.userId);
     if (!user) {
       await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
       return;
     }
 
-    let statsMessage = `📊 *Sizning statistikangiz*\n\n`;
-    statsMessage += `👤 Ism: ${user.fullName}\n`;
-    statsMessage += `🎯 Rol: ${getRoleNameInUzbek(user.role)}\n`;
-    statsMessage += `📅 Ro'yxatdan o'tgan: ${new Date(user.createdAt).toLocaleDateString('uz-UZ')}\n\n`;
+    let reportsMessage = `📊 *Hisobotlar*\n\n`;
 
     if (user.role === 'teacher') {
       const tests = await storage.getTestsByTeacherId(user.id);
       const lessons = await storage.getLessonsByTeacherId(user.id);
       
-      statsMessage += `📝 Yaratgan testlar: ${tests.length}\n`;
-      statsMessage += `📚 Yaratgan darsliklar: ${lessons.length}\n`;
-      statsMessage += `✅ Faol testlar: ${tests.filter(t => t.status === 'active').length}\n`;
+      reportsMessage += `📝 Yaratgan testlar: ${tests.length}\n`;
+      reportsMessage += `📚 Yaratgan darsliklar: ${lessons.length}\n`;
+      reportsMessage += `✅ Faol testlar: ${tests.filter(t => t.status === 'active').length}\n`;
+      reportsMessage += `\nBatafsil hisobotlar uchun veb-saytga tashrif buyuring.`;
       
     } else if (user.role === 'student') {
       const attempts = await storage.getTestAttemptsByStudentId(user.id);
@@ -3695,20 +3674,62 @@ bot.hears('📊 Statistika', async (ctx) => {
         ? Math.round(completedAttempts.reduce((sum, a) => sum + (Number(a.score) || 0), 0) / completedAttempts.length)
         : 0;
       
-      statsMessage += `🎯 Ishlagan testlar: ${attempts.length}\n`;
-      statsMessage += `✅ Tugatgan testlar: ${completedAttempts.length}\n`;
-      statsMessage += `📊 O'rtacha ball: ${averageScore}%\n`;
+      reportsMessage += `🎯 Ishlagan testlar: ${attempts.length}\n`;
+      reportsMessage += `✅ Tugatgan testlar: ${completedAttempts.length}\n`;
+      reportsMessage += `📊 O'rtacha ball: ${averageScore}%\n`;
+      reportsMessage += `\nBatafsil natijalar uchun veb-saytga tashrif buyuring.`;
       
     } else if (user.role === 'parent') {
       const children = await storage.getChildrenByParentId(user.id);
-      statsMessage += `👶 Farzandlar soni: ${children.length}\n`;
+      reportsMessage += `👶 Farzandlar soni: ${children.length}\n`;
+      reportsMessage += `\nFarzandlar faoliyati haqida batafsil ma'lumot uchun veb-saytga tashrif buyuring.`;
     }
 
-    await ctx.reply(statsMessage, { parse_mode: 'Markdown' });
+    await ctx.reply(reportsMessage, { parse_mode: 'Markdown' });
     
   } catch (error) {
-    console.error('Error fetching user statistics:', error);
-    await ctx.reply('❌ Statistikani olishda xatolik yuz berdi.');
+    console.error('Error fetching user reports:', error);
+    await ctx.reply('❌ Hisobotlarni olishda xatolik yuz berdi.');
+  }
+});
+
+// Ma'lumot handler - shows platform statistics
+bot.hears('ℹ️ Ma\'lumot', async (ctx) => {
+  try {
+    // Get platform statistics for all users
+    const totalUsers = await db.select({ count: sql`count(*)` }).from(schema.users);
+    const totalTeachers = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'teacher'));
+    const totalStudents = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'student'));
+    const totalParents = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'parent'));
+    const totalTests = await db.select({ count: sql`count(*)` }).from(schema.tests);
+    const totalLessons = await db.select({ count: sql`count(*)` }).from(schema.lessons);
+    
+    await ctx.reply(
+      `ℹ️ *O'zbek Talim platformasi haqida*\n\n` +
+      `📚 Ta'lim platformasi bo'lib, o'qituvchi va o'quvchilar uchun test va darslik tizimini taqdim etadi.\n\n` +
+      `📊 *Platformadagi statistika:*\n` +
+      `👥 Jami foydalanuvchilar: ${totalUsers[0]?.count || 0}\n` +
+      `👨‍🏫 O'qituvchilar: ${totalTeachers[0]?.count || 0}\n` +
+      `👨‍🎓 O'quvchilar: ${totalStudents[0]?.count || 0}\n` +
+      `👨‍👩‍👧‍👦 Ota-onalar: ${totalParents[0]?.count || 0}\n` +
+      `📝 Jami testlar: ${totalTests[0]?.count || 0}\n` +
+      `📚 Jami darsliklar: ${totalLessons[0]?.count || 0}\n\n` +
+      `🌐 Veb-sayt: https://replit.app\n` +
+      `📞 Qo'llab-quvvatlash: @support\n\n` +
+      `Batafsil ma'lumot olish uchun tizimga kiring!`,
+      { parse_mode: 'Markdown' }
+    );
+  } catch (error) {
+    console.error('Error fetching platform info:', error);
+    await ctx.reply(
+      `ℹ️ *O'zbek Talim platformasi haqida*\n\n` +
+      `📚 Ta'lim platformasi bo'lib, o'qituvchi va o'quvchilar uchun test va darslik tizimini taqdim etadi.\n\n` +
+      `📊 Platformamizda minglab foydalanuvchilar faol harakat qilmoqda.\n\n` +
+      `🌐 Veb-sayt: https://replit.app\n` +
+      `📞 Qo'llab-quvvatlash: @support\n\n` +
+      `Batafsil ma'lumot olish uchun tizimga kiring!`,
+      { parse_mode: 'Markdown' }
+    );
   }
 });
 
@@ -3869,7 +3890,22 @@ bot.action(/test_submit_(\d+)/, async (ctx) => {
 
 // 🚪 Hisobdan chiqish handler
 bot.hears('🚪 Hisobdan chiqish', async (ctx) => {
+  // Clear all session data completely
+  ctx.session.userId = undefined;
+  ctx.session.role = undefined;
+  ctx.session.token = undefined;
+  ctx.session.chatId = undefined;
+  ctx.session.loginStep = undefined;
+  ctx.session.registrationStep = undefined;
+  ctx.session.registrationData = undefined;
+  ctx.session.tempLoginData = undefined;
+  ctx.session.testAttempt = undefined;
+  ctx.session.editingField = undefined;
+  ctx.session.testCreation = undefined;
+  
+  // Completely reset session
   ctx.session = {};
+  
   await ctx.reply(
     '✅ Siz hisobdan muvaffaqiyatli chiqdingiz.\n\n' +
     'Qaytadan kirish uchun quyidagi tugmalardan foydalaning:',
