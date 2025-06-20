@@ -133,7 +133,7 @@ bot.on('text', async (ctx, next) => {
           return;
         }
         
-        const isPasswordValid = await bcrypt.compare(messageText, user.password);
+        const isPasswordValid = await bcrypt.compare(messageText, user.passwordHash);
         
         if (!isPasswordValid) {
           await ctx.reply('❌ Noto\'g\'ri parol. Qaytadan urinib ko\'ring.');
@@ -2490,9 +2490,11 @@ async function notifyParentOfTestCompletion(studentId: number, testId: number, s
       `Batafsil ma'lumot uchun veb-saytga tashrif buyuring.`;
     
     // Send message to parent's telegram
-    await bot.telegram.sendMessage(parent.telegramId, parentMessage, {
-      parse_mode: 'Markdown'
-    });
+    if (bot) {
+      await bot.telegram.sendMessage(parent.telegramId, parentMessage, {
+        parse_mode: 'Markdown'
+      });
+    }
     
   } catch (error) {
     console.error('Error notifying parent:', error);
@@ -3393,8 +3395,8 @@ bot.action(/start_test_(\d+)/, async (ctx) => {
   } catch (error) {
     console.error('Error starting test:', error);
     console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
       testId,
       userId: ctx.session.userId,
       sessionData: ctx.session

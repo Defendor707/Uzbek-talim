@@ -85,7 +85,8 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(user: any): Promise<schema.User> {
     // Hash the password before storing
-    const hashedPassword = await bcrypt.hash(user.password, 10);
+    const passwordToHash = user.password || user.passwordHash;
+    const hashedPassword = await bcrypt.hash(passwordToHash, 10);
     const userData = { 
       username: user.username,
       email: user.email,

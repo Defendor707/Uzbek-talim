@@ -134,6 +134,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 20, 2025: Fixed Telegram bot registration system completely
+  - Corrected password/passwordHash field mapping in bot.ts and storage.ts
+  - Fixed createUser method to properly handle password hashing
+  - Updated login flow to use passwordHash field correctly
+  - Resolved TypeScript errors in error handling
+  - Bot registration now works seamlessly with website authentication
+  - Telegram bot token verified and functional
+
 - June 20, 2025: Complete responsive design system with 100% mobile/PC optimization
   - Created unified ResponsiveDashboard component replacing all separate mobile/desktop components
   - Desktop layout: Full sidebar navigation with user profile section
