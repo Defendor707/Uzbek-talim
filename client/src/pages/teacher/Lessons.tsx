@@ -1,75 +1,65 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import useAuth from '@/hooks/useAuth';
+import ResponsiveDashboard from '@/components/dashboard/ResponsiveDashboard';
 
 const LessonsPage: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   
   // Fetch lessons
   const { data: lessons } = useQuery<any[]>({
     queryKey: ['/api/lessons'],
   });
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Darsliklar</h1>
-              <p className="text-gray-600">Darsliklarni boshqaring va yarating</p>
-            </div>
-            <div className="flex gap-3">
-              <Link href="/dashboard/teacher">
-                <Button variant="outline">
-                  Bosh sahifa
-                </Button>
-              </Link>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="text-red-600 border-red-600 hover:bg-red-50"
-                  >
-                    Chiqish
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Tizimdan chiqish</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Haqiqatan ham tizimdan chiqishni xohlaysizmi? Barcha ochilgan sahifalar yopiladi.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-                    <AlertDialogAction onClick={logout} className="bg-red-600 hover:bg-red-700">
-                      Ha, chiqish
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </div>
-        </div>
-      </div>
+  const dashboardSections = [
+    {
+      id: 'dashboard',
+      title: 'Bosh sahifa',
+      icon: (
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+        </svg>
+      ),
+      href: '/dashboard/teacher',
+    },
+    {
+      id: 'lessons',
+      title: 'Darsliklar',
+      icon: (
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+      ),
+      href: '/teacher/lessons'
+    },
+    {
+      id: 'tests',
+      title: 'Testlar',
+      icon: (
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+      ),
+      href: '/teacher/tests'
+    }
+  ];
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* Actions */}
-        <div className="mb-8">
-          <Button className="bg-green-600 hover:bg-green-700">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Yangi darslik yaratish
-          </Button>
-        </div>
+  return (
+    <ResponsiveDashboard 
+      userRole="teacher" 
+      sections={dashboardSections}
+      currentPage="Darsliklar"
+    >
+      {/* Actions */}
+      <div className="mb-8">
+        <Button className="bg-green-600 hover:bg-green-700">
+          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Yangi darslik yaratish
+        </Button>
+      </div>
 
         {/* Lessons List */}
         <div className="bg-white rounded-lg shadow-sm border">
@@ -182,8 +172,7 @@ const LessonsPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </ResponsiveDashboard>
   );
 };
 
