@@ -145,7 +145,7 @@ export const login = async (req: Request, res: Response) => {
     }
     
     // Compare passwords
-    const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+    const isPasswordValid = await bcrypt.compare(credentials.password, user.passwordHash);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Noto\'g\'ri foydalanuvchi nomi yoki parol' });
     }
@@ -154,7 +154,7 @@ export const login = async (req: Request, res: Response) => {
     const token = generateToken(user.id, user.role);
     
     // Return user info (without password) and token
-    const { password, ...userInfo } = user;
+    const { passwordHash, ...userInfo } = user;
     
     return res.status(200).json({
       user: userInfo,

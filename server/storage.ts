@@ -83,24 +83,39 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createUser(user: schema.InsertUser): Promise<schema.User> {
+  async createUser(user: any): Promise<schema.User> {
     // Hash the password before storing
     const hashedPassword = await bcrypt.hash(user.password, 10);
-    const userData = { ...user, password: hashedPassword };
+    const userData = { 
+      username: user.username,
+      email: user.email,
+      passwordHash: hashedPassword,
+      role: user.role,
+      fullName: user.fullName,
+      profileImage: user.profileImage,
+      phone: user.phone,
+      telegramId: user.telegramId,
+      isActive: true
+    };
 
     const [newUser] = await db.insert(schema.users).values(userData).returning();
     return newUser;
   }
 
-  async updateUser(id: number, userData: Partial<schema.InsertUser>): Promise<schema.User | undefined> {
+  async updateUser(id: number, userData: any): Promise<schema.User | undefined> {
+    const updateData: any = { ...userData };
+    
     // If updating password, hash it
     if (userData.password) {
-      userData.password = await bcrypt.hash(userData.password, 10);
+      updateData.passwordHash = await bcrypt.hash(userData.password, 10);
+      delete updateData.password;
     }
+
+    updateData.updatedAt = new Date();
 
     const [updatedUser] = await db
       .update(schema.users)
-      .set({ ...userData, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(schema.users.id, id))
       .returning();
 
