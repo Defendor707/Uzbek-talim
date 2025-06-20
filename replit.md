@@ -134,6 +134,13 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 20, 2025: Added profile and logout buttons to PC desktop sidebar
+  - Fixed missing user management controls on desktop version
+  - Added "Profil" button with user icon linking to profile page
+  - Added "Chiqish" (logout) button with proper styling and logout functionality
+  - Maintains consistent design with hover effects and proper spacing
+  - Profile button uses gray styling, logout button uses red styling for clear distinction
+
 - June 20, 2025: Created modern onboarding experience with fully responsive design
   - Developed stunning slide presentation showcasing each user role and benefits
   - Automatic progression every 5 seconds with manual controls (play/pause, next/previous, skip)
