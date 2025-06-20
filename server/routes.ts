@@ -22,7 +22,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      const { password, ...userData } = user;
+      const { passwordHash, ...userData } = user;
       return res.status(200).json(userData);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -45,7 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Only return sensitive data if it's the current user or an admin
       if (req.user?.userId === userId) {
-        const { password, ...userData } = user;
+        const { passwordHash, ...userData } = user;
         return res.status(200).json(userData);
       } else {
         // Return limited data for other users
@@ -76,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const { password, ...userData } = updatedUser;
+      const { passwordHash, ...userData } = updatedUser;
       return res.status(200).json(userData);
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -188,10 +188,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (req.user?.role === "student") {
         // Students see lessons for their grade
         const profile = await storage.getStudentProfile(req.user.userId);
-        if (!profile) {
-          return res.status(404).json({ message: "Student profile not found" });
+        if (profile?.grade) {
+          lessons = await storage.getLessonsByGrade(profile.grade);
+        } else {
+          // Return empty array if no profile exists instead of error
+          lessons = [];
         }
-        lessons = await storage.getLessonsByGrade(profile.grade);
+      } else if (req.user?.role === "center" || req.user?.role === "parent") {
+        // Centers and parents see all lessons (or could be filtered by grade)
+        lessons = await storage.getLessonsByGrade("10"); // Get grade 10 lessons as default
       }
 
       return res.status(200).json(lessons);
@@ -405,7 +410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/tests", authenticate, async (req, res) => {
     try {
-      let tests;
+      let tests: any[] = [];
 
       if (req.user?.role === "teacher") {
         // Teachers see their own tests
@@ -413,13 +418,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (req.user?.role === "student") {
         // Students see active tests for their grade and class
         const profile = await storage.getStudentProfile(req.user.userId);
-        if (!profile) {
-          return res.status(404).json({ message: "Student profile not found" });
+        if (profile?.grade) {
+          tests = await storage.getActiveTestsForStudent(
+            profile.grade,
+            profile.classroom || undefined
+          );
+        } else {
+          // Return empty array if no profile exists instead of error
+          tests = [];
         }
-        tests = await storage.getActiveTestsForStudent(
-          profile.grade,
-          profile.classroom
-        );
+      } else if (req.user?.role === "center" || req.user?.role === "parent") {
+        // Centers and parents see all public tests
+        tests = await storage.getAllPublicTests();
       } else {
         // Default to empty array for other roles
         tests = [];
@@ -555,6 +565,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error searching tests:", error);
       return res.status(500).json({ message: "Failed to search tests" });
+    }
+  });
+
+  // Public tests endpoint
+  app.get("/api/tests/public", authenticate, async (req, res) => {
+    try {
+      const publicTests = await storage.getAllPublicTests();
+      return res.status(200).json(publicTests);
+    } catch (error) {
+      console.error("Error fetching public tests:", error);
+      return res.status(500).json({ message: "Failed to fetch public tests" });
     }
   });
 
@@ -1463,7 +1484,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Ruxsat berilmagan" });
       }
 
-      await generateTestReportExcel(testId, res);
+      const buffer = await generateTestReportExcel(testId);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="test-report-${testId}.xlsx"`);
+      res.send(buffer);
     } catch (error) {
       console.error("Excel export error:", error);
       return res.status(500).json({ message: "Excel fayl yaratishda xatolik" });
@@ -1488,7 +1512,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      await generateStudentProgressExcel(studentId, res);
+      const buffer = await generateStudentProgressExcel(studentId);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="student-progress-${studentId}.xlsx"`);
+      res.send(buffer);
     } catch (error) {
       console.error("Excel export error:", error);
       return res.status(500).json({ message: "Excel fayl yaratishda xatolik" });
