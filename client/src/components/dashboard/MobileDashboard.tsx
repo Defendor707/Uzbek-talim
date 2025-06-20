@@ -1,4 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'wouter';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { LogOut, User } from 'lucide-react';
 import BottomNavigation from './BottomNavigation';
 import useAuth from '@/hooks/useAuth';
 
@@ -24,9 +28,16 @@ const MobileDashboard: React.FC<MobileDashboardProps> = ({
   children, 
   currentPage = "Bosh sahifa" 
 }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const [location, setLocation] = useLocation();
 
-  const bottomNavItems = sections.map(section => ({
+  const handleLogout = () => {
+    logout();
+    setLocation('/login');
+  };
+
+  // Only show main 3 navigation items (exclude profile)
+  const bottomNavItems = sections.filter(section => section.id !== 'profile').slice(0, 3).map(section => ({
     id: section.id,
     title: section.title,
     icon: section.icon,
@@ -59,13 +70,26 @@ const MobileDashboard: React.FC<MobileDashboardProps> = ({
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-              <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-              </svg>
-            </div>
-          </div>
+          {/* Profile Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full">
+                <User className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <Link href={`/${userRole}/profile`}>
+                <DropdownMenuItem className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  Profil
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+                <LogOut className="mr-2 h-4 w-4" />
+                Chiqish
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         
         {/* User Info */}

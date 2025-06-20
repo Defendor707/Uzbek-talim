@@ -22,30 +22,30 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ items, userRole }) 
   const [location] = useLocation();
   const { logout } = useAuth();
 
-  // Show only 4 main items + logout
-  const mainItems = items.slice(0, 4);
+  // Show only 3 main items (profile moved to header)
+  const mainItems = items.slice(0, 3);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-2 safe-area-pb z-50">
-      <div className="flex items-center justify-around max-w-md mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 safe-area-pb z-50">
+      <div className="flex items-center justify-around max-w-sm mx-auto">
         {mainItems.map((item) => {
           const isActive = location === item.href || location.startsWith(item.href + '/');
           return (
             <Link key={item.id} href={item.href}>
               <div className={cn(
-                "flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-colors relative",
+                "flex flex-col items-center justify-center px-4 py-2 rounded-xl transition-all duration-200 relative min-w-[80px]",
                 isActive 
-                  ? "text-blue-600" 
-                  : "text-gray-500"
+                  ? "bg-blue-50 text-blue-600 shadow-sm" 
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
               )}>
                 <div className={cn(
-                  "w-6 h-6 mb-1",
+                  "w-5 h-5 mb-1.5 transition-colors",
                   isActive ? "text-blue-600" : "text-gray-400"
                 )}>
                   {item.icon}
                 </div>
                 <span className={cn(
-                  "text-xs font-medium",
+                  "text-xs font-medium leading-tight",
                   isActive ? "text-blue-600" : "text-gray-500"
                 )}>
                   {item.title}
@@ -67,34 +67,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ items, userRole }) 
             </Link>
           );
         })}
-        
-        {/* Logout Button */}
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <div className="flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-colors text-red-500">
-              <div className="w-6 h-6 mb-1">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </div>
-              <span className="text-xs font-medium">Chiqish</span>
-            </div>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Tizimdan chiqish</AlertDialogTitle>
-              <AlertDialogDescription>
-                Haqiqatan ham tizimdan chiqishni xohlaysizmi?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-              <AlertDialogAction onClick={logout} className="bg-red-600 hover:bg-red-700">
-                Chiqish
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+
       </div>
     </div>
   );
