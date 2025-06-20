@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import useAuth from '@/hooks/useAuth';
-import ImprovedDashboard from '@/components/dashboard/ImprovedDashboard';
+import MobileDashboard from '@/components/dashboard/MobileDashboard';
 
 const StudentDashboard: React.FC = () => {
   const { toast } = useToast();
@@ -26,7 +26,7 @@ const StudentDashboard: React.FC = () => {
     queryKey: ['/api/lessons'],
   });
 
-  // Dashboard sections for sidebar
+  // Dashboard sections for bottom navigation - only 4 main items
   const dashboardSections = [
     {
       id: 'dashboard',
@@ -37,16 +37,6 @@ const StudentDashboard: React.FC = () => {
         </svg>
       ),
       href: '/dashboard/student',
-    },
-    {
-      id: 'profile',
-      title: 'Profil',
-      icon: (
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      ),
-      href: '/student/profile',
     },
     {
       id: 'tests',
@@ -71,109 +61,70 @@ const StudentDashboard: React.FC = () => {
       badge: lessons?.length || 0
     },
     {
-      id: 'results',
-      title: 'Natijalar',
+      id: 'profile',
+      title: 'Profil',
       icon: (
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       ),
-      href: '/student/results',
-      badge: attempts?.length || 0
-    },
-    {
-      id: 'schedule',
-      title: 'Jadval',
-      icon: (
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      ),
-      href: '/student/schedule',
+      href: '/student/profile',
     }
   ];
 
   return (
-    <ImprovedDashboard 
+    <MobileDashboard 
       userRole="student" 
       sections={dashboardSections}
       currentPage="O'quvchi paneli"
     >
-      <div className="p-6">
+      <div className="p-4">
         {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 gap-4 mb-6">
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-sm">Jami urinishlar</p>
-                  <p className="text-2xl font-bold">{attempts?.length || 0}</p>
-                </div>
-                <div className="w-12 h-12 bg-blue-400 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                  </svg>
-                </div>
+            <CardContent className="p-4">
+              <div className="text-center">
+                <p className="text-blue-100 text-xs">Jami urinishlar</p>
+                <p className="text-2xl font-bold">{attempts?.length || 0}</p>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-100 text-sm">O'rtacha ball</p>
-                  <p className="text-2xl font-bold">
-                    {attempts && attempts.length > 0 ? 
-                      Math.round(attempts.reduce((sum, a) => sum + (a.score || 0), 0) / attempts.length) + '%' 
-                      : '0%'
-                    }
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-green-400 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                  </svg>
-                </div>
+            <CardContent className="p-4">
+              <div className="text-center">
+                <p className="text-green-100 text-xs">O'rtacha ball</p>
+                <p className="text-2xl font-bold">
+                  {attempts && attempts.length > 0 ? 
+                    Math.round(attempts.reduce((sum, a) => sum + (a.score || 0), 0) / attempts.length) + '%' 
+                    : '0%'
+                  }
+                </p>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100 text-sm">Mavjud testlar</p>
-                  <p className="text-2xl font-bold">{tests?.length || 0}</p>
-                </div>
-                <div className="w-12 h-12 bg-purple-400 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
+            <CardContent className="p-4">
+              <div className="text-center">
+                <p className="text-purple-100 text-xs">Mavjud testlar</p>
+                <p className="text-2xl font-bold">{tests?.length || 0}</p>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-100 text-sm">Darsliklar</p>
-                  <p className="text-2xl font-bold">{lessons?.length || 0}</p>
-                </div>
-                <div className="w-12 h-12 bg-orange-400 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-                  </svg>
-                </div>
+            <CardContent className="p-4">
+              <div className="text-center">
+                <p className="text-orange-100 text-xs">Darsliklar</p>
+                <p className="text-2xl font-bold">{lessons?.length || 0}</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 gap-4 mb-6">
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -269,7 +220,7 @@ const StudentDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-    </ImprovedDashboard>
+    </MobileDashboard>
   );
 };
 
