@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import useAuth from '@/hooks/useAuth';
-import MobileDashboard from '@/components/dashboard/MobileDashboard';
+import ResponsiveDashboard from '@/components/dashboard/ResponsiveDashboard';
 
 const TeacherDashboard: React.FC = () => {
   const { toast } = useToast();
@@ -74,14 +74,14 @@ const TeacherDashboard: React.FC = () => {
   ];
 
   return (
-    <MobileDashboard 
+    <ResponsiveDashboard 
       userRole="teacher" 
       sections={dashboardSections}
       currentPage="Ustoz paneli"
     >
-      <div className="p-4 lg:p-0">
+      <div>
         {/* Quick Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <div className="responsive-grid-2-4 mb-6 lg:mb-8">
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
             <CardContent className="p-4">
               <div className="text-center">
@@ -244,7 +244,7 @@ const TeacherDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-    </MobileDashboard>
+    </ResponsiveDashboard>
   );
 };
 
