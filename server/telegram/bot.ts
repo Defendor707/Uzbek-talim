@@ -3649,6 +3649,7 @@ bot.hears('📊 Statistika', async (ctx) => {
     const totalTeachers = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'teacher'));
     const totalStudents = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'student'));
     const totalParents = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'parent'));
+    const totalCenters = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'center'));
     const totalTests = await db.select({ count: sql`count(*)` }).from(schema.tests);
     const totalLessons = await db.select({ count: sql`count(*)` }).from(schema.lessons);
     
@@ -3657,6 +3658,7 @@ bot.hears('📊 Statistika', async (ctx) => {
     statsMessage += `👨‍🏫 O'qituvchilar: ${totalTeachers[0]?.count || 0}\n`;
     statsMessage += `👨‍🎓 O'quvchilar: ${totalStudents[0]?.count || 0}\n`;
     statsMessage += `👨‍👩‍👧‍👦 Ota-onalar: ${totalParents[0]?.count || 0}\n`;
+    statsMessage += `🏫 O'quv markazlari: ${totalCenters[0]?.count || 0}\n`;
     statsMessage += `📝 Jami testlar: ${totalTests[0]?.count || 0}\n`;
     statsMessage += `📚 Jami darsliklar: ${totalLessons[0]?.count || 0}\n\n`;
 

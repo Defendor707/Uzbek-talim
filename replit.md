@@ -134,6 +134,11 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 20, 2025: Added educational centers count to platform statistics
+  - Enhanced Telegram bot statistics to include O'quv markazlari (educational centers) count
+  - Platform statistics now shows complete breakdown: teachers, students, parents, and centers
+  - Maintains consistency across all statistical displays in the bot interface
+
 - June 20, 2025: Fixed navigation badges and bot statistics completely
   - Added dynamic test/lesson count badges to navigation (updates when new content created)
   - Fixed bot statistics button to show user information instead of generic message
