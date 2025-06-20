@@ -134,6 +134,15 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 20, 2025: Fixed Telegram bot database connection issues affecting test creation
+  - Enhanced database connection pool with error handling and recovery mechanisms
+  - Added comprehensive error handling for PostgreSQL connection timeouts and interrupts
+  - Created BotErrorHandler utility for graceful database error management
+  - Implemented retry logic for database operations with exponential backoff
+  - Fixed connection pool configuration with proper timeout and connection limits
+  - Resolved "ProcessInterrupts" errors that were breaking test creation workflow
+  - Bot now handles temporary database issues without crashing
+
 - June 20, 2025: Added profile and logout buttons to PC desktop sidebar for all user roles
   - Fixed missing user management controls on desktop version including parent profiles
   - Added "Profil" button with user icon linking to role-specific profile page

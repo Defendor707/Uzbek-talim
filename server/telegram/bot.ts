@@ -2,6 +2,7 @@ import { Telegraf, session, Scenes, Markup } from 'telegraf';
 import { storage } from '../storage';
 import { generateToken, verifyToken } from '../utils/auth';
 import { botNotificationService } from '../sync/botNotifications';
+import { BotErrorHandler } from './errorHandler';
 import bcrypt from 'bcrypt';
 import * as schema from '@shared/schema';
 import { db } from '../db';
