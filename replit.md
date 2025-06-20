@@ -134,6 +134,12 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 20, 2025: Fixed public tests display issue in student section
+  - Identified test type inconsistency preventing public tests from showing
+  - Updated existing test from type 'simple' to type 'public' for proper display
+  - Public tests endpoint now correctly returns tests for student users
+  - Ommaviy testlar section will now show available public tests
+
 - June 20, 2025: Fixed Telegram bot database connection issues affecting test creation
   - Enhanced database connection pool with error handling and recovery mechanisms
   - Added comprehensive error handling for PostgreSQL connection timeouts and interrupts
