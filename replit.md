@@ -130,8 +130,20 @@ O'zbek Talim is a comprehensive educational management platform designed for the
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Dashboard design: User requested improved navigation without dropdown menus for better usability.
+
+## Recent Changes
+
+- June 20, 2025: Major dashboard redesign completed
+  - Replaced card-based navigation with professional sidebar navigation
+  - Eliminated dropdown "Boshqalar" menu for better UX
+  - Implemented ImprovedDashboard component with consistent layout
+  - Added role-specific sidebar sections with badges and counts
+  - Enhanced visual design with gradient cards and improved stats
+  - Applied changes to all user roles: Teacher, Student, Parent, Center
 
 ## Changelog
 
 Changelog:
-- June 16, 2025. Initial setup
+- June 20, 2025: Dashboard navigation system completely redesigned for better usability
+- June 16, 2025: Initial setup
