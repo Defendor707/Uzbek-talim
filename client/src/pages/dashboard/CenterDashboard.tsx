@@ -109,9 +109,9 @@ const CenterDashboard: React.FC = () => {
       sections={dashboardSections}
       currentPage="O'quv markaz paneli"
     >
-      <div className="p-4">
+      <div className="p-4 lg:p-0">
         {/* Quick Stats Cards */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">

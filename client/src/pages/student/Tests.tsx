@@ -140,10 +140,10 @@ const StudentTestsPage: React.FC = () => {
       sections={dashboardSections}
       currentPage="Testlar"
     >
-      <div className="p-4">
+      <div className="p-4 lg:p-0">
         {/* Search Section */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-3">Test qidirish</h2>
+        <div className="mb-6 lg:mb-8">
+          <h2 className="text-lg lg:text-xl font-semibold mb-3">Test qidirish</h2>
           <div className="flex gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -170,7 +170,7 @@ const StudentTestsPage: React.FC = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
             <CardContent className="p-4">
               <div className="text-center">
