@@ -3641,21 +3641,85 @@ bot.hears('👤 Profil', async (ctx) => {
   }
 });
 
+// Statistics handler - shows user information
+bot.hears('📊 Statistika', async (ctx) => {
+  if (!ctx.session.userId) {
+    try {
+      // Get platform statistics for non-logged users
+      const totalUsers = await db.select({ count: sql`count(*)` }).from(schema.users);
+      const totalTeachers = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'teacher'));
+      const totalStudents = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'student'));
+      const totalTests = await db.select({ count: sql`count(*)` }).from(schema.tests);
+      
+      await ctx.reply(
+        `📊 *O'zbek Talim platformasi statistikasi*\n\n` +
+        `👥 Jami foydalanuvchilar: ${totalUsers[0]?.count || 0}\n` +
+        `👨‍🏫 O'qituvchilar: ${totalTeachers[0]?.count || 0}\n` +
+        `👨‍🎓 O'quvchilar: ${totalStudents[0]?.count || 0}\n` +
+        `📝 Jami testlar: ${totalTests[0]?.count || 0}\n\n` +
+        `Batafsil ma'lumot olish uchun tizimga kiring!`,
+        { parse_mode: 'Markdown' }
+      );
+    } catch (error) {
+      console.error('Error fetching platform statistics:', error);
+      await ctx.reply('📊 Platformamizda minglab foydalanuvchilar faol harakat qilmoqda. Batafsil ma\'lumot olish uchun tizimga kiring!');
+    }
+    return;
+  }
+
+  try {
+    // Get user-specific statistics
+    const user = await storage.getUser(ctx.session.userId);
+    if (!user) {
+      await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
+      return;
+    }
+
+    let statsMessage = `📊 *Sizning statistikangiz*\n\n`;
+    statsMessage += `👤 Ism: ${user.fullName}\n`;
+    statsMessage += `🎯 Rol: ${getRoleNameInUzbek(user.role)}\n`;
+    statsMessage += `📅 Ro'yxatdan o'tgan: ${new Date(user.createdAt).toLocaleDateString('uz-UZ')}\n\n`;
+
+    if (user.role === 'teacher') {
+      const tests = await storage.getTestsByTeacherId(user.id);
+      const lessons = await storage.getLessonsByTeacherId(user.id);
+      
+      statsMessage += `📝 Yaratgan testlar: ${tests.length}\n`;
+      statsMessage += `📚 Yaratgan darsliklar: ${lessons.length}\n`;
+      statsMessage += `✅ Faol testlar: ${tests.filter(t => t.status === 'active').length}\n`;
+      
+    } else if (user.role === 'student') {
+      const attempts = await storage.getTestAttemptsByStudentId(user.id);
+      const completedAttempts = attempts.filter(a => a.status === 'completed');
+      const averageScore = completedAttempts.length > 0 
+        ? Math.round(completedAttempts.reduce((sum, a) => sum + (Number(a.score) || 0), 0) / completedAttempts.length)
+        : 0;
+      
+      statsMessage += `🎯 Ishlagan testlar: ${attempts.length}\n`;
+      statsMessage += `✅ Tugatgan testlar: ${completedAttempts.length}\n`;
+      statsMessage += `📊 O'rtacha ball: ${averageScore}%\n`;
+      
+    } else if (user.role === 'parent') {
+      const children = await storage.getChildrenByParentId(user.id);
+      statsMessage += `👶 Farzandlar soni: ${children.length}\n`;
+    }
+
+    await ctx.reply(statsMessage, { parse_mode: 'Markdown' });
+    
+  } catch (error) {
+    console.error('Error fetching user statistics:', error);
+    await ctx.reply('❌ Statistikani olishda xatolik yuz berdi.');
+  }
+});
+
 // Additional menu handlers for each role
-bot.hears(['📚 Darslik', '📝 Testlar', '📊 Statistika'], async (ctx) => {
+bot.hears(['📚 Darslik', '📝 Testlar'], async (ctx) => {
   if (!ctx.session.userId) {
     await ctx.reply('❌ Avval tizimga kiring.');
     return;
   }
   
   const action = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
-  
-  if (action === '👤 Profil') {
-    // Trigger profile command
-    await ctx.reply('👤 Profil ma\'lumotlari yuklanmoqda...');
-    // Reuse profile command logic
-    return;
-  }
   
   await ctx.reply(`${action} bo'limi hozircha ishlab chiqilmoqda. Tez orada faollashtiraman! 🚀`);
 });

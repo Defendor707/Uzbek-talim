@@ -134,6 +134,12 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 20, 2025: Fixed navigation badges and bot statistics completely
+  - Added dynamic test/lesson count badges to navigation (updates when new content created)
+  - Fixed bot statistics button to show user information instead of generic message
+  - Statistics now shows platform stats for non-logged users and personal stats for logged users
+  - Navigation badges persist across all pages and update automatically
+
 - June 20, 2025: Fixed Telegram bot registration system completely
   - Corrected password/passwordHash field mapping in bot.ts and storage.ts
   - Fixed createUser method to properly handle password hashing
