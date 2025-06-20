@@ -134,12 +134,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
-- June 20, 2025: Added profile and logout buttons to PC desktop sidebar
-  - Fixed missing user management controls on desktop version
-  - Added "Profil" button with user icon linking to profile page
-  - Added "Chiqish" (logout) button with proper styling and logout functionality
+- June 20, 2025: Added profile and logout buttons to PC desktop sidebar for all user roles
+  - Fixed missing user management controls on desktop version including parent profiles
+  - Added "Profil" button with user icon linking to role-specific profile page
+  - Added "Chiqish" (logout) button with confirmation dialog and proper styling
+  - Updated ResponsiveDashboard component to include profile management section
   - Maintains consistent design with hover effects and proper spacing
   - Profile button uses gray styling, logout button uses red styling for clear distinction
+  - Works for all user roles: teacher, student, parent, and center
 
 - June 20, 2025: Created modern onboarding experience with fully responsive design
   - Developed stunning slide presentation showcasing each user role and benefits
