@@ -168,13 +168,13 @@ const OnboardingSlides: React.FC<OnboardingSlidesProps> = ({ onComplete }) => {
       <div className={`absolute inset-0 bg-gradient-to-br ${slide.gradient}`}>
         <div className="absolute inset-0 bg-black bg-opacity-10"></div>
         
-        {/* Animated Background Pattern */}
-        <div className="absolute inset-0">
-          <div className="absolute top-10 left-10 w-32 h-32 bg-white bg-opacity-10 rounded-full animate-pulse"></div>
-          <div className="absolute top-40 right-20 w-24 h-24 bg-white bg-opacity-15 rounded-full animate-bounce delay-1000"></div>
-          <div className="absolute bottom-32 left-20 w-20 h-20 bg-white bg-opacity-5 rounded-full animate-pulse delay-500"></div>
-          <div className="absolute bottom-20 right-32 w-28 h-28 bg-white bg-opacity-10 rounded-full animate-bounce delay-700"></div>
-          <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-white bg-opacity-5 rounded-full animate-ping delay-1500"></div>
+        {/* Animated Background Pattern - Responsive */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-5 left-5 md:top-10 md:left-10 w-16 h-16 md:w-32 md:h-32 bg-white bg-opacity-10 rounded-full animate-pulse"></div>
+          <div className="absolute top-20 right-10 md:top-40 md:right-20 w-12 h-12 md:w-24 md:h-24 bg-white bg-opacity-15 rounded-full animate-bounce delay-1000"></div>
+          <div className="absolute bottom-16 left-10 md:bottom-32 md:left-20 w-10 h-10 md:w-20 md:h-20 bg-white bg-opacity-5 rounded-full animate-pulse delay-500"></div>
+          <div className="absolute bottom-10 right-16 md:bottom-20 md:right-32 w-14 h-14 md:w-28 md:h-28 bg-white bg-opacity-10 rounded-full animate-bounce delay-700"></div>
+          <div className="absolute top-1/2 left-1/4 w-8 h-8 md:w-16 md:h-16 bg-white bg-opacity-5 rounded-full animate-ping delay-1500"></div>
         </div>
       </div>
 
@@ -189,12 +189,12 @@ const OnboardingSlides: React.FC<OnboardingSlidesProps> = ({ onComplete }) => {
         </div>
 
         {/* Header Controls */}
-        <div className="flex justify-between items-center p-6">
-          <div className="flex space-x-2">
+        <div className="flex justify-between items-center p-4 md:p-6">
+          <div className="flex space-x-1.5 md:space-x-2">
             {slides.map((_, index) => (
               <div
                 key={index}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-300 ${
                   index === currentSlide ? 'bg-white' : 'bg-white bg-opacity-30'
                 }`}
               />
@@ -204,48 +204,52 @@ const OnboardingSlides: React.FC<OnboardingSlidesProps> = ({ onComplete }) => {
           <Button
             onClick={handleSkip}
             variant="ghost"
-            className="text-white hover:bg-white hover:bg-opacity-20 transition-colors"
+            className="text-white hover:bg-white hover:bg-opacity-20 transition-colors text-sm md:text-base px-3 md:px-4 py-2"
           >
             O'tkazib yuborish
           </Button>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex items-center justify-center px-8">
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 md:px-8">
           <div className="max-w-4xl w-full text-center text-white">
             {/* Icon */}
-            <div className="mb-8 flex justify-center">
-              <div className="p-6 bg-white bg-opacity-20 rounded-3xl backdrop-blur-sm border border-white border-opacity-30">
-                {slide.icon}
+            <div className="mb-6 md:mb-8 flex justify-center">
+              <div className="p-4 md:p-6 bg-white bg-opacity-20 rounded-2xl md:rounded-3xl backdrop-blur-sm border border-white border-opacity-30">
+                <div className="w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20">
+                  {React.cloneElement(slide.icon, { 
+                    className: "w-full h-full text-white"
+                  })}
+                </div>
               </div>
             </div>
 
             {/* Title */}
-            <h1 className="text-5xl md:text-6xl font-bold mb-4 leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 md:mb-4 leading-tight px-2">
               {slide.title}
             </h1>
 
             {/* Subtitle */}
-            <p className="text-2xl md:text-3xl text-white text-opacity-90 mb-8">
+            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white text-opacity-90 mb-6 md:mb-8 px-2">
               {slide.subtitle}
             </p>
 
             {/* Description */}
-            <p className="text-xl text-white text-opacity-80 mb-12 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-white text-opacity-80 mb-8 md:mb-12 max-w-xs sm:max-w-lg md:max-w-2xl lg:max-w-3xl mx-auto leading-relaxed px-4">
               {slide.description}
             </p>
 
             {/* Features */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 max-w-sm sm:max-w-lg md:max-w-2xl mx-auto mb-8 md:mb-12 px-4">
               {slide.features.map((feature, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-center md:justify-start bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-4 border border-white border-opacity-20"
+                  className="flex items-center justify-center sm:justify-start bg-white bg-opacity-10 backdrop-blur-sm rounded-lg md:rounded-xl p-3 md:p-4 border border-white border-opacity-20"
                 >
-                  <svg className="w-6 h-6 mr-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3 text-white flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                   </svg>
-                  <span className="text-lg font-medium">{feature}</span>
+                  <span className="text-sm md:text-base lg:text-lg font-medium text-center sm:text-left">{feature}</span>
                 </div>
               ))}
             </div>
@@ -253,31 +257,32 @@ const OnboardingSlides: React.FC<OnboardingSlidesProps> = ({ onComplete }) => {
         </div>
 
         {/* Navigation Controls */}
-        <div className="flex justify-between items-center p-6">
+        <div className="flex justify-between items-center p-4 md:p-6">
           <Button
             onClick={handlePrevious}
             disabled={currentSlide === 0}
             variant="ghost"
-            className="text-white hover:bg-white hover:bg-opacity-20 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-white hover:bg-white hover:bg-opacity-20 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] px-3 md:px-4"
           >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Orqaga
+            <span className="text-sm md:text-base">Orqaga</span>
           </Button>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 md:space-x-4">
             <Button
               onClick={() => setIsPaused(!isPaused)}
               variant="ghost"
-              className="text-white hover:bg-white hover:bg-opacity-20"
+              className="text-white hover:bg-white hover:bg-opacity-20 min-h-[44px] min-w-[44px] p-2"
+              aria-label={isPaused ? "Davom ettirish" : "To'xtatish"}
             >
               {isPaused ? (
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
               ) : (
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
                 </svg>
               )}
@@ -285,10 +290,10 @@ const OnboardingSlides: React.FC<OnboardingSlidesProps> = ({ onComplete }) => {
 
             <Button
               onClick={handleNext}
-              className="bg-white text-gray-900 hover:bg-gray-100 font-semibold px-6 py-3 rounded-xl transition-all duration-200 transform hover:scale-105"
+              className="bg-white text-gray-900 hover:bg-gray-100 font-semibold px-4 md:px-6 py-2 md:py-3 rounded-lg md:rounded-xl transition-all duration-200 transform hover:scale-105 min-h-[44px] text-sm md:text-base"
             >
-              {currentSlide === slides.length - 1 ? 'Boshlash' : 'Keyingisi'}
-              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span>{currentSlide === slides.length - 1 ? 'Boshlash' : 'Keyingisi'}</span>
+              <svg className="w-4 h-4 md:w-5 md:h-5 ml-1 md:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Button>
