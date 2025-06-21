@@ -491,6 +491,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // Update test with images
+  app.put(
+    "/api/tests/:id/update-with-images",
+    authenticate,
+    authorize(["teacher"]),
+    upload.array('testImages', 5),
+    async (req, res) => {
+      try {
+        const testId = parseInt(req.params.id);
+        if (isNaN(testId)) {
+          return res.status(400).json({ message: "Invalid test ID" });
+        }
+
+        // Check if test exists and belongs to the teacher
+        const test = await storage.getTestById(testId);
+        if (!test) {
+          return res.status(404).json({ message: "Test not found" });
+        }
+
+        if (test.teacherId !== req.user!.userId) {
+          return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        // Handle image uploads
+        let testImages: string[] = [];
+        
+        // Parse existing images if provided
+        if (req.body.existingImages) {
+          try {
+            const existingImages = JSON.parse(req.body.existingImages);
+            if (Array.isArray(existingImages)) {
+              testImages = [...existingImages];
+            }
+          } catch (e) {
+            console.error("Error parsing existing images:", e);
+          }
+        }
+
+        // Add new uploaded images
+        if (req.files && req.files.length > 0) {
+          const files = req.files as Express.Multer.File[];
+          const newImagePaths = files.map(file => {
+            const relativePath = file.path.replace(process.cwd() + '/', '');
+            return relativePath;
+          });
+          testImages = [...testImages, ...newImagePaths];
+        }
+
+        // Parse questions
+        let questions: any[] = [];
+        if (req.body.questions) {
+          try {
+            questions = JSON.parse(req.body.questions);
+          } catch (e) {
+            console.error("Error parsing questions:", e);
+            return res.status(400).json({ message: "Invalid questions format" });
+          }
+        }
+
+        // Update test data
+        const testData = {
+          title: req.body.title,
+          description: req.body.description || '',
+          type: req.body.type,
+          status: req.body.status,
+          totalQuestions: parseInt(req.body.totalQuestions) || questions.length,
+          testCode: req.body.testCode || null,
+          testImages: testImages.length > 0 ? testImages : null,
+        };
+
+        const updatedTest = await storage.updateTest(testId, testData);
+
+        // Delete existing questions for this test
+        const existingQuestions = await storage.getQuestionsByTestId(testId);
+        for (const question of existingQuestions) {
+          await storage.deleteQuestionById(question.id);
+        }
+
+        // Create new questions
+        for (const question of questions) {
+          await storage.createQuestion({
+            testId: testId,
+            questionText: question.questionText,
+            correctAnswer: question.correctAnswer,
+            order: question.order || 1,
+            points: question.points || 1,
+            options: question.options || ['A', 'B', 'C', 'D'],
+          });
+        }
+
+        // Notify bot users and sync with website
+        if (updatedTest) {
+          await botNotificationService.notifyTestUpdated(updatedTest);
+          await syncService.notifyTestUpdated(updatedTest);
+        }
+        
+        return res.status(200).json({
+          ...updatedTest,
+          testCode: req.body.testCode || updatedTest?.testCode,
+        });
+      } catch (error) {
+        console.error("Error updating test with images:", error);
+        return res.status(500).json({ message: "Failed to update test" });
+      }
+    }
+  );
+
   app.delete(
     "/api/tests/:id",
     authenticate,
