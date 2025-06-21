@@ -19,7 +19,7 @@ import useAuth from '@/hooks/useAuth';
 const testSchema = z.object({
   title: z.string().min(1, 'Test nomini kiriting'),
   description: z.string().optional(),
-  type: z.enum(['public', 'private']),
+  type: z.enum(['public', 'numerical']),
   totalQuestions: z.number().min(5, 'Kamida 5 ta savol bo\'lishi kerak').max(90, 'Maksimal 90 ta savol'),
 });
 
@@ -73,7 +73,7 @@ const CreateTestPage: React.FC = () => {
   });
 
   const handleTestInfoSubmit = (data: TestFormData) => {
-    if (data.type === 'private') {
+    if (data.type === 'numerical') {
       setTestCode(Math.floor(100000 + Math.random() * 900000).toString());
     }
     setStep('images');
@@ -113,9 +113,7 @@ const CreateTestPage: React.FC = () => {
     const testFormData = new FormData();
     testFormData.append('title', formData.title);
     testFormData.append('description', formData.description || '');
-    testFormData.append('type', formData.type === 'public' ? 'public' : 'simple');
-    testFormData.append('grade', '1');
-    testFormData.append('classroom', '');
+    testFormData.append('type', formData.type);
     testFormData.append('duration', '0');
     testFormData.append('totalQuestions', formData.totalQuestions.toString());
     testFormData.append('status', 'active');
@@ -259,13 +257,13 @@ const CreateTestPage: React.FC = () => {
 
                 <div>
                   <Label htmlFor="type">Test turi *</Label>
-                  <Select onValueChange={(value) => form.setValue('type', value as 'public' | 'private')}>
+                  <Select onValueChange={(value) => form.setValue('type', value as 'public' | 'numerical')}>
                     <SelectTrigger>
                       <SelectValue placeholder="Test turini tanlang" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="public">Ommaviy test</SelectItem>
-                      <SelectItem value="private">Maxsus raqamli test</SelectItem>
+                      <SelectItem value="numerical">Maxsus raqamli test</SelectItem>
                     </SelectContent>
                   </Select>
                   {form.formState.errors.type && (

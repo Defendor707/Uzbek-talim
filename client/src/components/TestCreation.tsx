@@ -17,12 +17,8 @@ const testCreationSchema = z.object({
   title: z.string().min(1, "Test nomi kiritilishi kerak"),
   description: z.string().optional(),
   testImages: z.array(z.string()).max(5, "Maksimal 5 ta rasm yuklash mumkin").optional(),
-  grade: z.string().min(1, "Sinf tanlanishi kerak"),
-  classroom: z.string().optional(),
-  type: z.enum(["simple", "open", "dtm", "certificate", "disciplinary"]),
-  duration: z.number().min(1, "Test davomiyligi kiritilishi kerak"),
+  type: z.enum(["public", "numerical"]),
   totalQuestions: z.number().min(1, "Savollar soni kiritilishi kerak"),
-  passingScore: z.number().min(0).max(100).optional(),
 });
 
 interface Question {
@@ -50,12 +46,8 @@ export function TestCreation() {
       title: "",
       description: "",
       testImages: [],
-      grade: "",
-      classroom: "",
-      type: "simple",
-      duration: 30,
+      type: "public",
       totalQuestions: 10,
-      passingScore: 60,
     },
   });
 
@@ -318,30 +310,7 @@ export function TestCreation() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="grade"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Sinf</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sinfni tanlang" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {[...Array(11)].map((_, i) => (
-                            <SelectItem key={i + 1} value={`${i + 1}`}>
-                              {i + 1}-sinf
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
               </div>
 
               <FormField
@@ -427,25 +396,7 @@ export function TestCreation() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="duration"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Davomiyligi (daqiqa)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="totalQuestions"
@@ -464,23 +415,7 @@ export function TestCreation() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="passingScore"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>O'tish bali (%)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
               </div>
 
               {/* Savollar */}

@@ -18,11 +18,8 @@ import useAuth from '@/hooks/useAuth';
 const editTestSchema = z.object({
   title: z.string().min(1, "Test sarlavhasi majburiy"),
   description: z.string().optional(),
-  type: z.enum(['simple', 'open', 'dtm', 'certificate', 'disciplinary', 'public', 'numerical']),
+  type: z.enum(['public', 'numerical']),
   status: z.enum(['draft', 'active', 'completed']),
-  grade: z.string().optional(),
-  classroom: z.string().optional(),
-  timeLimit: z.number().min(1, "Vaqt chegarasi majburiy").optional(),
   totalQuestions: z.number().min(1, "Savollar soni majburiy").optional(),
   testCode: z.string().optional(),
 });
@@ -54,11 +51,8 @@ const EditTestPage: React.FC = () => {
     defaultValues: {
       title: '',
       description: '',
-      type: 'simple',
+      type: 'public',
       status: 'draft',
-      grade: '',
-      classroom: '',
-      timeLimit: 60,
       totalQuestions: 0,
       testCode: '',
     },
@@ -70,11 +64,8 @@ const EditTestPage: React.FC = () => {
       form.reset({
         title: test.title || '',
         description: test.description || '',
-        type: test.type || 'simple',
+        type: test.type === 'numerical' ? 'numerical' : 'public',
         status: test.status || 'draft',
-        grade: test.grade || '',
-        classroom: test.classroom || '',
-        timeLimit: test.timeLimit || 60,
         totalQuestions: test.totalQuestions || 0,
         testCode: test.testCode || '',
       });
@@ -124,46 +115,8 @@ const EditTestPage: React.FC = () => {
     },
   });
 
-  // Delete question mutation
-  const deleteQuestionMutation = useMutation({
-    mutationFn: async (questionId: number) => {
-      const response = await fetch(`/api/questions/${questionId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Savolni o\'chirishda xatolik');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Muvaffaqiyat',
-        description: 'Savol muvaffaqiyatli o\'chirildi',
-      });
-      queryClient.invalidateQueries({ queryKey: [`/api/tests/${id}/questions`] });
-    },
-    onError: () => {
-      toast({
-        title: 'Xatolik',
-        description: 'Savolni o\'chirishda xatolik yuz berdi',
-        variant: 'destructive',
-      });
-    },
-  });
-
   const onSubmit = (data: EditTestForm) => {
     updateTestMutation.mutate(data);
-  };
-
-  const handleDeleteQuestion = (questionId: number) => {
-    if (confirm('Bu savolni o\'chirishni xohlaysizmi?')) {
-      deleteQuestionMutation.mutate(questionId);
-    }
   };
 
   const dashboardSections = [
@@ -282,13 +235,8 @@ const EditTestPage: React.FC = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="simple">Oddiy test</SelectItem>
-                            <SelectItem value="open">Ochiq test</SelectItem>
-                            <SelectItem value="dtm">DTM test</SelectItem>
-                            <SelectItem value="certificate">Sertifikat test</SelectItem>
-                            <SelectItem value="disciplinary">Intizomiy test</SelectItem>
                             <SelectItem value="public">Ommaviy test</SelectItem>
-                            <SelectItem value="numerical">Raqamli test</SelectItem>
+                            <SelectItem value="numerical">Maxsus raqamli test</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -321,45 +269,17 @@ const EditTestPage: React.FC = () => {
 
                   <FormField
                     control={form.control}
-                    name="timeLimit"
+                    name="totalQuestions"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Vaqt chegarasi (daqiqa)</FormLabel>
+                        <FormLabel>Savollar soni</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
-                            placeholder="60" 
+                            placeholder="10" 
                             {...field}
                             onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="grade"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sinf</FormLabel>
-                        <FormControl>
-                          <Input placeholder="1-sinf" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="classroom"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Xona</FormLabel>
-                        <FormControl>
-                          <Input placeholder="A" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -469,17 +389,7 @@ const EditTestPage: React.FC = () => {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:bg-red-50"
-                          onClick={() => handleDeleteQuestion(question.id)}
-                          disabled={deleteQuestionMutation.isPending}
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
+                          Tahrirlash
                         </Button>
                       </div>
                     </div>
