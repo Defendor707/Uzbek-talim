@@ -530,7 +530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Add new uploaded images
-        if (req.files && req.files.length > 0) {
+        if (req.files && Array.isArray(req.files) && req.files.length > 0) {
           const files = req.files as Express.Multer.File[];
           const newImagePaths = files.map(file => {
             const relativePath = file.path.replace(process.cwd() + '/', '');
@@ -558,7 +558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: req.body.status,
           totalQuestions: parseInt(req.body.totalQuestions) || questions.length,
           testCode: req.body.testCode || null,
-          testImages: testImages.length > 0 ? testImages : null,
+          ...(testImages.length > 0 && { testImages }),
         };
 
         const updatedTest = await storage.updateTest(testId, testData);
@@ -574,6 +574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.createQuestion({
             testId: testId,
             questionText: question.questionText,
+            questionType: testData.type, // Add required question_type
             correctAnswer: question.correctAnswer,
             order: question.order || 1,
             points: question.points || 1,
@@ -583,8 +584,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Notify bot users and sync with website
         if (updatedTest) {
-          await botNotificationService.notifyTestUpdated(updatedTest);
-          await syncService.notifyTestUpdated(updatedTest);
+          await botNotificationService.notifyTestCreated(updatedTest);
+          await syncService.notifyTestCreated(updatedTest);
         }
         
         return res.status(200).json({

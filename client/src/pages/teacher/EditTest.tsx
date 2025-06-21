@@ -141,13 +141,34 @@ const EditTestPage: React.FC = () => {
 
   const proceedToQuestions = () => {
     const formData = form.getValues();
-    if (questions.length === 0) {
-      const newQuestions = Array(formData.totalQuestions || 10).fill(null).map(() => ({
+    const targetQuestionCount = formData.totalQuestions || 10;
+    
+    // If question count changed, adjust the questions array
+    if (questions.length !== targetQuestionCount) {
+      const currentQuestions = [...questions];
+      
+      if (currentQuestions.length < targetQuestionCount) {
+        // Add new empty questions
+        const additionalQuestions = Array(targetQuestionCount - currentQuestions.length)
+          .fill(null)
+          .map(() => ({
+            questionText: '',
+            correctAnswer: 'A' as const
+          }));
+        setQuestions([...currentQuestions, ...additionalQuestions]);
+      } else if (currentQuestions.length > targetQuestionCount) {
+        // Remove excess questions
+        setQuestions(currentQuestions.slice(0, targetQuestionCount));
+      }
+    } else if (questions.length === 0) {
+      // Initial case - create new questions
+      const newQuestions = Array(targetQuestionCount).fill(null).map(() => ({
         questionText: '',
         correctAnswer: 'A' as const
       }));
       setQuestions(newQuestions);
     }
+    
     setStep('questions');
   };
 
@@ -531,7 +552,7 @@ const EditTestPage: React.FC = () => {
                           
                           <div className="space-y-4">
                             <div>
-                              <Label htmlFor={`question-${globalIndex}`}>Savol matni</Label>
+                              <Label htmlFor={`question-${globalIndex}`}>Savol</Label>
                               <Textarea
                                 id={`question-${globalIndex}`}
                                 value={question.questionText}
