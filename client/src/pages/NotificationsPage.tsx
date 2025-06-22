@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Check, CheckCheck, Trash2, Settings, ArrowLeft } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { useMobile } from '@/hooks/use-mobile';
 import useAuth from '@/hooks/useAuth';
 
@@ -22,6 +22,11 @@ const NotificationsPage: React.FC = () => {
   const { user } = useAuth();
   const isMobile = useMobile();
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [location, setLocation] = useLocation();
+  
+  const handleBackNavigation = () => {
+    setLocation(`/${user?.role}`);
+  };
 
   // Real API call for notifications
   const { data: notifications = [], isLoading } = useQuery({
@@ -79,11 +84,14 @@ const NotificationsPage: React.FC = () => {
         {/* Mobile Header */}
         <header className="bg-white border-b border-gray-200 px-4 py-4 sticky top-0 z-40 shadow-sm">
           <div className="flex items-center gap-3">
-            <Link href={`/${user?.role}`}>
-              <Button variant="ghost" size="sm" className="p-2 h-10 w-10 rounded-full">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              size="lg" 
+              className="p-3 h-12 w-12 rounded-full touch-target"
+              onClick={handleBackNavigation}
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </Button>
             <div className="flex-1">
               <h1 className="text-xl font-bold text-gray-900">Bildirishnomalar</h1>
               <p className="text-sm text-gray-600 mt-0.5">
@@ -102,28 +110,28 @@ const NotificationsPage: React.FC = () => {
         <main className="px-4 py-6 pb-24">
           {/* Filter Tabs */}
           <div className="mb-6">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
               <Button
                 variant={filter === 'all' ? 'default' : 'outline'}
-                size="sm"
+                size="lg"
                 onClick={() => setFilter('all')}
-                className="whitespace-nowrap min-h-[40px] px-4"
+                className="whitespace-nowrap min-h-[48px] px-6 text-base touch-target"
               >
                 Barchasi ({notifications.length})
               </Button>
               <Button
                 variant={filter === 'unread' ? 'default' : 'outline'}
-                size="sm"
+                size="lg"
                 onClick={() => setFilter('unread')}
-                className="whitespace-nowrap min-h-[40px] px-4"
+                className="whitespace-nowrap min-h-[48px] px-6 text-base touch-target"
               >
                 O'qilmagan ({unreadCount})
               </Button>
               <Button
                 variant={filter === 'read' ? 'default' : 'outline'}
-                size="sm"
+                size="lg"
                 onClick={() => setFilter('read')}
-                className="whitespace-nowrap min-h-[40px] px-4"
+                className="whitespace-nowrap min-h-[48px] px-6 text-base touch-target"
               >
                 O'qilgan ({notifications.length - unreadCount})
               </Button>
@@ -135,10 +143,10 @@ const NotificationsPage: React.FC = () => {
             <div className="mb-4">
               <Button 
                 variant="outline" 
-                size="sm" 
-                className="w-full h-12 text-sm font-medium"
+                size="lg" 
+                className="w-full h-14 text-base font-medium touch-target"
               >
-                <CheckCheck className="w-4 h-4 mr-2" />
+                <CheckCheck className="w-5 h-5 mr-3" />
                 Hammasini o'qilgan deb belgilash
               </Button>
             </div>
@@ -215,22 +223,22 @@ const NotificationsPage: React.FC = () => {
                           </p>
                           
                           {/* Action Buttons */}
-                          <div className="flex gap-1">
+                          <div className="flex gap-2">
                             {!notification.isRead && (
                               <Button 
                                 variant="ghost" 
-                                size="sm" 
-                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
+                                size="lg" 
+                                className="h-12 w-12 p-0 text-blue-600 hover:bg-blue-50 touch-target"
                               >
-                                <Check className="w-4 h-4" />
+                                <Check className="w-5 h-5" />
                               </Button>
                             )}
                             <Button 
                               variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 p-0 text-red-500 hover:bg-red-50"
+                              size="lg" 
+                              className="h-12 w-12 p-0 text-red-500 hover:bg-red-50 touch-target"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-5 h-5" />
                             </Button>
                           </div>
                         </div>

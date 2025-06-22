@@ -143,11 +143,11 @@ const ResponsiveDashboard: React.FC<MobileDashboardProps> = ({
             {/* Mobile Sidebar Trigger */}
             <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-10 w-10">
-                  <Menu className="h-5 w-5" />
+                <Button variant="ghost" size="lg" className="h-12 w-12 p-0 touch-target">
+                  <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-80 p-0">
+              <SheetContent side="left" className="w-[85vw] max-w-sm p-0">
                 <div className="flex flex-col h-full bg-white">
                   {/* Mobile Sidebar Header */}
                   <SheetHeader className="px-6 py-4 border-b border-gray-200">
@@ -169,19 +169,19 @@ const ResponsiveDashboard: React.FC<MobileDashboardProps> = ({
                       return (
                         <Link key={section.id} href={section.href}>
                           <div 
-                            className={`flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
+                            className={`flex items-center px-4 py-4 text-base font-medium rounded-lg transition-colors cursor-pointer touch-target min-h-[56px] ${
                               isActive 
-                                ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' 
+                                ? 'bg-blue-50 text-blue-700 border-r-4 border-blue-700' 
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                             }`}
                             onClick={() => setMobileSidebarOpen(false)}
                           >
-                            <div className="w-5 h-5 mr-3">
+                            <div className="w-6 h-6 mr-4 flex-shrink-0">
                               {section.icon}
                             </div>
                             <span className="flex-1">{section.title}</span>
                             {section.badge && (
-                              <span className={`ml-auto px-2 py-1 text-xs rounded-full ${
+                              <span className={`ml-auto px-3 py-1 text-sm rounded-full font-medium ${
                                 isActive ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
                               }`}>
                                 {section.badge}
@@ -210,24 +210,24 @@ const ResponsiveDashboard: React.FC<MobileDashboardProps> = ({
                       <Link href={`/${userRole}/profile`}>
                         <Button 
                           variant="ghost" 
-                          size="sm" 
-                          className="w-full justify-start"
+                          size="lg" 
+                          className="w-full justify-start h-12 text-base touch-target"
                           onClick={() => setMobileSidebarOpen(false)}
                         >
-                          <User className="mr-2 h-4 w-4" />
+                          <User className="mr-3 h-5 w-5" />
                           Profil
                         </Button>
                       </Link>
                       <Button 
                         variant="ghost" 
-                        size="sm" 
-                        className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                        size="lg" 
+                        className="w-full justify-start h-12 text-base text-red-600 hover:text-red-700 hover:bg-red-50 touch-target"
                         onClick={() => {
                           handleLogout();
                           setMobileSidebarOpen(false);
                         }}
                       >
-                        <LogOut className="mr-2 h-4 w-4" />
+                        <LogOut className="mr-3 h-5 w-5" />
                         Chiqish
                       </Button>
                     </div>
