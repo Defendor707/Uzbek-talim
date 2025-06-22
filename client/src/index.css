@@ -308,4 +308,15 @@
   .mobile-text-base {
     font-size: 16px !important;
   }
+  
+  /* Fix checkbox alignment on mobile */
+  .mobile-checkbox {
+    min-height: 20px !important;
+    min-width: 20px !important;
+  }
+  
+  /* Improve form spacing on mobile */
+  .mobile-form-item {
+    margin-bottom: 1rem !important;
+  }
 }
