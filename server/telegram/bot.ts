@@ -1754,8 +1754,8 @@ bot.hears('👤 Profil', async (ctx) => {
   }
 });
 
-// Logout command with confirmation
-bot.command('logout', async (ctx) => {
+// Logout confirmation function
+const showLogoutConfirmation = async (ctx: any) => {
   await ctx.reply(
     '⚠️ Tizimdan chiqish\n\n' +
     'Haqiqatan ham tizimdan chiqishni xohlaysizmi?\n' +
@@ -1767,7 +1767,16 @@ bot.command('logout', async (ctx) => {
       ]
     ])
   );
-});
+};
+
+// Logout command with confirmation
+bot.command('logout', showLogoutConfirmation);
+
+// Handle "Chiqish" text button
+bot.hears('Chiqish', showLogoutConfirmation);
+
+// Handle "🚪 Chiqish" settings button
+bot.hears('🚪 Chiqish', showLogoutConfirmation);
 
 // Confirm logout
 bot.action('confirm_logout', async (ctx) => {
@@ -3287,13 +3296,12 @@ bot.hears('⚙️ Sozlamalar', async (ctx) => {
   
   let settingsMenu = [
     ['🔐 Parolni o\'zgartirish', '👤 Profil tahrirlash'],
-    ['🔔 Bildirishnomalar', '🌐 Til sozlamalari']
+    ['🔔 Bildirishnomalar', '🌐 Til sozlamalari'],
+    ['🚪 Chiqish', '🔙 Orqaga']
   ];
   
   if (ctx.session.role === 'teacher' || ctx.session.role === 'student') {
-    settingsMenu.push(['🗑️ Hisobni o\'chirish', '🔙 Orqaga']);
-  } else {
-    settingsMenu.push(['🔙 Orqaga']);
+    settingsMenu.splice(-1, 0, ['🗑️ Hisobni o\'chirish']);
   }
   
   await ctx.reply(
