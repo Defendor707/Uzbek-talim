@@ -6,7 +6,7 @@ import { Link, useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
 import { useMobile } from '@/hooks/use-mobile';
 import useAuth from '@/hooks/useAuth';
-import { ChevronLeft, ChevronRight, Menu, User, Settings, LogOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, User, Settings, LogOut, Bell } from 'lucide-react';
 
 interface DashboardSection {
   id: string;
@@ -173,6 +173,29 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 </Link>
               );
             })}
+            
+            {/* Notifications Button */}
+            <Link href={`/${userRole}/notifications`}>
+              <div className={cn(
+                "flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all duration-200 relative min-w-[70px]",
+                location === `/${userRole}/notifications`
+                  ? "bg-blue-50 text-blue-600 shadow-sm" 
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              )}>
+                <div className={cn(
+                  "w-5 h-5 mb-1 transition-colors",
+                  location === `/${userRole}/notifications` ? "text-blue-600" : "text-gray-400"
+                )}>
+                  <Bell />
+                </div>
+                <span className={cn(
+                  "text-xs font-medium leading-tight text-center",
+                  location === `/${userRole}/notifications` ? "text-blue-600" : "text-gray-500"
+                )}>
+                  Xabarlar
+                </span>
+              </div>
+            </Link>
           </div>
         </div>
       </div>
@@ -247,6 +270,12 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 <Link href={`/${userRole}/profile`}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Profil</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/${userRole}/notifications`}>
+                  <Bell className="mr-2 h-4 w-4" />
+                  <span>Bildirishnomalar</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>

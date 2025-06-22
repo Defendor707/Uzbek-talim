@@ -14,6 +14,7 @@ import TeacherProfile from "@/pages/teacher/TeacherProfile";
 import StudentProfile from "@/pages/student/StudentProfile";
 import ParentProfile from "@/pages/parent/ParentProfile";
 import ChildrenPage from "@/pages/parent/ChildrenPage";
+import NotificationsPage from "@/pages/NotificationsPage";
 import LessonsPage from "@/pages/teacher/Lessons";
 import TestsPage from "@/pages/teacher/Tests";
 import CreateTestPage from "@/pages/teacher/CreateTestSimple";
@@ -72,6 +73,11 @@ function Router() {
           <TeacherProfile />
         </ProtectedRoute>
       </Route>
+      <Route path="/teacher/notifications">
+        <ProtectedRoute allowedRoles={["teacher"]}>
+          <NotificationsPage />
+        </ProtectedRoute>
+      </Route>
       <Route path="/teacher/lessons">
         <ProtectedRoute allowedRoles={["teacher"]}>
           <LessonsPage />
@@ -109,6 +115,11 @@ function Router() {
           <StudentProfile />
         </ProtectedRoute>
       </Route>
+      <Route path="/student/notifications">
+        <ProtectedRoute allowedRoles={["student"]}>
+          <NotificationsPage />
+        </ProtectedRoute>
+      </Route>
       <Route path="/student/tests">
         <ProtectedRoute allowedRoles={["student"]}>
           <StudentTestsPage />
@@ -126,9 +137,21 @@ function Router() {
           <ParentProfile />
         </ProtectedRoute>
       </Route>
+      <Route path="/parent/notifications">
+        <ProtectedRoute allowedRoles={["parent"]}>
+          <NotificationsPage />
+        </ProtectedRoute>
+      </Route>
       <Route path="/parent/children">
         <ProtectedRoute allowedRoles={["parent"]}>
           <ChildrenPage />
+        </ProtectedRoute>
+      </Route>
+      
+      {/* Center routes */}
+      <Route path="/center/notifications">
+        <ProtectedRoute allowedRoles={["center"]}>
+          <NotificationsPage />
         </ProtectedRoute>
       </Route>
       
