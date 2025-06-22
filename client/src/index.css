@@ -223,3 +223,37 @@
     z-index: 10;
   }
 }
+
+/* Mobile optimizations */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe area padding for mobile devices */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Mobile touch improvements */
+@media (max-width: 768px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improve tap targets on mobile */
+  button, .btn, [role="button"] {
+    min-height: 44px;
+  }
+  
+  /* Better spacing for mobile content */
+  .mobile-content {
+    padding: 1rem;
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+}

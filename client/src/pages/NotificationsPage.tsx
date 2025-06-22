@@ -77,32 +77,37 @@ const NotificationsPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Mobile Header */}
-        <header className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-40">
+        <header className="bg-white border-b border-gray-200 px-4 py-4 sticky top-0 z-40 shadow-sm">
           <div className="flex items-center gap-3">
             <Link href={`/${user?.role}`}>
-              <Button variant="ghost" size="sm" className="p-2">
+              <Button variant="ghost" size="sm" className="p-2 h-10 w-10 rounded-full">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">Bildirishnomalar</h1>
-              <p className="text-xs text-gray-600">
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-gray-900">Bildirishnomalar</h1>
+              <p className="text-sm text-gray-600 mt-0.5">
                 {unreadCount > 0 ? `${unreadCount} ta o'qilmagan` : 'Barcha xabarlar o\'qilgan'}
               </p>
             </div>
+            {unreadCount > 0 && (
+              <div className="bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </div>
+            )}
           </div>
         </header>
 
         {/* Mobile Content */}
-        <main className="px-4 py-4 pb-20">
+        <main className="px-4 py-6 pb-24">
           {/* Filter Tabs */}
-          <div className="mb-4">
-            <div className="flex gap-2 overflow-x-auto">
+          <div className="mb-6">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               <Button
                 variant={filter === 'all' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilter('all')}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap min-h-[40px] px-4"
               >
                 Barchasi ({notifications.length})
               </Button>
@@ -110,7 +115,7 @@ const NotificationsPage: React.FC = () => {
                 variant={filter === 'unread' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilter('unread')}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap min-h-[40px] px-4"
               >
                 O'qilmagan ({unreadCount})
               </Button>
@@ -118,28 +123,44 @@ const NotificationsPage: React.FC = () => {
                 variant={filter === 'read' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilter('read')}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap min-h-[40px] px-4"
               >
                 O'qilgan ({notifications.length - unreadCount})
               </Button>
             </div>
           </div>
 
+          {/* Quick Actions - Mobile */}
+          {unreadCount > 0 && (
+            <div className="mb-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full h-12 text-sm font-medium"
+              >
+                <CheckCheck className="w-4 h-4 mr-2" />
+                Hammasini o'qilgan deb belgilash
+              </Button>
+            </div>
+          )}
+
           {/* Notifications List */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             {isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-gray-500 mt-2">Yuklanmoqda...</p>
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="text-gray-500 mt-3 text-sm">Yuklanmoqda...</p>
               </div>
             ) : filteredNotifications.length === 0 ? (
-              <Card>
+              <Card className="shadow-sm">
                 <CardContent className="p-8 text-center">
-                  <Bell className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Bell className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
                     Sizga habarlar mavjud emas
                   </h3>
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 text-sm leading-relaxed">
                     {filter === 'unread' 
                       ? 'Barcha xabarlar o\'qilgan' 
                       : 'Hozircha sizga xabarlar kelmagan'}
@@ -150,35 +171,69 @@ const NotificationsPage: React.FC = () => {
               filteredNotifications.map((notification: Notification) => (
                 <Card 
                   key={notification.id} 
-                  className={`transition-all duration-200 ${
-                    !notification.isRead ? 'border-l-4 border-l-blue-500 bg-blue-50/30' : ''
+                  className={`transition-all duration-200 shadow-sm hover:shadow-md ${
+                    !notification.isRead 
+                      ? 'border-l-4 border-l-blue-500 bg-blue-50/30' 
+                      : 'hover:bg-gray-50/50'
                   }`}
                 >
-                  <CardContent className="p-3">
-                    <div className="flex items-start gap-3">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
                       {/* Icon */}
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getNotificationColor(notification.type)}`}>
-                        <span className="text-xs font-bold">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${getNotificationColor(notification.type)}`}>
+                        <span className="text-sm font-bold">
                           {getNotificationIcon(notification.type)}
                         </span>
                       </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 mb-1 text-sm">
-                          {notification.title}
+                        <div className="flex items-start justify-between mb-1">
+                          <h3 className="font-semibold text-gray-900 text-base leading-tight">
+                            {notification.title}
+                          </h3>
                           {!notification.isRead && (
-                            <Badge variant="secondary" className="ml-2 text-xs">
-                              Yangi
-                            </Badge>
+                            <div className="ml-2 flex-shrink-0">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            </div>
                           )}
-                        </h3>
-                        <p className="text-xs text-gray-600 leading-relaxed">
+                        </div>
+                        
+                        {!notification.isRead && (
+                          <Badge variant="secondary" className="mb-2 text-xs font-medium">
+                            Yangi
+                          </Badge>
+                        )}
+                        
+                        <p className="text-sm text-gray-600 leading-relaxed mb-3">
                           {notification.message}
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {formatDate(notification.createdAt)}
-                        </p>
+                        
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-400">
+                            {formatDate(notification.createdAt)}
+                          </p>
+                          
+                          {/* Action Buttons */}
+                          <div className="flex gap-1">
+                            {!notification.isRead && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
+                              >
+                                <Check className="w-4 h-4" />
+                              </Button>
+                            )}
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0 text-red-500 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
