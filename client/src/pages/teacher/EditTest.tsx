@@ -101,20 +101,49 @@ const EditTestPage: React.FC = () => {
 
   // Initialize questions when fetched
   useEffect(() => {
-    if (testQuestions && Array.isArray(testQuestions)) {
-      const formattedQuestions = testQuestions.map(q => ({
-        id: q.id,
-        questionText: q.questionText || '',
-        correctAnswer: q.correctAnswer || 'A',
-        optionA: q.optionA,
-        optionB: q.optionB,
-        optionC: q.optionC,
-        optionD: q.optionD,
-        hasImage: q.hasImage || false
-      }));
+    if (testQuestions && Array.isArray(testQuestions) && testQuestions.length > 0) {
+      const formattedQuestions = testQuestions.map(q => {
+        // Parse correctAnswer if it's a JSON string
+        let correctAnswer = 'A';
+        if (q.correctAnswer) {
+          try {
+            // If it's a JSON string, parse it
+            if (typeof q.correctAnswer === 'string' && q.correctAnswer.startsWith('"')) {
+              correctAnswer = JSON.parse(q.correctAnswer);
+            } else if (typeof q.correctAnswer === 'string') {
+              correctAnswer = q.correctAnswer;
+            } else {
+              correctAnswer = String(q.correctAnswer);
+            }
+          } catch (e) {
+            correctAnswer = 'A';
+          }
+        }
+        
+        return {
+          id: q.id,
+          questionText: q.questionText || '',
+          correctAnswer: correctAnswer as 'A' | 'B' | 'C' | 'D',
+          optionA: q.optionA,
+          optionB: q.optionB,
+          optionC: q.optionC,
+          optionD: q.optionD,
+          hasImage: q.hasImage || false
+        };
+      });
       setQuestions(formattedQuestions);
+      console.log('Loaded questions with correct answers:', formattedQuestions); // Debug
+    } else if (testQuestions && Array.isArray(testQuestions) && testQuestions.length === 0 && test) {
+      // If no questions exist but test exists, create empty questions based on totalQuestions
+      const questionCount = test.totalQuestions || 10;
+      const newQuestions = Array(questionCount).fill(null).map(() => ({
+        questionText: '',
+        correctAnswer: 'A' as const
+      }));
+      setQuestions(newQuestions);
+      console.log('Created new empty questions:', newQuestions); // Debug
     }
-  }, [testQuestions]);
+  }, [testQuestions, test]);
 
   // Watch for totalQuestions changes and adjust questions array in real time
   useEffect(() => {
