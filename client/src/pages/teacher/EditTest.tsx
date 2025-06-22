@@ -83,7 +83,7 @@ const EditTestPage: React.FC = () => {
         title: test.title || '',
         description: test.description || '',
         type: test.type === 'numerical' ? 'numerical' : 'public',
-        status: test.status || 'draft',
+        status: test.status || 'active',
         totalQuestions: test.totalQuestions || 0,
         testCode: test.testCode || '',
       });
