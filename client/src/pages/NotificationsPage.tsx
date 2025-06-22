@@ -80,58 +80,60 @@ const NotificationsPage: React.FC = () => {
   // Mobile layout
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 mobile-container">
         {/* Mobile Header */}
-        <header className="bg-white border-b border-gray-200 px-4 py-4 sticky top-0 z-40 shadow-sm">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="lg" 
-              className="p-3 h-12 w-12 rounded-full touch-target"
-              onClick={handleBackNavigation}
-            >
-              <ArrowLeft className="h-6 w-6" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-xl font-bold text-gray-900">Bildirishnomalar</h1>
-              <p className="text-sm text-gray-600 mt-0.5">
-                {unreadCount > 0 ? `${unreadCount} ta o'qilmagan` : 'Barcha xabarlar o\'qilgan'}
-              </p>
+        <header className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-50 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="p-2 h-10 w-10 rounded-full"
+                onClick={handleBackNavigation}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg font-bold text-gray-900 truncate">Bildirishnomalar</h1>
+                <p className="text-xs text-gray-600 truncate">
+                  {unreadCount > 0 ? `${unreadCount} ta o'qilmagan` : 'Barcha xabarlar o\'qilgan'}
+                </p>
+              </div>
             </div>
             {unreadCount > 0 && (
-              <div className="bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                {unreadCount > 99 ? '99+' : unreadCount}
+              <div className="bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center flex-shrink-0 ml-2">
+                {unreadCount > 9 ? '9+' : unreadCount}
               </div>
             )}
           </div>
         </header>
 
         {/* Mobile Content */}
-        <main className="px-4 py-6 pb-24">
+        <main className="px-3 py-4 pb-20 max-w-full overflow-hidden">
           {/* Filter Tabs */}
-          <div className="mb-6">
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="mb-4">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               <Button
                 variant={filter === 'all' ? 'default' : 'outline'}
-                size="lg"
+                size="sm"
                 onClick={() => setFilter('all')}
-                className="whitespace-nowrap min-h-[48px] px-6 text-base touch-target"
+                className="whitespace-nowrap min-h-[44px] px-4 text-sm font-medium flex-shrink-0"
               >
                 Barchasi ({notifications.length})
               </Button>
               <Button
                 variant={filter === 'unread' ? 'default' : 'outline'}
-                size="lg"
+                size="sm"
                 onClick={() => setFilter('unread')}
-                className="whitespace-nowrap min-h-[48px] px-6 text-base touch-target"
+                className="whitespace-nowrap min-h-[44px] px-4 text-sm font-medium flex-shrink-0"
               >
                 O'qilmagan ({unreadCount})
               </Button>
               <Button
                 variant={filter === 'read' ? 'default' : 'outline'}
-                size="lg"
+                size="sm"
                 onClick={() => setFilter('read')}
-                className="whitespace-nowrap min-h-[48px] px-6 text-base touch-target"
+                className="whitespace-nowrap min-h-[44px] px-4 text-sm font-medium flex-shrink-0"
               >
                 O'qilgan ({notifications.length - unreadCount})
               </Button>
@@ -143,32 +145,32 @@ const NotificationsPage: React.FC = () => {
             <div className="mb-4">
               <Button 
                 variant="outline" 
-                size="lg" 
-                className="w-full h-14 text-base font-medium touch-target"
+                size="sm" 
+                className="w-full h-12 text-sm font-medium"
               >
-                <CheckCheck className="w-5 h-5 mr-3" />
+                <CheckCheck className="w-4 h-4 mr-2" />
                 Hammasini o'qilgan deb belgilash
               </Button>
             </div>
           )}
 
           {/* Notifications List */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             {isLoading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-gray-500 mt-3 text-sm">Yuklanmoqda...</p>
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="text-gray-500 mt-2 text-sm">Yuklanmoqda...</p>
               </div>
             ) : filteredNotifications.length === 0 ? (
               <Card className="shadow-sm">
-                <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Bell className="w-8 h-8 text-gray-400" />
+                <CardContent className="p-6 text-center">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Bell className="w-6 h-6 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-base font-semibold text-gray-900 mb-2">
                     Sizga habarlar mavjud emas
                   </h3>
-                  <p className="text-gray-500 text-sm leading-relaxed">
+                  <p className="text-gray-500 text-sm">
                     {filter === 'unread' 
                       ? 'Barcha xabarlar o\'qilgan' 
                       : 'Hozircha sizga xabarlar kelmagan'}
@@ -179,17 +181,17 @@ const NotificationsPage: React.FC = () => {
               filteredNotifications.map((notification: Notification) => (
                 <Card 
                   key={notification.id} 
-                  className={`transition-all duration-200 shadow-sm hover:shadow-md ${
+                  className={`transition-all duration-200 shadow-sm ${
                     !notification.isRead 
                       ? 'border-l-4 border-l-blue-500 bg-blue-50/30' 
-                      : 'hover:bg-gray-50/50'
+                      : ''
                   }`}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
+                  <CardContent className="p-3">
+                    <div className="flex items-start gap-3">
                       {/* Icon */}
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${getNotificationColor(notification.type)}`}>
-                        <span className="text-sm font-bold">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getNotificationColor(notification.type)}`}>
+                        <span className="text-xs font-bold">
                           {getNotificationIcon(notification.type)}
                         </span>
                       </div>
@@ -197,23 +199,23 @@ const NotificationsPage: React.FC = () => {
                       {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between mb-1">
-                          <h3 className="font-semibold text-gray-900 text-base leading-tight">
+                          <h3 className="font-medium text-gray-900 text-sm leading-tight pr-2">
                             {notification.title}
                           </h3>
                           {!notification.isRead && (
-                            <div className="ml-2 flex-shrink-0">
+                            <div className="flex-shrink-0">
                               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                             </div>
                           )}
                         </div>
                         
                         {!notification.isRead && (
-                          <Badge variant="secondary" className="mb-2 text-xs font-medium">
+                          <Badge variant="secondary" className="mb-2 text-xs">
                             Yangi
                           </Badge>
                         )}
                         
-                        <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                        <p className="text-xs text-gray-600 leading-relaxed mb-2">
                           {notification.message}
                         </p>
                         
@@ -223,22 +225,22 @@ const NotificationsPage: React.FC = () => {
                           </p>
                           
                           {/* Action Buttons */}
-                          <div className="flex gap-2">
+                          <div className="flex gap-1">
                             {!notification.isRead && (
                               <Button 
                                 variant="ghost" 
-                                size="lg" 
-                                className="h-12 w-12 p-0 text-blue-600 hover:bg-blue-50 touch-target"
+                                size="sm" 
+                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
                               >
-                                <Check className="w-5 h-5" />
+                                <Check className="w-4 h-4" />
                               </Button>
                             )}
                             <Button 
                               variant="ghost" 
-                              size="lg" 
-                              className="h-12 w-12 p-0 text-red-500 hover:bg-red-50 touch-target"
+                              size="sm" 
+                              className="h-8 w-8 p-0 text-red-500 hover:bg-red-50"
                             >
-                              <Trash2 className="w-5 h-5" />
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </div>
