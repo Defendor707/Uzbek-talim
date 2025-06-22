@@ -116,11 +116,47 @@ const EditTestPage: React.FC = () => {
     }
   }, [testQuestions]);
 
+  // Watch for totalQuestions changes and adjust questions array in real time
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'totalQuestions' && value.totalQuestions) {
+        const targetCount = value.totalQuestions;
+        if (targetCount > 0 && targetCount !== questions.length) {
+          adjustQuestionsCount(targetCount);
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, questions.length]);
+
   const handleTestInfoSubmit = (data: EditTestForm) => {
     if (data.type === 'numerical' && !testCode) {
       setTestCode(Math.floor(100000 + Math.random() * 900000).toString());
     }
+    
+    // Automatically adjust questions based on totalQuestions change
+    const targetQuestionCount = data.totalQuestions || 10;
+    adjustQuestionsCount(targetQuestionCount);
+    
     setStep('images');
+  };
+
+  const adjustQuestionsCount = (targetCount: number) => {
+    const currentQuestions = [...questions];
+    
+    if (currentQuestions.length < targetCount) {
+      // Add new empty questions
+      const additionalQuestions = Array(targetCount - currentQuestions.length)
+        .fill(null)
+        .map(() => ({
+          questionText: '',
+          correctAnswer: 'A' as const
+        }));
+      setQuestions([...currentQuestions, ...additionalQuestions]);
+    } else if (currentQuestions.length > targetCount) {
+      // Remove excess questions
+      setQuestions(currentQuestions.slice(0, targetCount));
+    }
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -143,25 +179,8 @@ const EditTestPage: React.FC = () => {
     const formData = form.getValues();
     const targetQuestionCount = formData.totalQuestions || 10;
     
-    // If question count changed, adjust the questions array
-    if (questions.length !== targetQuestionCount) {
-      const currentQuestions = [...questions];
-      
-      if (currentQuestions.length < targetQuestionCount) {
-        // Add new empty questions
-        const additionalQuestions = Array(targetQuestionCount - currentQuestions.length)
-          .fill(null)
-          .map(() => ({
-            questionText: '',
-            correctAnswer: 'A' as const
-          }));
-        setQuestions([...currentQuestions, ...additionalQuestions]);
-      } else if (currentQuestions.length > targetQuestionCount) {
-        // Remove excess questions
-        setQuestions(currentQuestions.slice(0, targetQuestionCount));
-      }
-    } else if (questions.length === 0) {
-      // Initial case - create new questions
+    // Ensure we have questions for the current count
+    if (questions.length === 0) {
       const newQuestions = Array(targetQuestionCount).fill(null).map(() => ({
         questionText: '',
         correctAnswer: 'A' as const
@@ -542,43 +561,39 @@ const EditTestPage: React.FC = () => {
                     {questions.slice(currentQuestionGroup * questionsPerGroup, (currentQuestionGroup + 1) * questionsPerGroup).map((question, index) => {
                       const globalIndex = currentQuestionGroup * questionsPerGroup + index;
                       return (
-                        <div key={globalIndex} className="border rounded-lg p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Badge variant="outline">{globalIndex + 1}</Badge>
+                        <div key={globalIndex} className="border rounded-lg p-6">
+                          <div className="flex items-center gap-2 mb-4">
+                            <Badge variant="outline" className="text-lg px-3 py-1">{globalIndex + 1}-savol</Badge>
                             {question.hasImage && (
                               <Badge variant="secondary">Rasm bor</Badge>
                             )}
                           </div>
                           
                           <div className="space-y-4">
-                            <div>
-                              <Label htmlFor={`question-${globalIndex}`}>Savol</Label>
-                              <Textarea
-                                id={`question-${globalIndex}`}
-                                value={question.questionText}
-                                onChange={(e) => updateQuestion(globalIndex, 'questionText', e.target.value)}
-                                placeholder="Savolni kiriting..."
-                                rows={3}
-                              />
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                              {['A', 'B', 'C', 'D'].map((option) => (
+                                <button
+                                  key={option}
+                                  type="button"
+                                  onClick={() => updateQuestion(globalIndex, 'correctAnswer', option)}
+                                  className={`p-4 rounded-lg border-2 text-center font-medium transition-all duration-200 ${
+                                    question.correctAnswer === option
+                                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  <div className="text-lg font-bold">{option}.</div>
+                                </button>
+                              ))}
                             </div>
-
-                            <div>
-                              <Label>To'g'ri javob</Label>
-                              <Select 
-                                value={question.correctAnswer} 
-                                onValueChange={(value) => updateQuestion(globalIndex, 'correctAnswer', value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="A">A</SelectItem>
-                                  <SelectItem value="B">B</SelectItem>
-                                  <SelectItem value="C">C</SelectItem>
-                                  <SelectItem value="D">D</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
+                            
+                            {question.correctAnswer && (
+                              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <p className="text-green-700 font-medium">
+                                  To'g'ri javob: {question.correctAnswer}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
