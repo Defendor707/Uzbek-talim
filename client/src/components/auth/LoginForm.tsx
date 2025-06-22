@@ -123,16 +123,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               control={form.control}
               name="rememberMe"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-4">
-                  <FormControl>
-                    <Checkbox 
-                      checked={field.value} 
-                      onCheckedChange={field.onChange} 
-                      className="h-5 w-5 mt-0.5 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 border-gray-300"
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="text-sm text-gray-600 font-normal cursor-pointer">
+                <FormItem className="mt-4">
+                  <div className="flex items-center space-x-2">
+                    <FormControl>
+                      <Checkbox 
+                        checked={field.value} 
+                        onCheckedChange={field.onChange} 
+                        className="h-4 w-4 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 border-gray-300"
+                        id="rememberMe"
+                      />
+                    </FormControl>
+                    <FormLabel 
+                      htmlFor="rememberMe" 
+                      className="text-sm text-gray-600 font-normal cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
                       Meni eslab qolish
                     </FormLabel>
                   </div>
