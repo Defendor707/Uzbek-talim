@@ -544,6 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (req.body.questions) {
           try {
             questions = JSON.parse(req.body.questions);
+            console.log("Parsed questions from request:", questions); // Debug log
           } catch (e) {
             console.error("Error parsing questions:", e);
             return res.status(400).json({ message: "Invalid questions format" });

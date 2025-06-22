@@ -285,13 +285,10 @@ export class DatabaseStorage implements IStorage {
 
   // Question related methods
   async createQuestion(question: schema.InsertQuestion): Promise<schema.Question> {
-    // Store correctAnswer as a plain string to avoid double JSON encoding
-    const questionData = {
-      ...question,
-      correctAnswer: question.correctAnswer // Store as is - drizzle will handle JSONB properly
-    };
+    console.log("Creating question with data:", question); // Debug log
     
-    const [newQuestion] = await db.insert(schema.questions).values(questionData).returning();
+    const [newQuestion] = await db.insert(schema.questions).values(question).returning();
+    console.log("Created question:", newQuestion); // Debug log
     return newQuestion;
   }
 
