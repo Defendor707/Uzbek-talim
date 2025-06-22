@@ -19,7 +19,7 @@ const editTestSchema = z.object({
   description: z.string().optional(),
   type: z.enum(['public', 'numerical']),
   status: z.enum(['draft', 'active', 'completed']),
-  totalQuestions: z.number().min(1, "Savollar soni majburiy").optional(),
+  totalQuestions: z.number().min(5, "Kamida 5 ta savol bo'lishi kerak").max(90, "Ko'pi bilan 90 ta savol bo'lishi mumkin").optional(),
   testCode: z.string().optional(),
 });
 
@@ -28,7 +28,7 @@ type EditTestForm = z.infer<typeof editTestSchema>;
 interface Question {
   id?: number;
   questionText: string;
-  correctAnswer: 'A' | 'B' | 'C' | 'D';
+  correctAnswer: 'A' | 'B' | 'C' | 'D' | '';
   optionA?: string;
   optionB?: string;
   optionC?: string;
@@ -164,15 +164,20 @@ const EditTestPage: React.FC = () => {
   };
 
   const adjustQuestionsCount = (targetCount: number) => {
+    // Validate count range
+    if (targetCount < 5 || targetCount > 90) {
+      return;
+    }
+    
     const currentQuestions = [...questions];
     
     if (currentQuestions.length < targetCount) {
-      // Add new empty questions
+      // Add new empty questions with no answer selected
       const additionalQuestions = Array(targetCount - currentQuestions.length)
         .fill(null)
         .map(() => ({
           questionText: '',
-          correctAnswer: 'A' as const
+          correctAnswer: '' as any // No answer selected initially
         }));
       setQuestions([...currentQuestions, ...additionalQuestions]);
     } else if (currentQuestions.length > targetCount) {
@@ -222,12 +227,12 @@ const EditTestPage: React.FC = () => {
   const handleSaveTest = async () => {
     const formData = form.getValues();
     
-    // Validate all questions have text and correct answers
-    const incompleteQuestions = questions.filter(q => !q.questionText.trim() || !q.correctAnswer);
+    // Validate all questions have correct answers selected
+    const incompleteQuestions = questions.filter(q => !q.correctAnswer || q.correctAnswer === '');
     if (incompleteQuestions.length > 0) {
       toast({
         title: 'Xatolik',
-        description: 'Barcha savollar to\'ldirilishi va to\'g\'ri javob belgilanishi kerak',
+        description: 'Barcha savollar uchun to\'g\'ri javob belgilanishi kerak',
         variant: 'destructive',
       });
       return;
@@ -283,8 +288,13 @@ const EditTestPage: React.FC = () => {
         description: 'Test muvaffaqiyatli yangilandi!',
       });
       
+      // Invalidate all related queries to force refresh
       queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
       queryClient.invalidateQueries({ queryKey: [`/api/tests/${id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tests/${id}/questions`] });
+      
+      // Clear local state to force reload
+      setQuestions([]);
       
       setLocation('/teacher/tests');
     } catch (error: any) {
@@ -417,10 +427,10 @@ const EditTestPage: React.FC = () => {
                     <Input
                       id="totalQuestions"
                       type="number"
-                      min="1"
+                      min="5"
                       max="90"
                       {...form.register('totalQuestions', { valueAsNumber: true })}
-                      placeholder="Savollar sonini kiriting"
+                      placeholder="Savollar sonini kiriting (5-90)"
                     />
                     {form.formState.errors.totalQuestions && (
                       <p className="text-red-500 text-sm mt-1">{form.formState.errors.totalQuestions.message}</p>
@@ -609,10 +619,16 @@ const EditTestPage: React.FC = () => {
                               ))}
                             </div>
                             
-                            {question.correctAnswer && (
+                            {question.correctAnswer ? (
                               <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                                 <p className="text-green-700 font-medium">
                                   To'g'ri javob: {question.correctAnswer}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <p className="text-yellow-700 font-medium">
+                                  To'g'ri javobni tanlang
                                 </p>
                               </div>
                             )}

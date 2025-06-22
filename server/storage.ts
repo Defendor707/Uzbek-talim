@@ -285,10 +285,7 @@ export class DatabaseStorage implements IStorage {
 
   // Question related methods
   async createQuestion(question: schema.InsertQuestion): Promise<schema.Question> {
-    console.log("Creating question with data:", question); // Debug log
-    
     const [newQuestion] = await db.insert(schema.questions).values(question).returning();
-    console.log("Created question:", newQuestion); // Debug log
     return newQuestion;
   }
 
