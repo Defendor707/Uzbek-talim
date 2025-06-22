@@ -119,7 +119,7 @@ const TestsPage: React.FC = () => {
         
         {/* Actions */}
         <div className="mb-6 sm:mb-8">
-          <Link href="/teacher/create-test" className="w-full sm:w-auto">
+          <Link href="/teacher/test-types" className="w-full sm:w-auto">
             <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -197,7 +197,7 @@ const TestsPage: React.FC = () => {
                 </svg>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Testlar topilmadi</h3>
                 <p className="text-gray-600 mb-4">Hozircha sizda test mavjud emas. Birinchi testingizni yarating.</p>
-                <Link href="/teacher/tests/create">
+                <Link href="/teacher/test-types">
                   <Button className="bg-blue-600 hover:bg-blue-700">
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
