@@ -103,20 +103,19 @@ const EditTestPage: React.FC = () => {
   useEffect(() => {
     if (testQuestions && Array.isArray(testQuestions) && testQuestions.length > 0) {
       const formattedQuestions = testQuestions.map(q => {
-        // Parse correctAnswer if it's a JSON string
+        // Parse correctAnswer - handle double JSON encoding
         let correctAnswer = 'A';
         if (q.correctAnswer) {
           try {
-            // If it's a JSON string, parse it
-            if (typeof q.correctAnswer === 'string' && q.correctAnswer.startsWith('"')) {
-              correctAnswer = JSON.parse(q.correctAnswer);
-            } else if (typeof q.correctAnswer === 'string') {
-              correctAnswer = q.correctAnswer;
-            } else {
-              correctAnswer = String(q.correctAnswer);
+            let parsed = q.correctAnswer;
+            // Handle multiple levels of JSON encoding
+            while (typeof parsed === 'string' && (parsed.startsWith('"') || parsed.startsWith('['))) {
+              parsed = JSON.parse(parsed);
             }
+            correctAnswer = parsed;
           } catch (e) {
-            correctAnswer = 'A';
+            // Fallback to direct string if parsing fails
+            correctAnswer = typeof q.correctAnswer === 'string' ? q.correctAnswer.replace(/"/g, '') : 'A';
           }
         }
         

@@ -573,9 +573,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const question of questions) {
           await storage.createQuestion({
             testId: testId,
-            questionText: question.questionText,
+            questionText: question.questionText || '',
             questionType: testData.type, // Add required question_type
-            correctAnswer: question.correctAnswer,
+            correctAnswer: question.correctAnswer, // Don't double-encode
             order: question.order || 1,
             points: question.points || 1,
             options: question.options || ['A', 'B', 'C', 'D'],

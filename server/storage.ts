@@ -285,7 +285,15 @@ export class DatabaseStorage implements IStorage {
 
   // Question related methods
   async createQuestion(question: schema.InsertQuestion): Promise<schema.Question> {
-    const [newQuestion] = await db.insert(schema.questions).values(question).returning();
+    // Ensure correctAnswer is stored as a simple string, not JSON-encoded
+    const questionData = {
+      ...question,
+      correctAnswer: typeof question.correctAnswer === 'string' 
+        ? question.correctAnswer 
+        : JSON.stringify(question.correctAnswer)
+    };
+    
+    const [newQuestion] = await db.insert(schema.questions).values(questionData).returning();
     return newQuestion;
   }
 
