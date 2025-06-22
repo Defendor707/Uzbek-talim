@@ -1778,6 +1778,9 @@ bot.hears('Chiqish', showLogoutConfirmation);
 // Handle "🚪 Chiqish" settings button
 bot.hears('🚪 Chiqish', showLogoutConfirmation);
 
+// Handle "🚪 Hisobdan chiqish" teacher menu button
+bot.hears('🚪 Hisobdan chiqish', showLogoutConfirmation);
+
 // Confirm logout
 bot.action('confirm_logout', async (ctx) => {
   ctx.session = {};
@@ -2937,7 +2940,7 @@ bot.hears('📝 Testlar', async (ctx) => {
           ['📝 Oddiy test', '🔓 Ochiq test'],
           ['🎯 DTM test', '🏆 Sertifikat test'],
           ['⏰ Intizomli test', '📋 Mavjud testlar'],
-          ['🔙 Orqaga']
+          ['🔙 Orqaga', '🚪 Hisobdan chiqish']
         ]).resize()
       }
     );
