@@ -2940,7 +2940,7 @@ bot.hears('📝 Testlar', async (ctx) => {
           ['📝 Oddiy test', '🔓 Ochiq test'],
           ['🎯 DTM test', '🏆 Sertifikat test'],
           ['⏰ Intizomli test', '📋 Mavjud testlar'],
-          ['🔙 Orqaga', '🚪 Hisobdan chiqish']
+          ['🔙 Orqaga']
         ]).resize()
       }
     );
@@ -3973,33 +3973,8 @@ bot.action(/test_submit_(\d+)/, async (ctx) => {
 
 
 
-// 🚪 Hisobdan chiqish handler
-bot.hears('🚪 Hisobdan chiqish', async (ctx) => {
-  // Clear all session data completely
-  ctx.session.userId = undefined;
-  ctx.session.role = undefined;
-  ctx.session.token = undefined;
-  ctx.session.chatId = undefined;
-  ctx.session.loginStep = undefined;
-  ctx.session.registrationStep = undefined;
-  ctx.session.registrationData = undefined;
-  ctx.session.tempLoginData = undefined;
-  ctx.session.testAttempt = undefined;
-  ctx.session.editingField = undefined;
-  ctx.session.testCreation = undefined;
-  
-  // Completely reset session
-  ctx.session = {};
-  
-  await ctx.reply(
-    '✅ Siz hisobdan muvaffaqiyatli chiqdingiz.\n\n' +
-    'Qaytadan kirish uchun quyidagi tugmalardan foydalaning:',
-    Markup.keyboard([
-      ['🔑 Kirish', '📝 Ro\'yxatdan o\'tish'],
-      ['ℹ️ Ma\'lumot', '📊 Statistika']
-    ]).resize()
-  );
-});
+// 🚪 Hisobdan chiqish handler - now with confirmation
+// (This handler is replaced by the confirmation function above)
 
 } // End of bot conditional block
 
