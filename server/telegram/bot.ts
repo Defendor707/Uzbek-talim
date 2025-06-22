@@ -1754,17 +1754,76 @@ bot.hears('👤 Profil', async (ctx) => {
   }
 });
 
-// Logout command
+// Logout command with confirmation
 bot.command('logout', async (ctx) => {
-  ctx.session = {};
   await ctx.reply(
+    '⚠️ Tizimdan chiqish\n\n' +
+    'Haqiqatan ham tizimdan chiqishni xohlaysizmi?\n' +
+    'Barcha ma\'lumotlaringiz saqlanadi.',
+    Markup.inlineKeyboard([
+      [
+        Markup.button.callback('✅ Ha, chiqish', 'confirm_logout'),
+        Markup.button.callback('❌ Bekor qilish', 'cancel_logout')
+      ]
+    ])
+  );
+});
+
+// Confirm logout
+bot.action('confirm_logout', async (ctx) => {
+  ctx.session = {};
+  await ctx.editMessageText(
     '✅ Siz tizimdan muvaffaqiyatli chiqdingiz.\n\n' +
-    'Iltimos, quyidagi amallardan birini tanlang:',
+    'Iltimos, quyidagi amallardan birini tanlang:'
+  );
+  await ctx.reply(
+    'Tizimga qaytish uchun tugmalardan birini tanlang:',
     Markup.keyboard([
       ['🔑 Kirish', '📝 Ro\'yxatdan o\'tish'],
       ['ℹ️ Ma\'lumot', '📊 Statistika']
     ]).resize()
   );
+});
+
+// Cancel logout
+bot.action('cancel_logout', async (ctx) => {
+  await ctx.editMessageText('❌ Chiqish bekor qilindi.');
+  
+  // Return to main menu
+  const user = await storage.getUser(ctx.session.userId);
+  if (user) {
+    let roleButtons;
+    if (user.role === 'teacher') {
+      roleButtons = [
+        ['📝 Testlar', '📚 Darslar'],
+        ['👤 Profil', '📊 Statistika'],
+        ['⚙️ Sozlamalar', '❓ Yordam']
+      ];
+    } else if (user.role === 'student') {
+      roleButtons = [
+        ['📝 Testlar', '📚 Darslar'],
+        ['👤 Profil', '📊 Natijalar'],
+        ['⚙️ Sozlamalar', '❓ Yordam']
+      ];
+    } else if (user.role === 'parent') {
+      roleButtons = [
+        ['👶 Farzandlar', '📊 Natijalar'],
+        ['👤 Profil', '📞 Bog\'lanish'],
+        ['⚙️ Sozlamalar', '❓ Yordam']
+      ];
+    } else {
+      roleButtons = [
+        ['📝 Testlar', '📚 Darslar'],
+        ['👤 Profil', '📊 Hisobotlar'],
+        ['⚙️ Sozlamalar', '❓ Yordam']
+      ];
+    }
+    
+    await ctx.reply(
+      `🏠 Bosh menyu\n\nXush kelibsiz, ${user.username}!`,
+      Markup.keyboard(roleButtons).resize()
+    );
+  }
 });
 
 // Information command

@@ -218,18 +218,6 @@ const ResponsiveDashboard: React.FC<MobileDashboardProps> = ({
                           Profil
                         </Button>
                       </Link>
-                      <Button 
-                        variant="ghost" 
-                        size="lg" 
-                        className="w-full justify-start h-12 text-base text-red-600 hover:text-red-700 hover:bg-red-50 touch-target"
-                        onClick={() => {
-                          handleLogout();
-                          setMobileSidebarOpen(false);
-                        }}
-                      >
-                        <LogOut className="mr-3 h-5 w-5" />
-                        Chiqish
-                      </Button>
                     </div>
                   </div>
                 </div>
