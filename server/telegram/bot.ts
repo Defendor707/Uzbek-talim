@@ -4057,8 +4057,8 @@ bot.action(/test_submit_(\d+)/, async (ctx) => {
 
 // Helper function to show tests page with pagination
 async function showTestsPage(ctx: any, page: number = 0) {
-  const tests = ctx.session.existingTests || [];
-  const testsPerPage = 5;
+  const tests = (ctx.session as any).existingTests || [];
+  const testsPerPage = 3;
   const totalPages = Math.ceil(tests.length / testsPerPage);
   const startIndex = page * testsPerPage;
   const endIndex = Math.min(startIndex + testsPerPage, tests.length);
@@ -4066,69 +4066,80 @@ async function showTestsPage(ctx: any, page: number = 0) {
   
   let message = `📋 *Mavjud testlar* (${page + 1}/${totalPages})\n\n`;
   
+  // Create inline keyboard with test actions
+  const inlineButtons = [];
+  
   currentTests.forEach((test: any, index: number) => {
     const testNumber = startIndex + index + 1;
     const createdDate = new Date(test.createdAt).toLocaleDateString('uz-UZ');
     const testType = test.description?.includes('Ommaviy') ? '🔓 Ochiq' : '🔒 Maxsus';
     const category = test.description?.split(' | ')[0] || '';
+    const status = test.status === 'active' ? '✅ Faol' : test.status === 'draft' ? '📝 Loyiha' : '🔚 Tugagan';
     
     message += `${testNumber}. *${test.title}*\n`;
     if (category && !category.includes('test')) {
       message += `   📚 ${category}\n`;
     }
-    message += `   ${testType} • ${test.totalQuestions} savol • ${createdDate}\n`;
-    message += `   /edit_${test.id} • /delete_${test.id}\n\n`;
+    message += `   ${testType} • ${test.totalQuestions} savol • ${status}\n`;
+    message += `   📅 ${createdDate}\n\n`;
+    
+    // Add inline buttons for each test
+    inlineButtons.push([
+      Markup.button.callback(`📝 Tahrirlash`, `edit_test_${test.id}`),
+      Markup.button.callback(`📊 Ko'rish`, `view_test_${test.id}`),
+      Markup.button.callback(`🗑️ O'chirish`, `delete_test_${test.id}`)
+    ]);
   });
   
   // Navigation buttons
-  const buttons = [];
-  const navRow = [];
-  
+  const navButtons = [];
   if (page > 0) {
-    navRow.push('⬅️ Oldingi');
+    navButtons.push(Markup.button.callback('⬅️ Oldingi', `tests_page_${page - 1}`));
   }
   if (page < totalPages - 1) {
-    navRow.push('Keyingi ➡️');
+    navButtons.push(Markup.button.callback('Keyingi ➡️', `tests_page_${page + 1}`));
   }
   
-  if (navRow.length > 0) {
-    buttons.push(navRow);
+  if (navButtons.length > 0) {
+    inlineButtons.push(navButtons);
   }
   
-  buttons.push(['➕ Yangi test yaratish', '🔙 Orqaga']);
+  // Add bottom action buttons
+  inlineButtons.push([
+    Markup.button.callback('➕ Yangi test', 'create_new_test'),
+    Markup.button.callback('🔙 Orqaga', 'back_to_teacher_menu')
+  ]);
   
   await ctx.reply(message, {
     parse_mode: 'Markdown',
-    ...Markup.keyboard(buttons).resize()
+    ...Markup.inlineKeyboard(inlineButtons)
   });
 }
 
-// Handler for pagination
-bot.hears(['⬅️ Oldingi', 'Keyingi ➡️'], async (ctx) => {
-  if (!ctx.session.userId || ctx.session.role !== 'teacher' || !(ctx.session as any).existingTests) {
+// Callback handler for test pagination
+bot.action(/tests_page_(\d+)/, async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
     return;
   }
   
-  const messageText = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
-  let newPage = (ctx.session as any).currentTestPage || 0;
+  const page = parseInt(ctx.match[1]);
+  (ctx.session as any).currentTestPage = page;
   
-  if (messageText === '⬅️ Oldingi' && newPage > 0) {
-    newPage--;
-  } else if (messageText === 'Keyingi ➡️') {
-    const totalPages = Math.ceil((ctx.session as any).existingTests.length / 5);
-    if (newPage < totalPages - 1) {
-      newPage++;
-    }
+  try {
+    await ctx.editMessageText('📋 Testlar yuklanmoqda...', { parse_mode: 'Markdown' });
+    await showTestsPage(ctx, page);
+    await ctx.answerCbQuery();
+  } catch (error) {
+    console.error('Error navigating tests page:', error);
+    await ctx.answerCbQuery('❌ Sahifani yuklashda xatolik');
   }
-  
-  (ctx.session as any).currentTestPage = newPage;
-  await showTestsPage(ctx, newPage);
 });
 
-// Handler for creating new test from existing tests page
-bot.hears('➕ Yangi test yaratish', async (ctx) => {
+// Callback handler for creating new test
+bot.action('create_new_test', async (ctx) => {
   if (!ctx.session.userId || ctx.session.role !== 'teacher') {
-    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
     return;
   }
   
@@ -4137,24 +4148,45 @@ bot.hears('➕ Yangi test yaratish', async (ctx) => {
   (ctx.session as any).currentTestPage = undefined;
   
   // Show test creation menu
-  await ctx.reply(
+  await ctx.editMessageText(
     '📝 *Test yaratish*\n\nQaysi turdagi test yaratmoqchisiz?',
     {
       parse_mode: 'Markdown',
-      ...Markup.keyboard([
-        ['📝 Oddiy test', '🔓 Ochiq test'],
-        ['🎯 DTM test', '🏆 Sertifikat test'],
-        ['⏰ Intizomli test', '📋 Mavjud testlar'],
-        ['🔙 Orqaga']
-      ]).resize()
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback('📝 Oddiy test', 'create_simple_test')],
+        [Markup.button.callback('🔓 Ochiq test', 'create_public_test')],
+        [Markup.button.callback('🔙 Orqaga', 'back_to_tests')]
+      ])
     }
   );
+  await ctx.answerCbQuery();
 });
 
-// Handler for test editing commands
-bot.hears(/\/edit_(\d+)/, async (ctx) => {
+// Callback handler for going back to teacher menu
+bot.action('back_to_teacher_menu', async (ctx) => {
   if (!ctx.session.userId || ctx.session.role !== 'teacher') {
-    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    return;
+  }
+  
+  await ctx.editMessageText(
+    '👨‍🏫 *O\'qituvchi paneli*\n\nQuyidagi funksiyalardan foydalaning:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback('📝 Test yaratish', 'show_test_creation')],
+        [Markup.button.callback('📋 Mavjud testlar', 'show_existing_tests')],
+        [Markup.button.callback('👥 O\'quvchilar', 'show_students')]
+      ])
+    }
+  );
+  await ctx.answerCbQuery();
+});
+
+// Callback handler for test editing
+bot.action(/edit_test_(\d+)/, async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
     return;
   }
   
@@ -4163,7 +4195,7 @@ bot.hears(/\/edit_(\d+)/, async (ctx) => {
   try {
     const test = await storage.getTestById(testId);
     if (!test || test.teacherId !== ctx.session.userId) {
-      await ctx.reply('❌ Test topilmadi yoki sizga tegishli emas.');
+      await ctx.answerCbQuery('❌ Test topilmadi yoki sizga tegishli emas.');
       return;
     }
     
@@ -4175,6 +4207,7 @@ bot.hears(/\/edit_(\d+)/, async (ctx) => {
     
     const category = test.description?.split(' | ')[0] || '';
     const testType = test.description?.includes('Ommaviy') ? '🔓 Ochiq' : '🔒 Maxsus';
+    const status = test.status === 'active' ? '✅ Faol' : test.status === 'draft' ? '📝 Loyiha' : '🔚 Tugagan';
     
     let testInfo = `📝 *Test tahrirlash*\n\n`;
     testInfo += `📋 *Nomi*: ${test.title}\n`;
@@ -4183,28 +4216,30 @@ bot.hears(/\/edit_(\d+)/, async (ctx) => {
     }
     testInfo += `🔓 *Turi*: ${testType}\n`;
     testInfo += `📊 *Savollar*: ${test.totalQuestions}\n`;
+    testInfo += `📊 *Holat*: ${status}\n`;
     testInfo += `📅 *Yaratilgan*: ${new Date(test.createdAt).toLocaleDateString('uz-UZ')}\n\n`;
     testInfo += `Qaysi qismini o'zgartirmoqchisiz?`;
     
-    await ctx.reply(testInfo, {
+    await ctx.editMessageText(testInfo, {
       parse_mode: 'Markdown',
-      ...Markup.keyboard([
-        ['📝 Nom o\'zgartirish', '📚 Tasnif o\'zgartirish'],
-        ['🔄 Holat o\'zgartirish', '🗑️ Testni o\'chirish'],
-        ['🔙 Orqaga']
-      ]).resize()
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback('📝 Nom', `edit_name_${test.id}`), Markup.button.callback('📚 Tasnif', `edit_category_${test.id}`)],
+        [Markup.button.callback('🔄 Holat', `edit_status_${test.id}`), Markup.button.callback('📊 Ko\'rish', `view_test_${test.id}`)],
+        [Markup.button.callback('🔙 Orqaga', 'back_to_tests')]
+      ])
     });
+    await ctx.answerCbQuery();
     
   } catch (error) {
     console.error('Error editing test:', error);
-    await ctx.reply('❌ Test ma\'lumotlarini yuklashda xatolik yuz berdi.');
+    await ctx.answerCbQuery('❌ Test ma\'lumotlarini yuklashda xatolik yuz berdi.');
   }
 });
 
-// Handler for test deletion commands
-bot.hears(/\/delete_(\d+)/, async (ctx) => {
+// Callback handler for test deletion
+bot.action(/delete_test_(\d+)/, async (ctx) => {
   if (!ctx.session.userId || ctx.session.role !== 'teacher') {
-    await ctx.reply('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
     return;
   }
   
@@ -4213,54 +4248,48 @@ bot.hears(/\/delete_(\d+)/, async (ctx) => {
   try {
     const test = await storage.getTestById(testId);
     if (!test || test.teacherId !== ctx.session.userId) {
-      await ctx.reply('❌ Test topilmadi yoki sizga tegishli emas.');
+      await ctx.answerCbQuery('❌ Test topilmadi yoki sizga tegishli emas.');
       return;
     }
     
     // Set up deletion confirmation
     (ctx.session as any).deletingTestId = testId;
     
-    await ctx.reply(
+    await ctx.editMessageText(
       `🗑️ *Test o'chirish*\n\n` +
       `❗ Diqqat! Siz "${test.title}" testini o'chirmoqchisiz.\n\n` +
       `Bu amalni bekor qilib bo'lmaydi. Test va unga tegishli barcha ma'lumotlar o'chiriladi.\n\n` +
       `Davom etishni xohlaysizmi?`,
       {
         parse_mode: 'Markdown',
-        ...Markup.keyboard([
-          ['✅ Ha, o\'chirish', '❌ Bekor qilish'],
-          ['🔙 Orqaga']
-        ]).resize()
+        ...Markup.inlineKeyboard([
+          [Markup.button.callback('✅ Ha, o\'chirish', `confirm_delete_${testId}`)],
+          [Markup.button.callback('❌ Bekor qilish', 'back_to_tests')]
+        ])
       }
     );
+    await ctx.answerCbQuery();
     
   } catch (error) {
     console.error('Error preparing test deletion:', error);
-    await ctx.reply('❌ Test ma\'lumotlarini yuklashda xatolik yuz berdi.');
+    await ctx.answerCbQuery('❌ Test ma\'lumotlarini yuklashda xatolik yuz berdi.');
   }
 });
 
-// Handler for test deletion confirmation
-bot.hears(['✅ Ha, o\'chirish', '❌ Bekor qilish'], async (ctx) => {
-  if (!ctx.session.userId || ctx.session.role !== 'teacher' || !(ctx.session as any).deletingTestId) {
+// Callback handler for confirming test deletion
+bot.action(/confirm_delete_(\d+)/, async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
     return;
   }
   
-  const messageText = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
-  
-  if (messageText === '❌ Bekor qilish') {
-    (ctx.session as any).deletingTestId = undefined;
-    await ctx.reply('❌ Test o\'chirish bekor qilindi.');
-    return;
-  }
+  const testId = parseInt(ctx.match[1]);
   
   try {
-    const testId = (ctx.session as any).deletingTestId;
     const test = await storage.getTestById(testId);
     
     if (!test || test.teacherId !== ctx.session.userId) {
-      await ctx.reply('❌ Test topilmadi yoki sizga tegishli emas.');
-      (ctx.session as any).deletingTestId = undefined;
+      await ctx.answerCbQuery('❌ Test topilmadi yoki sizga tegishli emas.');
       return;
     }
     
@@ -4268,114 +4297,331 @@ bot.hears(['✅ Ha, o\'chirish', '❌ Bekor qilish'], async (ctx) => {
     const deleted = await storage.deleteTestById(testId);
     
     if (deleted) {
-      await ctx.reply(`✅ "${test.title}" testi muvaffaqiyatli o'chirildi.`);
+      await ctx.editMessageText(`✅ "${test.title}" testi muvaffaqiyatli o'chirildi.`);
       
-      // Refresh tests list
-      const tests = await storage.getTestsByTeacherId(ctx.session.userId);
-      (ctx.session as any).existingTests = tests;
-      (ctx.session as any).currentTestPage = 0;
-      
-      if (tests.length > 0) {
-        await showTestsPage(ctx, 0);
-      } else {
-        await ctx.reply(
-          '📋 *Mavjud testlar*\n\n' +
-          'Sizda hali yaratilgan testlar yo\'q.\n\n' +
-          'Test yaratish uchun "📝 Oddiy test" tugmasini bosing.',
-          {
-            parse_mode: 'Markdown',
-            ...Markup.keyboard([['📝 Oddiy test'], ['🔙 Orqaga']]).resize()
+      // Refresh tests list after 2 seconds
+      setTimeout(async () => {
+        try {
+          const tests = await storage.getTestsByTeacherId(ctx.session.userId!);
+          (ctx.session as any).existingTests = tests;
+          (ctx.session as any).currentTestPage = 0;
+          
+          if (tests.length > 0) {
+            await showTestsPage(ctx, 0);
+          } else {
+            await ctx.editMessageText(
+              '📋 *Mavjud testlar*\n\n' +
+              'Sizda hali yaratilgan testlar yo\'q.\n\n' +
+              'Test yaratish uchun "Yangi test" tugmasini bosing.',
+              {
+                parse_mode: 'Markdown',
+                ...Markup.inlineKeyboard([
+                  [Markup.button.callback('➕ Yangi test', 'create_new_test')],
+                  [Markup.button.callback('🔙 Orqaga', 'back_to_teacher_menu')]
+                ])
+              }
+            );
           }
-        );
-      }
+        } catch (error) {
+          console.error('Error refreshing tests after deletion:', error);
+        }
+      }, 2000);
+      
+      await ctx.answerCbQuery('✅ Test o\'chirildi');
     } else {
-      await ctx.reply('❌ Test o\'chirishda xatolik yuz berdi.');
+      await ctx.answerCbQuery('❌ Test o\'chirishda xatolik yuz berdi.');
     }
     
   } catch (error) {
     console.error('Error deleting test:', error);
-    await ctx.reply('❌ Test o\'chirishda xatolik yuz berdi.');
+    await ctx.answerCbQuery('❌ Test o\'chirishda xatolik yuz berdi.');
   } finally {
     (ctx.session as any).deletingTestId = undefined;
   }
 });
 
-// Handler for test editing actions
-bot.hears(['📝 Nom o\'zgartirish', '📚 Tasnif o\'zgartirish', '🔄 Holat o\'zgartirish'], async (ctx) => {
-  if (!ctx.session.userId || ctx.session.role !== 'teacher' || !(ctx.session as any).editingTest) {
+// Callback handler for viewing test details
+bot.action(/view_test_(\d+)/, async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
     return;
   }
   
-  const messageText = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+  const testId = parseInt(ctx.match[1]);
   
-  if (messageText === '📝 Nom o\'zgartirish') {
-    (ctx.session as any).editingTest.step = 'name';
-    await ctx.reply(
-      '📝 *Test nomini o\'zgartirish*\n\n' +
-      'Yangi test nomini kiriting:',
-      {
-        parse_mode: 'Markdown',
-        ...Markup.keyboard([['🔙 Orqaga']]).resize()
-      }
-    );
-  } else if (messageText === '📚 Tasnif o\'zgartirish') {
-    (ctx.session as any).editingTest.step = 'category';
-    await ctx.reply(
-      '📚 *Tasnifni o\'zgartirish*\n\n' +
-      'Yangi tasnif nomini kiriting yoki bo\'sh qoldirish uchun "Bo\'sh" deb yozing:',
-      {
-        parse_mode: 'Markdown',
-        ...Markup.keyboard([['Bo\'sh', '🔙 Orqaga']]).resize()
-      }
-    );
-  } else if (messageText === '🔄 Holat o\'zgartirish') {
-    (ctx.session as any).editingTest.step = 'status';
-    await ctx.reply(
-      '🔄 *Test holatini o\'zgartirish*\n\n' +
-      'Yangi holatni tanlang:',
-      {
-        parse_mode: 'Markdown',
-        ...Markup.keyboard([
-          ['✅ Faol', '📝 Loyiha'],
-          ['🔚 Tugatilgan', '🔙 Orqaga']
-        ]).resize()
-      }
-    );
+  try {
+    const test = await storage.getTestById(testId);
+    if (!test || test.teacherId !== ctx.session.userId) {
+      await ctx.answerCbQuery('❌ Test topilmadi yoki sizga tegishli emas.');
+      return;
+    }
+    
+    // Get test attempts count
+    const attempts = await storage.getTestAttemptsByTestId(testId);
+    const completedAttempts = attempts.filter(a => a.status === 'completed');
+    
+    const category = test.description?.split(' | ')[0] || '';
+    const testType = test.description?.includes('Ommaviy') ? '🔓 Ochiq test' : '🔒 Maxsus test';
+    const status = test.status === 'active' ? '✅ Faol' : test.status === 'draft' ? '📝 Loyiha' : '🔚 Tugagan';
+    
+    let testInfo = `📊 *Test ma'lumotlari*\n\n`;
+    testInfo += `📋 *Nomi*: ${test.title}\n`;
+    if (category && !category.includes('test')) {
+      testInfo += `📚 *Tasnif*: ${category}\n`;
+    }
+    testInfo += `🔓 *Turi*: ${testType}\n`;
+    testInfo += `📊 *Holat*: ${status}\n`;
+    testInfo += `📝 *Savollar soni*: ${test.totalQuestions}\n`;
+    testInfo += `👥 *Urinishlar*: ${attempts.length}\n`;
+    testInfo += `✅ *Tugallangan*: ${completedAttempts.length}\n`;
+    testInfo += `📅 *Yaratilgan*: ${new Date(test.createdAt).toLocaleDateString('uz-UZ')}\n`;
+    
+    if (test.testCode) {
+      testInfo += `🔢 *Test kodi*: ${test.testCode}\n`;
+    }
+    
+    await ctx.editMessageText(testInfo, {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback('📝 Tahrirlash', `edit_test_${test.id}`)],
+        [Markup.button.callback('📊 Statistika', `test_stats_${test.id}`)],
+        [Markup.button.callback('🔙 Orqaga', 'back_to_tests')]
+      ])
+    });
+    await ctx.answerCbQuery();
+    
+  } catch (error) {
+    console.error('Error viewing test:', error);
+    await ctx.answerCbQuery('❌ Test ma\'lumotlarini olishda xatolik yuz berdi.');
   }
 });
 
-// Handler for test editing status changes
-bot.hears(['✅ Faol', '📝 Loyiha', '🔚 Tugatilgan'], async (ctx) => {
-  if (!ctx.session.userId || ctx.session.role !== 'teacher' || !(ctx.session as any).editingTest || (ctx.session as any).editingTest.step !== 'status') {
+// Callback handler for going back to tests list
+bot.action('back_to_tests', async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
     return;
   }
   
-  const messageText = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
-  let newStatus = 'active';
-  
-  if (messageText === '📝 Loyiha') {
-    newStatus = 'draft';
-  } else if (messageText === '🔚 Tugatilgan') {
-    newStatus = 'completed';
+  try {
+    // Get updated tests list
+    const tests = await storage.getTestsByTeacherId(ctx.session.userId);
+    (ctx.session as any).existingTests = tests;
+    (ctx.session as any).currentTestPage = 0;
+    
+    if (tests.length > 0) {
+      await showTestsPage(ctx, 0);
+    } else {
+      await ctx.editMessageText(
+        '📋 *Mavjud testlar*\n\n' +
+        'Sizda hali yaratilgan testlar yo\'q.\n\n' +
+        'Test yaratish uchun "Yangi test" tugmasini bosing.',
+        {
+          parse_mode: 'Markdown',
+          ...Markup.inlineKeyboard([
+            [Markup.button.callback('➕ Yangi test', 'create_new_test')],
+            [Markup.button.callback('🔙 Orqaga', 'back_to_teacher_menu')]
+          ])
+        }
+      );
+    }
+    await ctx.answerCbQuery();
+  } catch (error) {
+    console.error('Error going back to tests:', error);
+    await ctx.answerCbQuery('❌ Testlarni yuklashda xatolik yuz berdi.');
+  }
+});
+
+// Callback handlers for test editing actions
+bot.action(/edit_name_(\d+)/, async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    return;
   }
   
+  const testId = parseInt(ctx.match[1]);
+  (ctx.session as any).editingTest = { testId, step: 'name' };
+  
+  await ctx.editMessageText(
+    '📝 *Test nomini o\'zgartirish*\n\n' +
+    'Yangi test nomini kiriting:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback('🔙 Orqaga', `edit_test_${testId}`)]
+      ])
+    }
+  );
+  await ctx.answerCbQuery();
+});
+
+bot.action(/edit_category_(\d+)/, async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    return;
+  }
+  
+  const testId = parseInt(ctx.match[1]);
+  (ctx.session as any).editingTest = { testId, step: 'category' };
+  
+  await ctx.editMessageText(
+    '📚 *Tasnifni o\'zgartirish*\n\n' +
+    'Yangi tasnif nomini kiriting yoki "Bo\'sh" deb yozing:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback('Bo\'sh qoldirish', `clear_category_${testId}`)],
+        [Markup.button.callback('🔙 Orqaga', `edit_test_${testId}`)]
+      ])
+    }
+  );
+  await ctx.answerCbQuery();
+});
+
+bot.action(/edit_status_(\d+)/, async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    return;
+  }
+  
+  const testId = parseInt(ctx.match[1]);
+  
+  await ctx.editMessageText(
+    '🔄 *Test holatini o\'zgartirish*\n\n' +
+    'Yangi holatni tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback('✅ Faol', `set_status_active_${testId}`)],
+        [Markup.button.callback('📝 Loyiha', `set_status_draft_${testId}`)],
+        [Markup.button.callback('🔚 Tugatilgan', `set_status_completed_${testId}`)],
+        [Markup.button.callback('🔙 Orqaga', `edit_test_${testId}`)]
+      ])
+    }
+  );
+  await ctx.answerCbQuery();
+});
+
+// Status change handlers
+bot.action(/set_status_(active|draft|completed)_(\d+)/, async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    return;
+  }
+  
+  const status = ctx.match[1];
+  const testId = parseInt(ctx.match[2]);
+  
   try {
-    const testId = (ctx.session as any).editingTest.testId;
-    const updatedTest = await storage.updateTest(testId, { status: newStatus as any });
+    const updatedTest = await storage.updateTest(testId, { status: status as any });
     
     if (updatedTest) {
-      const statusName = newStatus === 'active' ? 'Faol' : newStatus === 'draft' ? 'Loyiha' : 'Tugatilgan';
-      await ctx.reply(`✅ Test holati "${statusName}" ga o'zgartirildi.`);
+      const statusName = status === 'active' ? 'Faol' : status === 'draft' ? 'Loyiha' : 'Tugatilgan';
+      await ctx.editMessageText(`✅ Test holati "${statusName}" ga o'zgartirildi.`);
+      
+      // Go back to test view after 2 seconds
+      setTimeout(async () => {
+        try {
+          const test = await storage.getTestById(testId);
+          if (test && test.teacherId === ctx.session.userId) {
+            // We'll manually show the test view
+            const attempts = await storage.getTestAttemptsByTestId(testId);
+            const completedAttempts = attempts.filter(a => a.status === 'completed');
+            
+            const category = test.description?.split(' | ')[0] || '';
+            const testType = test.description?.includes('Ommaviy') ? '🔓 Ochiq test' : '🔒 Maxsus test';
+            const statusDisplay = test.status === 'active' ? '✅ Faol' : test.status === 'draft' ? '📝 Loyiha' : '🔚 Tugagan';
+            
+            let testInfo = `📊 *Test ma'lumotlari*\n\n`;
+            testInfo += `📋 *Nomi*: ${test.title}\n`;
+            if (category && !category.includes('test')) {
+              testInfo += `📚 *Tasnif*: ${category}\n`;
+            }
+            testInfo += `🔓 *Turi*: ${testType}\n`;
+            testInfo += `📊 *Holat*: ${statusDisplay}\n`;
+            testInfo += `📝 *Savollar soni*: ${test.totalQuestions}\n`;
+            testInfo += `👥 *Urinishlar*: ${attempts.length}\n`;
+            testInfo += `✅ *Tugallangan*: ${completedAttempts.length}\n`;
+            testInfo += `📅 *Yaratilgan*: ${new Date(test.createdAt).toLocaleDateString('uz-UZ')}\n`;
+            
+            if (test.testCode) {
+              testInfo += `🔢 *Test kodi*: ${test.testCode}\n`;
+            }
+            
+            await ctx.editMessageText(testInfo, {
+              parse_mode: 'Markdown',
+              ...Markup.inlineKeyboard([
+                [Markup.button.callback('📝 Tahrirlash', `edit_test_${test.id}`)],
+                [Markup.button.callback('📊 Statistika', `test_stats_${test.id}`)],
+                [Markup.button.callback('🔙 Orqaga', 'back_to_tests')]
+              ])
+            });
+          }
+        } catch (error) {
+          console.error('Error showing test after status update:', error);
+        }
+      }, 2000);
+      
+      await ctx.answerCbQuery(`✅ Holat o'zgartirildi`);
     } else {
-      await ctx.reply('❌ Test holatini o\'zgartirishda xatolik yuz berdi.');
+      await ctx.answerCbQuery('❌ Test holatini o\'zgartirishda xatolik yuz berdi.');
     }
   } catch (error) {
     console.error('Error updating test status:', error);
-    await ctx.reply('❌ Test holatini o\'zgartirishda xatolik yuz berdi.');
-  } finally {
-    (ctx.session as any).editingTest = undefined;
+    await ctx.answerCbQuery('❌ Test holatini o\'zgartirishda xatolik yuz berdi.');
   }
 });
+
+// Clear category handler
+bot.action(/clear_category_(\d+)/, async (ctx) => {
+  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
+    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
+    return;
+  }
+  
+  const testId = parseInt(ctx.match[1]);
+  
+  try {
+    const test = await storage.getTestById(testId);
+    if (!test || test.teacherId !== ctx.session.userId) {
+      await ctx.answerCbQuery('❌ Test topilmadi yoki sizga tegishli emas.');
+      return;
+    }
+    
+    const isPublic = test.description?.includes('Ommaviy');
+    const testType = isPublic ? 'Ommaviy test' : `Maxsus test (Kod: ${test.testCode || ''})`;
+    
+    const updatedTest = await storage.updateTest(testId, { description: testType });
+    
+    if (updatedTest) {
+      await ctx.editMessageText('✅ Test tasniflari bo\'sh qoldirildi.');
+      
+      // Go back to edit view after 2 seconds
+      setTimeout(async () => {
+        // Show success message with navigation options
+        await ctx.editMessageText(
+          '📝 Test muvaffaqiyatli tahrirlandi',
+          {
+            parse_mode: 'Markdown',
+            ...Markup.inlineKeyboard([
+              [Markup.button.callback('🔙 Testga qaytish', `view_test_${testId}`)],
+              [Markup.button.callback('📋 Testlar ro\'yxati', 'back_to_tests')]
+            ])
+          }
+        );
+      }, 2000);
+      
+      await ctx.answerCbQuery('✅ Tasnif tozalandi');
+    } else {
+      await ctx.answerCbQuery('❌ Tasnifni o\'zgartirishda xatolik yuz berdi.');
+    }
+  } catch (error) {
+    console.error('Error clearing category:', error);
+    await ctx.answerCbQuery('❌ Tasnifni o\'zgartirishda xatolik yuz berdi.');
+  }
+});
+
+
 
 // Function to handle test editing text inputs
 async function handleTestEditing(ctx: any, messageText: string) {
