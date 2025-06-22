@@ -1274,6 +1274,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notifications API endpoint
+  app.get("/api/notifications", authenticate, async (req, res) => {
+    try {
+      // Return empty array since we don't have notifications table yet
+      // This will show "Sizga habarlar mavjud emas" message in UI
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Teacher Profile Routes
   app.get("/api/profile/teacher", authenticate, authorize(["teacher"]), async (req, res) => {
     try {
