@@ -38,7 +38,8 @@ interface BotSessionData extends Scenes.SceneSession {
   };
   editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience' | 'addChild' | 'testCode';
   testCreation?: {
-    step?: 'title' | 'type' | 'questionCount' | 'answers' | 'inputMethod' | 'imageUpload';
+    step?: 'title' | 'type' | 'category' | 'questionCount' | 'answers' | 'inputMethod' | 'imageUpload';
+    category?: string;
     testType?: 'public' | 'private';
     questionCount?: number;
     answers?: string[];
@@ -348,7 +349,30 @@ bot.on('text', async (ctx, next) => {
       }
       ctx.session.testCreation.testData.title = title;
       
-      // Barcha test turlari uchun rasm yuklash imkoniyati
+      // Test tasnifi kiritish bosqichi
+      ctx.session.testCreation.step = 'category';
+      
+      await ctx.reply(
+        '📚 *Test tasnifi (ixtiyoriy)*\n\n' +
+        'Test uchun tasnif (fanni) kiriting yoki o\'tkazib yuboring:\n\n' +
+        '💡 Masalan: Matematika, Fizika, Adabiyot...',
+        {
+          parse_mode: 'Markdown',
+          ...Markup.keyboard([['⏭️ O\'tkazib yuborish'], ['🔙 Orqaga']]).resize()
+        }
+      );
+      return;
+    }
+    
+    if (ctx.session.testCreation.step === 'category') {
+      // Handle category input or skip
+      const category = messageText.trim();
+      
+      if (category && category !== '⏭️ O\'tkazib yuborish' && category.length <= 50) {
+        ctx.session.testCreation.category = category;
+      }
+      
+      // Move to image upload step
       ctx.session.testCreation.step = 'imageUpload';
       ctx.session.testCreation.uploadedImages = [];
       
@@ -2456,7 +2480,9 @@ async function saveTest(ctx: BotContext) {
     
     // Test ma'lumotlarini yaratish
     const testTitle = ctx.session.testCreation.testData?.title || `Oddiy test - ${new Date().toLocaleDateString('uz-UZ')}`;
-    const testDescription = ctx.session.testCreation.testType === 'public' ? 'Ommaviy test' : `Maxsus test (Kod: ${ctx.session.testCreation.testCode})`;
+    const category = ctx.session.testCreation.category;
+    const testType = ctx.session.testCreation.testType === 'public' ? 'Ommaviy test' : `Maxsus test (Kod: ${ctx.session.testCreation.testCode})`;
+    const testDescription = category ? `${category} | ${testType}` : testType;
     
     const testData = {
       title: testTitle,
@@ -2492,8 +2518,13 @@ async function saveTest(ctx: BotContext) {
     
     // Muvaffaqiyatli xabar
     let successMessage = '✅ *Test muvaffaqiyatli yaratildi!*\n\n' +
-      `📝 Test nomi: ${testData.title}\n` +
-      `📊 Savollar soni: ${testData.totalQuestions}\n` +
+      `📝 Test nomi: ${testData.title}\n`;
+    
+    if (category) {
+      successMessage += `📚 Tasnif: ${category}\n`;
+    }
+    
+    successMessage += `📊 Savollar soni: ${testData.totalQuestions}\n` +
       `⏰ Vaqt: Cheklanmagan\n` +
       `🌐 Turi: ${ctx.session.testCreation.testType === 'public' ? 'Ommaviy' : 'Maxsus raqamli'}\n`;
     
