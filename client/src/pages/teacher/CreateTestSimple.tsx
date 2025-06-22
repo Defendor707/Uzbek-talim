@@ -197,13 +197,6 @@ const CreateTestPage: React.FC = () => {
                   Orqaga
                 </Button>
               </Link>
-              <Button 
-                variant="outline" 
-                onClick={logout}
-                className="text-red-600 border-red-600 hover:bg-red-50 w-full sm:w-auto"
-              >
-                Chiqish
-              </Button>
             </div>
           </div>
         </div>

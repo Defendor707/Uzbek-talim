@@ -1790,7 +1790,7 @@ bot.action('cancel_logout', async (ctx) => {
   await ctx.editMessageText('❌ Chiqish bekor qilindi.');
   
   // Return to main menu
-  const user = await storage.getUser(ctx.session.userId);
+  const user = ctx.session.userId ? await storage.getUser(ctx.session.userId) : null;
   if (user) {
     let roleButtons;
     if (user.role === 'teacher') {

@@ -29,30 +29,7 @@ const StudentsPage: React.FC = () => {
                   Bosh sahifa
                 </Button>
               </Link>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="text-red-600 border-red-600 hover:bg-red-50"
-                  >
-                    Chiqish
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Tizimdan chiqish</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Haqiqatan ham tizimdan chiqishni xohlaysizmi? Barcha ochilgan sahifalar yopiladi.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-                    <AlertDialogAction onClick={logout} className="bg-red-600 hover:bg-red-700">
-                      Ha, chiqish
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+
             </div>
           </div>
         </div>
