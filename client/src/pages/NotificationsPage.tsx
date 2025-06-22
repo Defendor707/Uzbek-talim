@@ -25,7 +25,7 @@ const NotificationsPage: React.FC = () => {
   const [location, setLocation] = useLocation();
   
   const handleBackNavigation = () => {
-    setLocation(`/${user?.role}`);
+    setLocation(`/dashboard/${user?.role}`);
   };
 
   // Real API call for notifications
@@ -272,12 +272,14 @@ const NotificationsPage: React.FC = () => {
       <header className="bg-white border-b border-gray-200 px-8 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href={`/${user?.role}`}>
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Orqaga
-              </Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={handleBackNavigation}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Orqaga
+            </Button>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Bildirishnomalar</h1>
               <p className="text-gray-600 mt-1">
