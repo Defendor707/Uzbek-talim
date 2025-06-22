@@ -136,7 +136,7 @@ export const questions = pgTable("questions", {
   questionImage: text("question_image"), // Savol uchun rasm URL yoki fayl yo'li
   questionType: testTypeEnum("question_type").notNull(),
   options: jsonb("options"), // Array of options for multiple choice
-  correctAnswer: jsonb("correct_answer").notNull(), // Could be single value or array
+  correctAnswer: text("correct_answer").notNull(), // Single letter answer: A, B, C, or D
   points: integer("points").notNull().default(1),
   order: integer("order").notNull(),
 });

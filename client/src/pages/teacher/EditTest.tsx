@@ -70,7 +70,7 @@ const EditTestPage: React.FC = () => {
       title: '',
       description: '',
       type: 'public',
-      status: 'draft',
+      status: 'active', // Default to active status
       totalQuestions: 0,
       testCode: '',
     },
@@ -103,19 +103,13 @@ const EditTestPage: React.FC = () => {
   useEffect(() => {
     if (testQuestions && Array.isArray(testQuestions) && testQuestions.length > 0) {
       const formattedQuestions = testQuestions.map(q => {
-        // Parse correctAnswer - handle double JSON encoding
+        // Parse correctAnswer as simple string
         let correctAnswer = 'A';
         if (q.correctAnswer) {
-          try {
-            let parsed = q.correctAnswer;
-            // Handle multiple levels of JSON encoding
-            while (typeof parsed === 'string' && (parsed.startsWith('"') || parsed.startsWith('['))) {
-              parsed = JSON.parse(parsed);
-            }
-            correctAnswer = parsed;
-          } catch (e) {
-            // Fallback to direct string if parsing fails
-            correctAnswer = typeof q.correctAnswer === 'string' ? q.correctAnswer.replace(/"/g, '') : 'A';
+          if (typeof q.correctAnswer === 'string') {
+            correctAnswer = q.correctAnswer;
+          } else {
+            correctAnswer = String(q.correctAnswer);
           }
         }
         
