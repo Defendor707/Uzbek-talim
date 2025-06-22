@@ -38,7 +38,8 @@ interface BotSessionData extends Scenes.SceneSession {
   };
   editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience' | 'addChild' | 'testCode';
   testCreation?: {
-    step?: 'title' | 'type' | 'questionCount' | 'answers' | 'inputMethod' | 'imageUpload';
+    step?: 'category' | 'title' | 'type' | 'questionCount' | 'answers' | 'inputMethod' | 'imageUpload';
+    category?: string;
     testType?: 'public' | 'private';
     questionCount?: number;
     answers?: string[];
@@ -2122,12 +2123,40 @@ bot.hears('📝 Oddiy test', async (ctx) => {
 
   // Initialize test creation session
   ctx.session.testCreation = {
-    step: 'type',
+    step: 'category',
     answers: []
   };
 
   await ctx.reply(
     '📝 *Oddiy test yaratish*\n\n' +
+    'Test tasnifini (kategoriyasini) tanlang:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['📚 Matematika', '🔬 Fizika'],
+        ['🧪 Kimyo', '🌍 Geografiya'],
+        ['📖 Adabiyot', '🗣️ Ingliz tili'],
+        ['💻 Informatika', '🎨 Boshqa'],
+        ['🔙 Orqaga']
+      ]).resize()
+    }
+  );
+});
+
+// Test tasnifi tanlash
+bot.hears(['📚 Matematika', '🔬 Fizika', '🧪 Kimyo', '🌍 Geografiya', '📖 Adabiyot', '🗣️ Ingliz tili', '💻 Informatika', '🎨 Boshqa'], async (ctx) => {
+  if (!ctx.session.testCreation || ctx.session.testCreation.step !== 'category') {
+    return;
+  }
+
+  const messageText = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+  
+  // Save category
+  ctx.session.testCreation.category = messageText;
+  ctx.session.testCreation.step = 'type';
+
+  await ctx.reply(
+    '📝 *Test turi*\n\n' +
     'Test turini tanlang:',
     {
       parse_mode: 'Markdown',
@@ -2456,7 +2485,9 @@ async function saveTest(ctx: BotContext) {
     
     // Test ma'lumotlarini yaratish
     const testTitle = ctx.session.testCreation.testData?.title || `Oddiy test - ${new Date().toLocaleDateString('uz-UZ')}`;
-    const testDescription = ctx.session.testCreation.testType === 'public' ? 'Ommaviy test' : `Maxsus test (Kod: ${ctx.session.testCreation.testCode})`;
+    const category = ctx.session.testCreation.category || '🎨 Boshqa';
+    const testType = ctx.session.testCreation.testType === 'public' ? 'Ommaviy test' : `Maxsus test (Kod: ${ctx.session.testCreation.testCode})`;
+    const testDescription = `${category} | ${testType}`;
     
     const testData = {
       title: testTitle,
@@ -2493,6 +2524,7 @@ async function saveTest(ctx: BotContext) {
     // Muvaffaqiyatli xabar
     let successMessage = '✅ *Test muvaffaqiyatli yaratildi!*\n\n' +
       `📝 Test nomi: ${testData.title}\n` +
+      `📚 Tasnif: ${category}\n` +
       `📊 Savollar soni: ${testData.totalQuestions}\n` +
       `⏰ Vaqt: Cheklanmagan\n` +
       `🌐 Turi: ${ctx.session.testCreation.testType === 'public' ? 'Ommaviy' : 'Maxsus raqamli'}\n`;
