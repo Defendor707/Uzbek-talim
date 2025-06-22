@@ -48,11 +48,15 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const getWelcomeMessage = (role: string) => {
     switch (role) {
       case 'teacher': return 'Darslaringizni boshqaring va o\'quvchilar bilan ishlang';
-      case 'student': return 'Darslarni o\'rganing va testlar ishlang';
+      case 'student': return 'Testlar va darslaringizni ko\'ring';
       case 'parent': return 'Farzandingizning o\'qish jarayonini kuzatib boring';
       case 'center': return 'O\'quv markazingizni boshqaring';
-      default: return 'Platformadan foydalaning';
+      default: return 'Tizimga xush kelibsiz';
     }
+  };
+
+  const handleLogout = () => {
+    logout();
   };
 
   // Mobile Layout
@@ -72,60 +76,79 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               </div>
             </div>
             
-            {/* Profile Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 rounded-full p-0">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                    </svg>
-                  </div>
+            {/* Notifications and Profile */}
+            <div className="flex items-center space-x-2">
+              {/* Notifications Button - Mobile Version */}
+              <Link href={`/${userRole}/notifications`}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "relative p-2 h-8 w-8",
+                    location === `/${userRole}/notifications`
+                      ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                  )}
+                >
+                  <Bell className="h-4 w-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="px-3 py-2 border-b">
-                  <p className="text-sm font-medium">{user?.fullName || user?.username}</p>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
-                </div>
-                <DropdownMenuItem asChild>
-                  <Link href={`/${userRole}/profile`}>
-                    <span className="flex items-center space-x-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </Link>
+              
+              {/* Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 rounded-full p-0">
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                       </svg>
-                      <span>Profil</span>
-                    </span>
-                  </Link>
-                </DropdownMenuItem>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                      <span className="flex items-center space-x-2 text-red-600">
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-3 py-2 border-b">
+                    <p className="text-sm font-medium">{user?.fullName || user?.username}</p>
+                    <p className="text-xs text-gray-500">{user?.email}</p>
+                  </div>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/${userRole}/profile`}>
+                      <span className="flex items-center space-x-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
-                        <span>Chiqish</span>
+                        <span>Profil</span>
                       </span>
-                    </DropdownMenuItem>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Tizimdan chiqish</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Haqiqatan ham tizimdan chiqishni xohlaysizmi? Barcha ochilgan sahifalar yopiladi.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-                      <AlertDialogAction onClick={logout} className="bg-red-600 hover:bg-red-700">
-                        Ha, chiqish
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    </Link>
+                  </DropdownMenuItem>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <span className="flex items-center space-x-2 text-red-600">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          <span>Chiqish</span>
+                        </span>
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Tizimdan chiqish</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Haqiqatan ham tizimdan chiqishni xohlaysizmi? Barcha ochilgan sahifalar yopiladi.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700">
+                          Ha, chiqish
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </header>
 
@@ -173,29 +196,6 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 </Link>
               );
             })}
-            
-            {/* Notifications Button */}
-            <Link href={`/${userRole}/notifications`}>
-              <div className={cn(
-                "flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all duration-200 relative min-w-[70px]",
-                location === `/${userRole}/notifications`
-                  ? "bg-blue-50 text-blue-600 shadow-sm" 
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              )}>
-                <div className={cn(
-                  "w-5 h-5 mb-1 transition-colors",
-                  location === `/${userRole}/notifications` ? "text-blue-600" : "text-gray-400"
-                )}>
-                  <Bell />
-                </div>
-                <span className={cn(
-                  "text-xs font-medium leading-tight text-center",
-                  location === `/${userRole}/notifications` ? "text-blue-600" : "text-gray-500"
-                )}>
-                  Xabarlar
-                </span>
-              </div>
-            </Link>
           </div>
         </div>
       </div>
@@ -204,39 +204,33 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
   // Desktop Layout
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Desktop Sidebar */}
       <div className={cn(
-        "h-screen bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out",
+        "bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out",
         sidebarCollapsed ? "w-16" : "w-64"
       )}>
-        {/* Sidebar Header with Toggle */}
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        {/* Sidebar Header */}
+        <div className="p-3 border-b border-gray-200 flex items-center justify-between">
           <div className={cn(
             "flex items-center space-x-3 transition-opacity duration-200",
             sidebarCollapsed ? "opacity-0" : "opacity-100"
           )}>
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">O</span>
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">O</span>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-900">O'zbek Talim</h1>
-              <p className="text-sm text-gray-600">{getRoleTitle(userRole)}</p>
+              <h2 className="text-lg font-bold text-gray-900">O'zbek Talim</h2>
+              <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
             </div>
           </div>
-          
-          {/* Toggle Button */}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="h-8 w-8 p-0 hover:bg-gray-100 transition-colors"
+            className="p-1 h-8 w-8 rounded-lg hover:bg-gray-100"
           >
-            {sidebarCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
+            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
         </div>
 
@@ -294,7 +288,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-                    <AlertDialogAction onClick={logout} className="bg-red-600 hover:bg-red-700">
+                    <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700">
                       Ha, chiqish
                     </AlertDialogAction>
                   </AlertDialogFooter>
