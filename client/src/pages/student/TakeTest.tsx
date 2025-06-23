@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, ChevronLeft, ChevronRight, Flag, Send, AlertCircle } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, Flag, Send, AlertCircle, Check } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import useAuth from '@/hooks/useAuth';
@@ -84,7 +84,12 @@ const TakeTestPage: React.FC = () => {
     },
     onSuccess: (data: TestAttempt) => {
       setTestAttempt(data);
-      setTimeLeft(test?.duration * 60 || 0); // Convert minutes to seconds
+      // Only set timer for tests with duration > 0 and not simple type
+      if (test?.type !== 'simple' && test?.duration > 0) {
+        setTimeLeft(test.duration * 60); // Convert minutes to seconds
+      } else {
+        setTimeLeft(0); // No time limit for simple tests
+      }
     },
     onError: (error) => {
       toast({
@@ -153,18 +158,21 @@ const TakeTestPage: React.FC = () => {
     },
   });
 
-  // Timer effect
+  // Timer effect - only for timed tests
   useEffect(() => {
-    if (timeLeft > 0 && testAttempt && !isSubmitting) {
-      const timer = setTimeout(() => {
-        setTimeLeft(timeLeft - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && testAttempt && !isSubmitting) {
-      // Auto-submit when time is up
-      handleSubmitTest();
+    // Only run timer for non-simple tests with duration > 0
+    if (test?.type !== 'simple' && test?.duration > 0) {
+      if (timeLeft > 0 && testAttempt && !isSubmitting) {
+        const timer = setTimeout(() => {
+          setTimeLeft(timeLeft - 1);
+        }, 1000);
+        return () => clearTimeout(timer);
+      } else if (timeLeft === 0 && testAttempt && !isSubmitting) {
+        // Auto-submit when time is up (only for timed tests)
+        handleSubmitTest();
+      }
     }
-  }, [timeLeft, testAttempt, isSubmitting]);
+  }, [timeLeft, testAttempt, isSubmitting, test?.type, test?.duration]);
 
   // Handle answer selection
   const handleAnswerChange = (questionId: number, answer: any) => {
@@ -251,7 +259,12 @@ const TakeTestPage: React.FC = () => {
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <Clock className="h-8 w-8 text-blue-600 mx-auto mb-2" />
                 <p className="font-semibold">Vaqt</p>
-                <p className="text-sm text-gray-600">{test?.duration || 0} daqiqa</p>
+                <p className="text-sm text-gray-600">
+                  {test?.type === 'simple' || test?.duration === 0 
+                    ? 'Cheklanmagan' 
+                    : `${test?.duration || 0} daqiqa`
+                  }
+                </p>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <Flag className="h-8 w-8 text-green-600 mx-auto mb-2" />
@@ -263,8 +276,11 @@ const TakeTestPage: React.FC = () => {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                <strong>Diqqat:</strong> Test boshlanganidan keyin vaqt o'ta boshlaydi. 
-                Testni yakunlashdan oldin barcha savollarni ko'rib chiqishingiz tavsiya etiladi.
+                <strong>Diqqat:</strong> 
+                {test?.type === 'simple' || test?.duration === 0 
+                  ? 'Bu oddiy test bo\'lib, vaqt cheklanmagan. O\'z vaqtingizda savollarni yechib, javoblarni tekshirib topshiring.'
+                  : 'Test boshlanganidan keyin vaqt o\'ta boshlaydi. Testni yakunlashdan oldin barcha savollarni ko\'rib chiqishingiz tavsiya etiladi.'
+                }
               </AlertDescription>
             </Alert>
 
@@ -306,12 +322,24 @@ const TakeTestPage: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-gray-500" />
-                <span className={`font-mono text-lg ${timeLeft < 300 ? 'text-red-600' : 'text-gray-900'}`}>
-                  {formatTime(timeLeft)}
-                </span>
-              </div>
+              {/* Only show timer for timed tests */}
+              {test?.type !== 'simple' && test?.duration > 0 && (
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <span className={`font-mono text-lg ${timeLeft < 300 ? 'text-red-600' : 'text-gray-900'}`}>
+                    {formatTime(timeLeft)}
+                  </span>
+                </div>
+              )}
+              {/* Show "No time limit" for simple tests */}
+              {(test?.type === 'simple' || test?.duration === 0) && (
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-green-600 font-medium">
+                    Vaqt cheklanmagan
+                  </span>
+                </div>
+              )}
               <Button
                 variant="outline"
                 onClick={handleSubmitTest}
@@ -369,15 +397,38 @@ const TakeTestPage: React.FC = () => {
                   <RadioGroup
                     value={answers[currentQuestion.id] || ''}
                     onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
+                    className="space-y-3"
                   >
-                    {currentQuestion.options?.map((option, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option} id={`option-${index}`} />
-                        <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
-                          {option}
-                        </Label>
-                      </div>
-                    ))}
+                    {currentQuestion.options?.map((option, index) => {
+                      const optionLabels = ['A', 'B', 'C', 'D', 'E'];
+                      const isSelected = answers[currentQuestion.id] === option;
+                      return (
+                        <div 
+                          key={index} 
+                          className={`flex items-center space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer hover:bg-gray-50 ${
+                            isSelected 
+                              ? 'border-blue-500 bg-blue-50' 
+                              : 'border-gray-200'
+                          }`}
+                          onClick={() => handleAnswerChange(currentQuestion.id, option)}
+                        >
+                          <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold ${
+                            isSelected 
+                              ? 'border-blue-500 bg-blue-500 text-white' 
+                              : 'border-gray-300 text-gray-500'
+                          }`}>
+                            {optionLabels[index] || index + 1}
+                          </div>
+                          <RadioGroupItem value={option} id={`option-${index}`} className="sr-only" />
+                          <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer text-gray-900">
+                            {option}
+                          </Label>
+                          {isSelected && (
+                            <Check className="h-5 w-5 text-blue-500" />
+                          )}
+                        </div>
+                      );
+                    })}
                   </RadioGroup>
                 )}
               </div>
@@ -385,43 +436,92 @@ const TakeTestPage: React.FC = () => {
           </Card>
         )}
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center mt-8">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
-            disabled={currentQuestionIndex === 0}
-          >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Oldingi savol
-          </Button>
+        {/* Enhanced Navigation */}
+        <div className="flex flex-col gap-6 mt-8">
+          {/* Question Navigation Buttons */}
+          <div className="flex justify-between items-center">
+            <Button
+              variant="outline"
+              onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
+              disabled={currentQuestionIndex === 0}
+              size="lg"
+            >
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Oldingi savol
+            </Button>
 
-          <div className="flex gap-2">
-            {questions?.map((_, index) => (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-600">
+                {currentQuestionIndex + 1} / {questions?.length}
+              </span>
               <Button
-                key={index}
-                variant={index === currentQuestionIndex ? "default" : "outline"}
+                variant="outline"
                 size="sm"
-                onClick={() => setCurrentQuestionIndex(index)}
-                className={`w-8 h-8 p-0 ${
-                  answers[questions[index].id] 
-                    ? 'bg-green-100 border-green-500 text-green-700' 
-                    : ''
-                }`}
+                onClick={() => setCurrentQuestionIndex(Math.min((questions?.length || 1) - 1, currentQuestionIndex + 1))}
+                disabled={isLastQuestion}
               >
-                {index + 1}
+                Keyingi
+                <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
-            ))}
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={() => setCurrentQuestionIndex(Math.min((questions?.length || 1) - 1, currentQuestionIndex + 1))}
+              disabled={isLastQuestion}
+              size="lg"
+            >
+              Keyingi savol
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
           </div>
 
-          <Button
-            variant="outline"
-            onClick={() => setCurrentQuestionIndex(Math.min((questions?.length || 1) - 1, currentQuestionIndex + 1))}
-            disabled={isLastQuestion}
-          >
-            Keyingi savol
-            <ChevronRight className="h-4 w-4 ml-2" />
-          </Button>
+          {/* Question Overview Grid */}
+          <div className="bg-white p-4 rounded-lg border">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">Savollar holati:</h4>
+            <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2">
+              {questions?.map((_, index) => {
+                const isAnswered = answers[questions[index].id];
+                const isCurrent = index === currentQuestionIndex;
+                return (
+                  <Button
+                    key={index}
+                    variant={isCurrent ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentQuestionIndex(index)}
+                    className={`w-10 h-10 p-0 relative ${
+                      isAnswered 
+                        ? 'bg-green-100 border-green-500 text-green-700 hover:bg-green-200' 
+                        : isCurrent
+                        ? 'bg-blue-500 text-white'
+                        : 'hover:bg-gray-100'
+                    }`}
+                  >
+                    {index + 1}
+                    {isAnswered && !isCurrent && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
+                        <Check className="h-2 w-2 text-white" />
+                      </div>
+                    )}
+                  </Button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-4 mt-3 text-xs text-gray-600">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span>Javob berilgan</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span>Joriy savol</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 border border-gray-300 rounded-full"></div>
+                <span>Javob berilmagan</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
