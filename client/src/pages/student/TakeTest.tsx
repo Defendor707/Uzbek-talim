@@ -187,7 +187,7 @@ const TakeTestPage: React.FC = () => {
     if (!currentQuestion) return;
 
     // For multiple choice, ensure answer is selected
-    if (currentQuestion.questionType === 'multiple_choice' && !answer) {
+    if ((currentQuestion.questionType === 'multiple_choice' || currentQuestion.questionType === 'simple') && !answer) {
       return;
     }
 
@@ -457,51 +457,42 @@ const TakeTestPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {currentQuestion.questionType === 'open' ? (
-                  <Textarea
-                    placeholder="Javobingizni yozing..."
-                    value={answers[currentQuestion.id] || ''}
-                    onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                    rows={4}
-                  />
-                ) : (
-                  <RadioGroup
-                    value={answers[currentQuestion.id] || ''}
-                    onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
-                    className="space-y-3"
-                  >
-                    {currentQuestion.options?.map((option, index) => {
-                      const optionLabels = ['A', 'B', 'C', 'D', 'E'];
-                      const isSelected = answers[currentQuestion.id] === option;
-                      return (
-                        <div 
-                          key={index} 
-                          className={`flex items-center space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer hover:bg-gray-50 ${
-                            isSelected 
-                              ? 'border-blue-500 bg-blue-50' 
-                              : 'border-gray-200'
-                          }`}
-                          onClick={() => handleAnswerChange(currentQuestion.id, option)}
-                        >
-                          <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold ${
-                            isSelected 
-                              ? 'border-blue-500 bg-blue-500 text-white' 
-                              : 'border-gray-300 text-gray-500'
-                          }`}>
-                            {optionLabels[index] || index + 1}
-                          </div>
-                          <RadioGroupItem value={option} id={`option-${index}`} className="sr-only" />
-                          <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer text-gray-900">
-                            {option}
-                          </Label>
-                          {isSelected && (
-                            <Check className="h-5 w-5 text-blue-500" />
-                          )}
+                <RadioGroup
+                  value={answers[currentQuestion.id] || ''}
+                  onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
+                  className="space-y-3"
+                >
+                  {currentQuestion.options?.map((option, index) => {
+                    const optionLabels = ['A', 'B', 'C', 'D', 'E'];
+                    const isSelected = answers[currentQuestion.id] === option;
+                    return (
+                      <div 
+                        key={index} 
+                        className={`flex items-center space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer hover:bg-gray-50 ${
+                          isSelected 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-200'
+                        }`}
+                        onClick={() => handleAnswerChange(currentQuestion.id, option)}
+                      >
+                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold ${
+                          isSelected 
+                            ? 'border-blue-500 bg-blue-500 text-white' 
+                            : 'border-gray-300 text-gray-500'
+                        }`}>
+                          {optionLabels[index] || index + 1}
                         </div>
-                      );
-                    })}
-                  </RadioGroup>
-                )}
+                        <RadioGroupItem value={option} id={`option-${index}`} className="sr-only" />
+                        <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer text-gray-900">
+                          {option}
+                        </Label>
+                        {isSelected && (
+                          <Check className="h-5 w-5 text-blue-500" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </RadioGroup>
               </div>
             </CardContent>
           </Card>
