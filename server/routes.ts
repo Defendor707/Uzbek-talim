@@ -442,6 +442,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public tests endpoint - MUST be before the :id route
+  app.get("/api/tests/public", authenticate, async (req, res) => {
+    try {
+      const publicTests = await storage.getAllPublicTests();
+      return res.status(200).json(publicTests);
+    } catch (error) {
+      console.error("Error fetching public tests:", error);
+      return res.status(500).json({ message: "Failed to fetch public tests" });
+    }
+  });
+
   app.get("/api/tests/:id", authenticate, async (req, res) => {
     try {
       const testId = parseInt(req.params.id);
@@ -735,16 +746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Public tests endpoint
-  app.get("/api/tests/public", authenticate, async (req, res) => {
-    try {
-      const publicTests = await storage.getAllPublicTests();
-      return res.status(200).json(publicTests);
-    } catch (error) {
-      console.error("Error fetching public tests:", error);
-      return res.status(500).json({ message: "Failed to fetch public tests" });
-    }
-  });
+
 
   // Question Routes
   app.post(

@@ -435,8 +435,8 @@ export class DatabaseStorage implements IStorage {
     const tests = await db.select()
       .from(schema.tests)
       .where(and(
-        eq(schema.tests.type, 'public'),
-        eq(schema.tests.status, 'active')
+        eq(schema.tests.status, 'active'),
+        like(schema.tests.description, '%Ommaviy%')
       ))
       .orderBy(desc(schema.tests.createdAt));
     return tests;
