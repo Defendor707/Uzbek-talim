@@ -644,28 +644,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Universal search endpoint - supports both name and code search
   app.get("/api/tests/search/:query", authenticate, async (req, res) => {
     try {
-      const query = req.params.query.toLowerCase().trim();
+      const query = req.params.query.trim();
       
       if (!query) {
         return res.status(400).json({ message: "Search query is required" });
       }
 
-      // First, try to search by test code (for numerical tests)
-      const testByCode = await storage.getTestByCode(query);
-      if (testByCode && testByCode.status === 'active') {
-        return res.status(200).json([testByCode]);
+      let availableTests: any[] = [];
+      let searchResults: any[] = [];
+
+      // Get available tests based on user role
+      if (req.user?.role === "teacher") {
+        // Teachers can search their own tests
+        availableTests = await storage.getTestsByTeacherId(req.user.userId);
+      } else if (req.user?.role === "student") {
+        // Students can search tests available to them
+        const profile = await storage.getStudentProfile(req.user.userId);
+        if (profile?.grade) {
+          const gradeTests = await storage.getActiveTestsForStudent(
+            profile.grade,
+            profile.classroom || undefined
+          );
+          const publicTests = await storage.getAllPublicTests();
+          // Combine grade-specific tests and public tests, remove duplicates
+          const testIds = new Set();
+          availableTests = [...gradeTests, ...publicTests].filter(test => {
+            if (testIds.has(test.id)) return false;
+            testIds.add(test.id);
+            return test.status === 'active';
+          });
+        } else {
+          // If no profile, only show public tests
+          availableTests = await storage.getAllPublicTests();
+        }
+      } else if (req.user?.role === "center" || req.user?.role === "parent") {
+        // Centers and parents can search public tests
+        availableTests = await storage.getAllPublicTests();
       }
 
-      // If not found by code, search by title in all public tests
-      const publicTests = await storage.getAllPublicTests();
-      
-      // Search in public tests by title
-      const matchingTests = publicTests.filter(test => 
-        test.title.toLowerCase().includes(query)
-      );
+      // Search by test code first (case-insensitive)
+      const testByCode = await storage.getTestByCode(query.toUpperCase());
+      if (testByCode && availableTests.some(test => test.id === testByCode.id)) {
+        searchResults.push(testByCode);
+      }
 
-      if (matchingTests.length > 0) {
-        return res.status(200).json(matchingTests);
+      // Search by title (case-insensitive)
+      const titleMatches = availableTests.filter(test => 
+        test.title.toLowerCase().includes(query.toLowerCase()) &&
+        !searchResults.some(result => result.id === test.id) // Avoid duplicates
+      );
+      
+      searchResults = [...searchResults, ...titleMatches];
+
+      // Search by description/category if no results yet
+      if (searchResults.length === 0) {
+        const descriptionMatches = availableTests.filter(test => 
+          test.description && 
+          test.description.toLowerCase().includes(query.toLowerCase())
+        );
+        searchResults = [...searchResults, ...descriptionMatches];
+      }
+
+      // Search by grade if no results yet (for role-appropriate tests)
+      if (searchResults.length === 0) {
+        const gradeMatches = availableTests.filter(test => 
+          test.grade && 
+          test.grade.toLowerCase().includes(query.toLowerCase())
+        );
+        searchResults = [...searchResults, ...gradeMatches];
+      }
+
+      if (searchResults.length > 0) {
+        // Sort results: exact title matches first, then partial matches
+        searchResults.sort((a, b) => {
+          const aExactTitle = a.title.toLowerCase() === query.toLowerCase();
+          const bExactTitle = b.title.toLowerCase() === query.toLowerCase();
+          if (aExactTitle && !bExactTitle) return -1;
+          if (!aExactTitle && bExactTitle) return 1;
+          return 0;
+        });
+        
+        return res.status(200).json(searchResults);
       }
 
       // No tests found

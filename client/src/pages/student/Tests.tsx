@@ -30,31 +30,41 @@ const StudentTestsPage: React.FC = () => {
 
   // Handle universal search (both code and name)
   const handleSearch = async (query: string) => {
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
     
     try {
-      const response = await fetch(`/api/tests/search/${encodeURIComponent(query)}`, {
+      const response = await fetch(`/api/tests/search/${encodeURIComponent(query.trim())}`, {
         credentials: 'include',
       });
       
       if (response.ok) {
         const foundTests = await response.json();
         if (foundTests && foundTests.length > 0) {
-          // If only one test found, navigate directly
-          if (foundTests.length === 1) {
-            setLocation(`/student/test/${foundTests[0].id}`);
-          } else {
-            // Show multiple results
-            setSearchResults(foundTests);
-          }
+          setSearchResults(foundTests);
+          toast({
+            title: "Qidiruv muvaffaqiyatli",
+            description: `${foundTests.length} ta test topildi`,
+          });
         } else {
+          setSearchResults([]);
           toast({
             title: "Test topilmadi",
-            description: "Bunday kod yoki nom bilan test topilmadi",
+            description: "Bunday kod yoki nom bilan test mavjud emas",
             variant: "destructive",
           });
         }
+      } else if (response.status === 404) {
+        setSearchResults([]);
+        toast({
+          title: "Test topilmadi",
+          description: "Bunday kod yoki nom bilan test mavjud emas",
+          variant: "destructive",
+        });
       } else {
+        console.error('Search failed with status:', response.status);
         toast({
           title: "Xatolik",
           description: "Test qidirishda xatolik yuz berdi",
@@ -65,7 +75,7 @@ const StudentTestsPage: React.FC = () => {
       console.error('Search error:', error);
       toast({
         title: "Xatolik",
-        description: "Test qidirishda xatolik yuz berdi",
+        description: "Tarmoq xatoligi. Internetni tekshiring",
         variant: "destructive",
       });
     }

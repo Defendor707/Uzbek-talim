@@ -22,11 +22,74 @@ const TestsPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [testToDelete, setTestToDelete] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   
   // Fetch tests
   const { data: tests } = useQuery<any[]>({
     queryKey: ['/api/tests'],
   });
+
+  // Handle search functionality
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/tests/search/${encodeURIComponent(query.trim())}`, {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const foundTests = await response.json();
+        if (foundTests && foundTests.length > 0) {
+          setSearchResults(foundTests);
+          toast({
+            title: "Qidiruv muvaffaqiyatli",
+            description: `${foundTests.length} ta test topildi`,
+          });
+        } else {
+          setSearchResults([]);
+          toast({
+            title: "Test topilmadi",
+            description: "Bunday nom yoki tasnif bilan test mavjud emas",
+            variant: "destructive",
+          });
+        }
+      } else if (response.status === 404) {
+        setSearchResults([]);
+        toast({
+          title: "Test topilmadi",
+          description: "Bunday nom yoki tasnif bilan test mavjud emas",
+          variant: "destructive",
+        });
+      } else {
+        console.error('Search failed with status:', response.status);
+        toast({
+          title: "Xatolik",
+          description: "Test qidirishda xatolik yuz berdi",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        title: "Xatolik",
+        description: "Tarmoq xatoligi. Internetni tekshiring",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Filter function for displaying tests
+  const getDisplayTests = () => {
+    if (searchResults.length > 0) {
+      return searchResults;
+    }
+    return tests || [];
+  };
 
   // Delete test mutation
   const deleteTestMutation = useMutation({
@@ -117,26 +180,82 @@ const TestsPage: React.FC = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Actions */}
-        <div className="mb-6 sm:mb-8">
-          <Link href="/teacher/test-types" className="w-full sm:w-auto">
-            <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Yangi test yaratish
-            </Button>
-          </Link>
+        {/* Actions and Search */}
+        <div className="mb-6 sm:mb-8 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between">
+            <Link href="/teacher/test-types" className="w-full sm:w-auto">
+              <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Yangi test yaratish
+              </Button>
+            </Link>
+            
+            {/* Search Input */}
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto max-w-md">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Test nomini qidirish..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch(searchQuery);
+                    }
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <svg 
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <Button 
+                onClick={() => handleSearch(searchQuery)}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
+                Qidirish
+              </Button>
+              {(searchResults.length > 0 || searchQuery) && (
+                <Button 
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSearchResults([]);
+                  }}
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
+                  Tozalash
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Tests List */}
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Mening testlarim</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">
+                {searchResults.length > 0 ? 'Qidiruv natijalari' : 'Mening testlarim'}
+              </h2>
+              {searchResults.length > 0 && (
+                <span className="text-sm text-gray-500">
+                  {searchResults.length} ta test topildi
+                </span>
+              )}
+            </div>
             
-            {tests && tests.length > 0 ? (
+            {getDisplayTests().length > 0 ? (
               <div className="space-y-4">
-                {tests.map((test) => (
+                {getDisplayTests().map((test) => (
                   <div key={test.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
                     <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                       <div className="flex-1 min-w-0">
@@ -195,16 +314,25 @@ const TestsPage: React.FC = () => {
                 <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Testlar topilmadi</h3>
-                <p className="text-gray-600 mb-4">Hozircha sizda test mavjud emas. Birinchi testingizni yarating.</p>
-                <Link href="/teacher/test-types">
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Yangi test yaratish
-                  </Button>
-                </Link>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {searchQuery ? 'Qidiruv natijalari topilmadi' : 'Testlar topilmadi'}
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  {searchQuery 
+                    ? `"${searchQuery}" so'roviga mos test topilmadi. Boshqa kalit so'z bilan qidiring.`
+                    : 'Hozircha sizda test mavjud emas. Birinchi testingizni yarating.'
+                  }
+                </p>
+                {!searchQuery && (
+                  <Link href="/teacher/test-types">
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Yangi test yaratish
+                    </Button>
+                  </Link>
+                )}
               </div>
             )}
           </div>
