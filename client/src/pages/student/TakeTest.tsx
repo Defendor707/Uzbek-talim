@@ -88,22 +88,64 @@ const TakeTestPage: React.FC = () => {
     },
   });
 
-  // Submit answer mutation
+  // Submit answer mutation with enhanced error handling
   const submitAnswerMutation = useMutation({
     mutationFn: async ({ questionId, answer }: { questionId: number; answer: any }) => {
+      if (!testAttempt?.id) {
+        throw new Error('Test attempt not found');
+      }
+      
       const response = await apiRequest('POST', '/api/student-answers', {
-        attemptId: testAttempt?.id,
+        attemptId: testAttempt.id,
         questionId,
-        answer,
+        answer: answer || '', // Ensure answer is never null/undefined
       });
       return response.json();
     },
+    onSuccess: (data, variables) => {
+      // Visual feedback that answer was saved
+      const questionElement = document.querySelector(`[data-question-id="${variables.questionId}"]`);
+      if (questionElement) {
+        questionElement.classList.add('answer-saved');
+        setTimeout(() => {
+          questionElement.classList.remove('answer-saved');
+        }, 1000);
+      }
+    },
+    onError: (error, variables) => {
+      toast({
+        title: "Javob saqlanmadi",
+        description: `Savol ${variables.questionId} uchun javob saqlanishda xato yuz berdi`,
+        variant: "destructive",
+      });
+    },
   });
 
-  // Submit test mutation
+  // Submit test mutation with comprehensive validation
   const submitTestMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', `/api/test-attempts/${testAttempt?.id}/submit`, { answers });
+      if (!testAttempt?.id) {
+        throw new Error('Test attempt not found');
+      }
+
+      // Validate all answers before submission
+      const unansweredQuestions = questions?.filter(q => !answers[q.id]) || [];
+      
+      // For simple tests, allow partial submission but warn user
+      if (unansweredQuestions.length > 0 && test?.type === 'simple') {
+        const confirmSubmit = window.confirm(
+          `Siz ${unansweredQuestions.length} ta savolga javob bermadingiz. Testni baribir topshirmoqchimisiz?`
+        );
+        if (!confirmSubmit) {
+          throw new Error('Submission cancelled by user');
+        }
+      }
+
+      const response = await apiRequest('POST', `/api/test-attempts/${testAttempt.id}/submit`, { 
+        answers,
+        questionsCount: questions?.length || 0,
+        answeredCount: Object.keys(answers).length
+      });
       return response.json();
     },
     onSuccess: (data) => {
@@ -138,20 +180,62 @@ const TakeTestPage: React.FC = () => {
     }
   }, [timeLeft, testAttempt, isSubmitting, test?.type, test?.duration]);
 
-  // Handle answer selection
+  // Handle answer selection with improved validation and feedback
   const handleAnswerChange = (questionId: number, answer: any) => {
+    // Validate answer based on question type
+    const currentQuestion = questions?.find(q => q.id === questionId);
+    if (!currentQuestion) return;
+
+    // For multiple choice, ensure answer is selected
+    if (currentQuestion.questionType === 'multiple_choice' && !answer) {
+      return;
+    }
+
+    // For open questions, trim whitespace
+    if (currentQuestion.questionType === 'open' && typeof answer === 'string') {
+      answer = answer.trim();
+    }
+
+    // Update local state immediately for responsive UI
     setAnswers(prev => ({
       ...prev,
       [questionId]: answer
     }));
     
-    // Submit answer immediately
-    submitAnswerMutation.mutate({ questionId, answer });
+    // Debounced auto-save to reduce API calls
+    const timeoutId = setTimeout(() => {
+      if (answer !== undefined && answer !== null) {
+        submitAnswerMutation.mutate({ questionId, answer });
+      }
+    }, 800);
+
+    // Store timeout ID for cleanup
+    if (typeof window !== 'undefined') {
+      const previousTimeout = (window as any).answerTimeout;
+      if (previousTimeout) {
+        clearTimeout(previousTimeout);
+      }
+      (window as any).answerTimeout = timeoutId;
+    }
   };
 
-  // Handle test submission
+  // Enhanced test submission with validation
   const handleSubmitTest = async () => {
-    if (!testAttempt) return;
+    if (!testAttempt || !questions) return;
+    
+    const answeredCount = Object.keys(answers).length;
+    const totalQuestions = questions.length;
+    const unansweredCount = totalQuestions - answeredCount;
+    
+    // For simple tests, show detailed confirmation if there are unanswered questions
+    if (test?.type === 'simple' && unansweredCount > 0) {
+      const progress = Math.round((answeredCount / totalQuestions) * 100);
+      const confirmMessage = `Test holati:\n\n📊 Umumiy savollar: ${totalQuestions}\n✅ Javob berilgan: ${answeredCount} (${progress}%)\n❌ Javob berilmagan: ${unansweredCount}\n\nJavob berilmagan savollar uchun ball olmaysiz.\nTestni topshirmoqchimisiz?`;
+      
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+    }
     
     setIsSubmitting(true);
     submitTestMutation.mutate();
@@ -310,8 +394,17 @@ const TakeTestPage: React.FC = () => {
                 disabled={isSubmitting}
                 className="text-green-600 border-green-600 hover:bg-green-50"
               >
-                <Send className="h-4 w-4 mr-2" />
-                Testni yakunlash
+                {isSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Topshirilmoqda...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Testni yakunlash
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -328,15 +421,29 @@ const TakeTestPage: React.FC = () => {
       {/* Question content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
         {currentQuestion && (
-          <Card>
+          <Card data-question-id={currentQuestion.id} className="relative">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <CardTitle className="text-lg">
                   {currentQuestion.questionText}
                 </CardTitle>
-                <Badge variant="outline">
-                  {currentQuestion.points} ball
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">
+                    {currentQuestion.points} ball
+                  </Badge>
+                  {answers[currentQuestion.id] && (
+                    <div className="flex items-center gap-1 text-green-600 text-sm">
+                      <Check className="h-4 w-4" />
+                      <span>Saqlandi</span>
+                    </div>
+                  )}
+                  {submitAnswerMutation.isPending && (
+                    <div className="flex items-center gap-1 text-blue-600 text-sm">
+                      <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                      <span>Saqlanmoqda...</span>
+                    </div>
+                  )}
+                </div>
               </div>
               {currentQuestion.questionImage && (
                 <div className="mt-4">

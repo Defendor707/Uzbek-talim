@@ -320,3 +320,39 @@
     margin-bottom: 1rem !important;
   }
 }
+
+/* Test taking animations and visual feedback */
+.answer-saved {
+  animation: answer-saved-pulse 1s ease-in-out;
+  border-color: #10b981 !important;
+}
+
+@keyframes answer-saved-pulse {
+  0% {
+    transform: scale(1);
+    background-color: rgba(16, 185, 129, 0.1);
+  }
+  50% {
+    transform: scale(1.02);
+    background-color: rgba(16, 185, 129, 0.2);
+  }
+  100% {
+    transform: scale(1);
+    background-color: rgba(16, 185, 129, 0.1);
+  }
+}
+
+/* Enhanced question navigation */
+.question-nav-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.question-nav-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Progress indicators */
+.progress-ring {
+  transition: stroke-dashoffset 0.3s ease-in-out;
+}
