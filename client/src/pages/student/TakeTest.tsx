@@ -64,22 +64,10 @@ const TakeTestPage: React.FC = () => {
   // Start test attempt mutation
   const startAttemptMutation = useMutation<TestAttempt, Error, void>({
     mutationFn: async () => {
-      const response = await fetch('/api/test-attempts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          testId,
-          studentId: user?.id,
-        }),
-        credentials: 'include',
+      const response = await apiRequest('POST', '/api/test-attempts', {
+        testId,
+        studentId: user?.id,
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to start test');
-      }
-      
       return response.json();
     },
     onSuccess: (data: TestAttempt) => {
@@ -103,23 +91,11 @@ const TakeTestPage: React.FC = () => {
   // Submit answer mutation
   const submitAnswerMutation = useMutation({
     mutationFn: async ({ questionId, answer }: { questionId: number; answer: any }) => {
-      const response = await fetch('/api/student-answers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          attemptId: testAttempt?.id,
-          questionId,
-          answer,
-        }),
-        credentials: 'include',
+      const response = await apiRequest('POST', '/api/student-answers', {
+        attemptId: testAttempt?.id,
+        questionId,
+        answer,
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to save answer');
-      }
-      
       return response.json();
     },
   });
@@ -127,19 +103,7 @@ const TakeTestPage: React.FC = () => {
   // Submit test mutation
   const submitTestMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`/api/test-attempts/${testAttempt?.id}/submit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ answers }),
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to submit test');
-      }
-      
+      const response = await apiRequest('POST', `/api/test-attempts/${testAttempt?.id}/submit`, { answers });
       return response.json();
     },
     onSuccess: (data) => {
