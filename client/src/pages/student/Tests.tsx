@@ -36,8 +36,13 @@ const StudentTestsPage: React.FC = () => {
     }
     
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`/api/tests/search/${encodeURIComponent(query.trim())}`, {
         credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
       
       if (response.ok) {

@@ -25,16 +25,35 @@ export const verifyToken = (token: string): { userId: number; role: string } | n
   }
 };
 
-// Authentication middleware
+// Authentication middleware - supports both Bearer tokens and session-based auth
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
+    let token: string | null = null;
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Try to get token from Authorization header first
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+    
+    // If no Bearer token, try to get from session (for web interface)
+    if (!token && (req as any).session?.token) {
+      token = (req as any).session.token;
+    }
+    
+    // If still no token, check if user info is already in session
+    if (!token && (req as any).session?.userId) {
+      req.user = {
+        userId: (req as any).session.userId,
+        role: (req as any).session.role
+      };
+      return next();
+    }
+    
+    if (!token) {
       return res.status(401).json({ message: 'Authentication required' });
     }
     
-    const token = authHeader.split(' ')[1];
     const decoded = verifyToken(token);
     
     if (!decoded) {
