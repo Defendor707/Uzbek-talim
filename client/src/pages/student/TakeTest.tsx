@@ -303,6 +303,40 @@ const TakeTestPage: React.FC = () => {
             <CardDescription>{test?.description || ''}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Test Images Display */}
+            {test?.testImages && test.testImages.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-center">Test rasmlari</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {test.testImages.map((image, index) => (
+                    <div key={index} className="text-center">
+                      <img
+                        src={`/uploads/${image}`}
+                        alt={`Test rasmi ${index + 1}`}
+                        className="max-w-full h-auto max-h-48 mx-auto rounded-lg border shadow-sm"
+                        onError={(e) => {
+                          // Fallback to root path if uploads path fails
+                          const img = e.target as HTMLImageElement;
+                          if (img.src.includes('/uploads/')) {
+                            img.src = `/${image}`;
+                          }
+                        }}
+                      />
+                      <p className="text-sm text-gray-500 mt-2">Rasm {index + 1}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Test Description */}
+            {test?.description && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">Test haqida</h3>
+                <p className="text-blue-800">{test.description}</p>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <Clock className="h-8 w-8 text-blue-600 mx-auto mb-2" />
@@ -448,9 +482,16 @@ const TakeTestPage: React.FC = () => {
               {currentQuestion.questionImage && (
                 <div className="mt-4">
                   <img
-                    src={currentQuestion.questionImage}
+                    src={`/uploads/${currentQuestion.questionImage}`}
                     alt="Savol rasmi"
-                    className="max-w-full h-auto rounded-lg"
+                    className="max-w-full h-auto rounded-lg shadow-sm"
+                    onError={(e) => {
+                      // Fallback to root path if uploads path fails
+                      const img = e.target as HTMLImageElement;
+                      if (img.src.includes('/uploads/')) {
+                        img.src = `/${currentQuestion.questionImage}`;
+                      }
+                    }}
                   />
                 </div>
               )}

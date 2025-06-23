@@ -76,7 +76,12 @@ export function TestTaking() {
     },
     onSuccess: (data: TestAttempt) => {
       setAttemptId(data.id);
-      setTimeRemaining(test?.duration ? test.duration * 60 : 1800); // Convert minutes to seconds
+      // Only set timer for non-simple tests with duration > 0
+      if (test?.type !== 'simple' && test?.duration > 0) {
+        setTimeRemaining(test.duration * 60); // Convert minutes to seconds
+      } else {
+        setTimeRemaining(0); // No time limit for simple tests
+      }
     },
     onError: (error: any) => {
       toast({
@@ -120,22 +125,25 @@ export function TestTaking() {
     },
   });
 
-  // Timer effect
+  // Timer effect - only for timed tests
   useEffect(() => {
-    if (timeRemaining > 0 && attemptId) {
-      const timer = setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            handleSubmitTest();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    // Only run timer for non-simple tests with duration > 0
+    if (test?.type !== 'simple' && test?.duration > 0) {
+      if (timeRemaining > 0 && attemptId) {
+        const timer = setInterval(() => {
+          setTimeRemaining((prev) => {
+            if (prev <= 1) {
+              handleSubmitTest();
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
 
-      return () => clearInterval(timer);
+        return () => clearInterval(timer);
+      }
     }
-  }, [timeRemaining, attemptId]);
+  }, [timeRemaining, attemptId, test?.type, test?.duration]);
 
   // Format time display
   const formatTime = (seconds: number) => {
@@ -231,9 +239,16 @@ export function TestTaking() {
                   {test.testImages.map((image, index) => (
                     <div key={index} className="text-center">
                       <img
-                        src={`/${image}`}
+                        src={`/uploads/${image}`}
                         alt={`Test rasmi ${index + 1}`}
-                        className="max-w-full h-auto max-h-48 mx-auto rounded-lg border"
+                        className="max-w-full h-auto max-h-48 mx-auto rounded-lg border shadow-sm"
+                        onError={(e) => {
+                          // Fallback to root path if uploads path fails
+                          const img = e.target as HTMLImageElement;
+                          if (img.src.includes('/uploads/')) {
+                            img.src = `/${image}`;
+                          }
+                        }}
                       />
                       <p className="text-sm text-gray-500 mt-2">Rasm {index + 1}</p>
                     </div>
@@ -243,7 +258,10 @@ export function TestTaking() {
             )}
             
             {test.description && (
-              <p className="text-gray-600 text-center">{test.description}</p>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">Test haqida</h3>
+                <p className="text-blue-800">{test.description}</p>
+              </div>
             )}
             
             <div className="grid grid-cols-2 gap-4 text-center">
@@ -259,7 +277,10 @@ export function TestTaking() {
             
             <div className="text-center space-y-2">
               <p className="text-sm text-gray-600">
-                Test boshlangandan so'ng {test.duration} daqiqa vaqtingiz bor
+                {test.type === 'simple' || test.duration === 0 
+                  ? 'Bu oddiy test bo\'lib, vaqt cheklanmagan'
+                  : `Test boshlangandan so'ng ${test.duration} daqiqa vaqtingiz bor`
+                }
               </p>
               <Button 
                 onClick={handleStartTest} 
@@ -282,10 +303,20 @@ export function TestTaking() {
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold">{test.title}</h1>
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2 text-red-600">
-              <Clock className="h-5 w-5" />
-              <span className="font-mono text-lg">{formatTime(timeRemaining)}</span>
-            </div>
+            {/* Only show timer for timed tests */}
+            {test.type !== 'simple' && test.duration > 0 && (
+              <div className="flex items-center space-x-2 text-red-600">
+                <Clock className="h-5 w-5" />
+                <span className="font-mono text-lg">{formatTime(timeRemaining)}</span>
+              </div>
+            )}
+            {/* Show "No time limit" for simple tests */}
+            {(test.type === 'simple' || test.duration === 0) && (
+              <div className="flex items-center space-x-2 text-green-600">
+                <Clock className="h-5 w-5" />
+                <span className="text-sm font-medium">Vaqt cheklanmagan</span>
+              </div>
+            )}
             <Button
               onClick={handleSubmitTest}
               variant="outline"
@@ -340,9 +371,16 @@ export function TestTaking() {
               {test.testImages.map((image, index) => (
                 <div key={index} className="text-center">
                   <img
-                    src={`/${image}`}
+                    src={`/uploads/${image}`}
                     alt={`Test rasmi ${index + 1}`}
-                    className="max-w-full h-auto max-h-48 mx-auto rounded-lg border"
+                    className="max-w-full h-auto max-h-48 mx-auto rounded-lg border shadow-sm"
+                    onError={(e) => {
+                      // Fallback to root path if uploads path fails
+                      const img = e.target as HTMLImageElement;
+                      if (img.src.includes('/uploads/')) {
+                        img.src = `/${image}`;
+                      }
+                    }}
                   />
                   <p className="text-sm text-gray-500 mt-2">Rasm {index + 1}</p>
                 </div>
@@ -369,9 +407,16 @@ export function TestTaking() {
                 {question.questionImage && (
                   <div className="mb-4">
                     <img
-                      src={`/${question.questionImage}`}
+                      src={`/uploads/${question.questionImage}`}
                       alt="Savol rasmi"
-                      className="max-w-full h-auto max-h-64 rounded-lg"
+                      className="max-w-full h-auto max-h-64 rounded-lg shadow-sm"
+                      onError={(e) => {
+                        // Fallback to root path if uploads path fails
+                        const img = e.target as HTMLImageElement;
+                        if (img.src.includes('/uploads/')) {
+                          img.src = `/${question.questionImage}`;
+                        }
+                      }}
                     />
                   </div>
                 )}

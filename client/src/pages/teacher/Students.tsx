@@ -51,7 +51,7 @@ const StudentsPage: React.FC = () => {
                       <div>
                         <h3 className="font-medium text-gray-900">{student.fullName}</h3>
                         <div className="flex gap-4 mt-2 text-sm text-gray-500">
-                          <span>Sinf: {student.grade}</span>
+                          <span>Daraja: {student.grade}</span>
                           <span>Email: {student.email}</span>
                         </div>
                       </div>
