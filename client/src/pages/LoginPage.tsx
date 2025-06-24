@@ -93,6 +93,7 @@ const LoginPage: React.FC = () => {
   }
 
   const translateX = isDragging ? (currentX - startX) * 0.3 : 0;
+  const dragProgress = isDragging ? Math.min(Math.abs(translateX) / 100, 1) : 0;
 
   return (
     <div 
@@ -117,24 +118,49 @@ const LoginPage: React.FC = () => {
         </svg>
       </div>
 
-      {/* Floating Elements */}
-      <div className="absolute top-20 left-20 w-32 h-32 bg-blue-200 rounded-full opacity-20 animate-pulse"></div>
-      <div className="absolute bottom-20 right-20 w-24 h-24 bg-purple-200 rounded-full opacity-20 animate-pulse delay-1000"></div>
-      <div className="absolute top-1/2 left-10 w-16 h-16 bg-indigo-200 rounded-full opacity-20 animate-pulse delay-500"></div>
+      {/* Floating Elements with enhanced animation */}
+      <div className="absolute top-20 left-20 w-32 h-32 bg-blue-200 rounded-full opacity-20 animate-pulse"
+           style={{
+             transform: isDragging ? `translateX(${translateX * 0.1}px) scale(${1 + dragProgress * 0.1})` : 'none',
+             transition: isDragging ? 'none' : 'all 0.5s ease-out'
+           }}></div>
+      <div className="absolute bottom-20 right-20 w-24 h-24 bg-purple-200 rounded-full opacity-20 animate-pulse delay-1000"
+           style={{
+             transform: isDragging ? `translateX(${translateX * -0.05}px) scale(${1 + dragProgress * 0.05})` : 'none',
+             transition: isDragging ? 'none' : 'all 0.5s ease-out'
+           }}></div>
+      <div className="absolute top-1/2 left-10 w-16 h-16 bg-indigo-200 rounded-full opacity-20 animate-pulse delay-500"
+           style={{
+             transform: isDragging ? `translateX(${translateX * 0.15}px) scale(${1 + dragProgress * 0.15})` : 'none',
+             transition: isDragging ? 'none' : 'all 0.5s ease-out'
+           }}></div>
 
       {/* Slide Container */}
-      <div className="relative w-full h-full flex transition-transform duration-300 ease-out"
+      <div className="relative w-full h-full flex transition-all duration-500 ease-out"
            style={{ 
              transform: `translateX(${-currentSlide * 100 + translateX}vw)`,
+             transformStyle: 'preserve-3d',
            }}>
         
         {/* Page 1: Logo and Introduction */}
-        <div className="w-screen h-screen flex items-center justify-center p-4 flex-shrink-0">
+        <div className="w-screen h-screen flex items-center justify-center p-4 flex-shrink-0 relative"
+             style={{
+               transform: isDragging && currentSlide === 0 && translateX < 0 ? 
+                 `perspective(1000px) rotateY(${Math.min(dragProgress * 15, 15)}deg)` : 'none',
+               transformOrigin: 'right center',
+               filter: isDragging && currentSlide === 0 && translateX < 0 ? 
+                 `brightness(${1 - dragProgress * 0.2})` : 'none',
+               transition: isDragging ? 'none' : 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+             }}>
           <div className="w-full max-w-md text-center relative z-10">
             {/* Logo and Title Section */}
             <div className="mb-8">
               <div className="relative mx-auto mb-6">
-                <div className="w-24 h-24 bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl flex items-center justify-center mx-auto shadow-2xl shadow-blue-600/30 transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                <div className="w-24 h-24 bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl flex items-center justify-center mx-auto shadow-2xl shadow-blue-600/30 transform rotate-3 hover:rotate-0 transition-all duration-500"
+                     style={{
+                       transform: `rotate(3deg) ${isDragging && currentSlide === 0 && translateX < 0 ? `scale(${1 - dragProgress * 0.1}) rotateY(${dragProgress * 10}deg)` : ''}`,
+                       filter: isDragging && currentSlide === 0 && translateX < 0 ? `brightness(${1 - dragProgress * 0.1})` : 'none'
+                     }}>
                   {/* Custom Logo based on the image provided */}
                   <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 100 100">
                     {/* Book shape */}
@@ -175,24 +201,37 @@ const LoginPage: React.FC = () => {
             
             {/* Swipe Indicator */}
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="flex items-center text-gray-500">
-                <svg className="w-5 h-5 mr-2 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center text-gray-500 animate-bounce">
+                <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                <span className="text-sm">Chapga torting</span>
+                <span className="text-sm font-medium">Chapga torting</span>
+                <div className="ml-2 flex space-x-1">
+                  <div className="w-1 h-1 bg-current rounded-full animate-ping"></div>
+                  <div className="w-1 h-1 bg-current rounded-full animate-ping delay-75"></div>
+                  <div className="w-1 h-1 bg-current rounded-full animate-ping delay-150"></div>
+                </div>
               </div>
             </div>
             
             {/* Page Indicators */}
-            <div className="flex justify-center space-x-2">
-              <div className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === 0 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
-              <div className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === 1 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+            <div className="flex justify-center space-x-3">
+              <div className={`w-4 h-4 rounded-full transition-all duration-500 transform ${currentSlide === 0 ? 'bg-blue-600 scale-125 shadow-lg shadow-blue-600/50' : 'bg-gray-300 scale-100'}`}></div>
+              <div className={`w-4 h-4 rounded-full transition-all duration-500 transform ${currentSlide === 1 ? 'bg-blue-600 scale-125 shadow-lg shadow-blue-600/50' : 'bg-gray-300 scale-100'}`}></div>
             </div>
           </div>
         </div>
 
         {/* Page 2: Login Form */}
-        <div className="w-screen h-screen flex items-center justify-center p-4 flex-shrink-0">
+        <div className="w-screen h-screen flex items-center justify-center p-4 flex-shrink-0 relative"
+             style={{
+               transform: isDragging && currentSlide === 1 && translateX > 0 ? 
+                 `perspective(1000px) rotateY(${Math.max(-dragProgress * 15, -15)}deg)` : 'none',
+               transformOrigin: 'left center',
+               filter: isDragging && currentSlide === 1 && translateX > 0 ? 
+                 `brightness(${1 - dragProgress * 0.2})` : 'none',
+               transition: isDragging ? 'none' : 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+             }}>
           <div className="w-full max-w-md relative z-10">
             {/* Simple header */}
             <div className="text-center mb-8">
@@ -218,18 +257,23 @@ const LoginPage: React.FC = () => {
             
             {/* Swipe Indicator */}
             <div className="flex items-center justify-center space-x-2 mt-6">
-              <div className="flex items-center text-gray-500">
-                <svg className="w-5 h-5 mr-2 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center text-gray-500 animate-bounce">
+                <div className="mr-2 flex space-x-1">
+                  <div className="w-1 h-1 bg-current rounded-full animate-ping"></div>
+                  <div className="w-1 h-1 bg-current rounded-full animate-ping delay-75"></div>
+                  <div className="w-1 h-1 bg-current rounded-full animate-ping delay-150"></div>
+                </div>
+                <span className="text-sm font-medium">O'nga torting</span>
+                <svg className="w-6 h-6 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-                <span className="text-sm">O'nga torting</span>
               </div>
             </div>
             
             {/* Page Indicators */}
-            <div className="flex justify-center space-x-2 mt-4">
-              <div className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === 0 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
-              <div className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === 1 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+            <div className="flex justify-center space-x-3 mt-4">
+              <div className={`w-4 h-4 rounded-full transition-all duration-500 transform ${currentSlide === 0 ? 'bg-blue-600 scale-125 shadow-lg shadow-blue-600/50' : 'bg-gray-300 scale-100'}`}></div>
+              <div className={`w-4 h-4 rounded-full transition-all duration-500 transform ${currentSlide === 1 ? 'bg-blue-600 scale-125 shadow-lg shadow-blue-600/50' : 'bg-gray-300 scale-100'}`}></div>
             </div>
           </div>
         </div>
