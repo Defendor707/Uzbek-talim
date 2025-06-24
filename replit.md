@@ -134,13 +134,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
-- June 24, 2025: Completely rebuilt sidebar functionality from scratch
-  - Removed complex collapse/expand system with arrows
-  - Implemented simple sidebarOpen/sidebarClose toggle system  
-  - Sidebar fully disappears when closed, appears when opened
-  - Menu button in header for opening sidebar when closed
-  - Clean, intuitive navigation without complicated states
-  - User feedback: "E gap yuq malades Baraka top yaratgan" - sidebar working perfectly
+- June 24, 2025: Created unified sidebar system for both desktop and mobile
+  - Desktop: Full sidebar with simple toggle (open/close only)
+  - Mobile: Overlay sidebar that slides in from left with backdrop
+  - Menu button in mobile header to open sidebar
+  - Sidebar contains all navigation links with profile and logout sections
+  - Bottom navigation preserved for primary mobile navigation
+  - Consistent experience across all device sizes
+  - User feedback: "Mobile versiyada mavjud emas" - now fixed with full mobile sidebar support
 
 - June 20, 2025: Added comprehensive test editing functionality for teachers
   - Created EditTest.tsx component with full test information editing capabilities
