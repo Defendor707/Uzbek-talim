@@ -128,39 +128,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 })}
               </nav>
 
-              {/* Mobile Sidebar Footer - Profile Section */}
-              <div className="p-4 border-t border-gray-200">
-                <div className="space-y-2">
-                  <Link href={`/${userRole}/profile`} onClick={() => setSidebarOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start text-gray-700">
-                      <User className="w-4 h-4 mr-2" />
-                      Profil
-                    </Button>
-                  </Link>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50">
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Chiqish
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Tizimdan chiqish</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Haqiqatan ham tizimdan chiqishni xohlaysizmi? Barcha ochilgan sahifalar yopiladi.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700">
-                          Ha, chiqish
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
+
             </div>
           </div>
         )}
@@ -210,28 +178,48 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="h-8 w-8 rounded-full p-0">
-                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                      </svg>
+                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="px-3 py-2 border-b">
-                    <p className="text-sm font-medium">{user?.fullName || user?.username}</p>
-                    <p className="text-xs text-gray-500">{user?.email}</p>
+                    <p className="text-sm font-medium">{user?.username}</p>
+                    <p className="text-xs text-gray-500">{getRoleTitle(userRole)}</p>
                   </div>
-                  <DropdownMenuItem asChild>
-                    <Link href={`/${userRole}/profile`}>
-                      <span className="flex items-center space-x-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        <span>Profil</span>
-                      </span>
-                    </Link>
+                  <Link href={`/${userRole}/profile`}>
+                    <DropdownMenuItem>
+                      <User className="w-4 h-4 mr-2" />
+                      Profil
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuItem>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Sozlamalar
                   </DropdownMenuItem>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-700 focus:bg-red-50">
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Chiqish
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Chiqishni tasdiqlang</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Haqiqatan ham tizimdan chiqmoqchimisiz?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+                        <AlertDialogAction onClick={logout} className="bg-red-600 hover:bg-red-700">
+                          Chiqish
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
