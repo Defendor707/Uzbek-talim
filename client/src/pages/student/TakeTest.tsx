@@ -54,6 +54,9 @@ const TakeTestPage: React.FC = () => {
   const { data: test, isLoading: testLoading } = useQuery<Test>({
     queryKey: ['/api/tests', testId],
     queryFn: async () => {
+      if (!testId || testId === 'undefined') {
+        throw new Error('Test ID mavjud emas');
+      }
       const response = await fetch(`/api/tests/${testId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -62,12 +65,16 @@ const TakeTestPage: React.FC = () => {
       if (!response.ok) throw new Error('Test topilmadi');
       return response.json();
     },
+    enabled: !!testId && testId !== 'undefined',
   });
 
   // Fetch questions
   const { data: questions, isLoading: questionsLoading } = useQuery<Question[]>({
     queryKey: ['/api/tests', testId, 'questions'],
     queryFn: async () => {
+      if (!testId || testId === 'undefined') {
+        throw new Error('Test ID mavjud emas');
+      }
       const response = await fetch(`/api/tests/${testId}/questions`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -76,7 +83,7 @@ const TakeTestPage: React.FC = () => {
       if (!response.ok) throw new Error('Savollar topilmadi');
       return response.json();
     },
-    enabled: !!testId,
+    enabled: !!testId && testId !== 'undefined',
   });
 
   // Start test attempt
@@ -169,6 +176,22 @@ const TakeTestPage: React.FC = () => {
       completeTestMutation.mutate();
     }
   };
+
+  // Handle invalid testId early
+  if (!testId || testId === 'undefined') {
+    return (
+      <ResponsiveDashboard userRole="student" sections={[]} currentPage="Test">
+        <div className="text-center py-8">
+          <h2 className="text-xl font-semibold mb-4">Noto'g'ri test</h2>
+          <p className="text-gray-600 mb-4">Test ID mavjud emas yoki noto'g'ri</p>
+          <Button onClick={() => setLocation('/student/tests')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Testlarga qaytish
+          </Button>
+        </div>
+      </ResponsiveDashboard>
+    );
+  }
 
   if (testLoading || questionsLoading) {
     return (

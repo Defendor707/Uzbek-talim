@@ -207,7 +207,10 @@ const StudentTestsPage: React.FC = () => {
                     <div className="flex justify-between items-center">
                       <div>
                         <h4 className="font-medium">{test.title}</h4>
-                        <p className="text-sm text-gray-600">{test.subject} • {test.grade} daraja</p>
+                        <p className="text-sm text-gray-600">{test.description || 'Test'}</p>
+                        {test.testCode && (
+                          <p className="text-xs text-blue-600 font-mono">Kod: {test.testCode}</p>
+                        )}
                         <Badge className={getTestTypeColor(test.type)}>{test.type}</Badge>
                       </div>
                       <Link href={`/student/test/${test.id}`}>
@@ -232,7 +235,10 @@ const StudentTestsPage: React.FC = () => {
                     <div className="flex justify-between items-center">
                       <div>
                         <h4 className="font-medium">{test.title}</h4>
-                        <p className="text-sm text-gray-600">{test.subject} • {test.grade} daraja</p>
+                        <p className="text-sm text-gray-600">{test.description || 'Test'}</p>
+                        {test.testCode && (
+                          <p className="text-xs text-blue-600 font-mono">Kod: {test.testCode}</p>
+                        )}
                         <Badge className={getTestTypeColor(test.type)}>{test.type}</Badge>
                       </div>
                       <Link href={`/student/test/${test.id}`}>
