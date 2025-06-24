@@ -60,7 +60,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
     defaultValues: {
       username: '',
       fullName: '',
-      email: '',
       password: '',
       confirmPassword: '',
       role: 'student',
@@ -92,7 +91,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
     const registerData = {
       username: values.username,
       fullName: values.fullName,
-      email: values.email || undefined,
       password: values.password,
       confirmPassword: values.confirmPassword,
       role: values.role,
@@ -194,30 +192,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
               )}
             />
             
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-semibold text-gray-800">
-                    Email (ixtiyoriy)
-                  </FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="email"
-                      placeholder="example@gmail.com" 
-                      {...field} 
-                      className="h-11 px-3 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    />
-                  </FormControl>
-                  <div className="text-xs text-gray-500">
-                    Parol tiklash uchun email kerak bo'ladi
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
+
             <FormField
               control={form.control}
               name="username"

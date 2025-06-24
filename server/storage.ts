@@ -13,7 +13,7 @@ export interface IStorage {
   getUsersByRole(role: string): Promise<schema.User[]>;
   
   // Password reset methods
-  createResetToken(email: string): Promise<string | null>;
+  createResetToken(username: string): Promise<string | null>;
   getUserByResetToken(token: string): Promise<schema.User | undefined>;
   resetPassword(token: string, newPasswordHash: string): Promise<boolean>;
 
@@ -431,9 +431,9 @@ export class DatabaseStorage implements IStorage {
     return children;
   }
 
-  async createResetToken(email: string): Promise<string | null> {
+  async createResetToken(username: string): Promise<string | null> {
     try {
-      const user = await this.getUserByEmail(email);
+      const user = await this.getUserByUsername(username);
       if (!user) {
         return null;
       }

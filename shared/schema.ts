@@ -23,7 +23,6 @@ export const testStatusEnum = pgEnum('test_status', ['draft', 'active', 'complet
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  email: text("email").unique(),
   passwordHash: text("password_hash").notNull(),
   role: roleEnum("role").notNull(),
   fullName: text("full_name").notNull(),
@@ -281,7 +280,7 @@ export const loginSchema = z.object({
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email('To\'g\'ri email manzilini kiriting'),
+  username: z.string().min(1, 'Foydalanuvchi nomini kiriting'),
 });
 
 export const resetPasswordSchema = z.object({

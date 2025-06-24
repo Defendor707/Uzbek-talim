@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { apiRequest } from '@/lib/queryClient';
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email('To\'g\'ri email manzilini kiriting'),
+  username: z.string().min(1, 'Foydalanuvchi nomini kiriting'),
 });
 
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
@@ -22,7 +22,7 @@ const ForgotPasswordPage: React.FC = () => {
   const form = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
-      email: '',
+      username: '',
     },
   });
 
@@ -60,7 +60,7 @@ const ForgotPasswordPage: React.FC = () => {
             Parolni tiklash
           </h1>
           <p className="text-gray-600">
-            Email manzilingizni kiriting, sizga parol tiklash havolasi yuboramiz
+            Foydalanuvchi nomingizni kiriting, sizga parol tiklash kodi beramiz
           </p>
         </div>
 
@@ -89,16 +89,15 @@ const ForgotPasswordPage: React.FC = () => {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="username"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-semibold text-gray-800">
-                        Email manzili
+                        Foydalanuvchi nomi
                       </FormLabel>
                       <FormControl>
                         <Input 
-                          type="email"
-                          placeholder="example@gmail.com" 
+                          placeholder="foydalanuvchi_nomi" 
                           {...field} 
                           className="h-11 px-3 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                         />
@@ -113,7 +112,7 @@ const ForgotPasswordPage: React.FC = () => {
                   className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold text-sm rounded-lg transition-all duration-200 mt-6"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Yuborilmoqda...' : 'Parol tiklash havolasini yuborish'}
+                  {isSubmitting ? 'Tekshirilmoqda...' : 'Parol tiklash kodini olish'}
                 </Button>
               </form>
             </Form>
