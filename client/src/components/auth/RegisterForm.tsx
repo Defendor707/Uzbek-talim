@@ -273,13 +273,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-700 font-medium">Parolni tasdiqlang</FormLabel>
+                  <FormLabel className="text-sm font-semibold text-gray-800">Parolni tasdiqlang</FormLabel>
                   <FormControl>
                     <Input 
                       type="password" 
                       placeholder="••••••••" 
                       {...field} 
-                      className="h-12 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                      className="h-11 px-3 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                     />
                   </FormControl>
                   <FormMessage />
@@ -289,7 +289,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
             
             <Button 
               type="submit" 
-              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200 mt-6"
+              className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-lg transition duration-200 mt-6"
               disabled={isRegistering}
             >
               {isRegistering ? (
