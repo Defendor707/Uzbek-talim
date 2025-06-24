@@ -1749,5 +1749,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize WebSocket sync service
   syncService.init(httpServer);
 
+  // Forgot password routes
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+      const result = schema.forgotPasswordSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: 'Validation failed', 
+          details: result.error.errors 
+        });
+      }
+
+      const { username } = result.data;
+      const resetToken = await storage.createResetToken(username);
+      
+      if (!resetToken) {
+        return res.json({ 
+          message: 'Foydalanuvchi topilmadi' 
+        });
+      }
+
+      console.log(`Reset token for ${username}: ${resetToken}`);
+      console.log(`Reset URL: ${req.get('origin')}/reset-password?token=${resetToken}`);
+      
+      res.json({ 
+        message: 'Parol tiklash kodi yaratildi',
+        resetUrl: `/reset-password?token=${resetToken}`
+      });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({ error: 'Parol tiklashda xatolik yuz berdi' });
+    }
+  });
+
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const result = schema.resetPasswordSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: 'Validation failed', 
+          details: result.error.errors 
+        });
+      }
+
+      const { token, password } = result.data;
+      
+      const bcrypt = await import('bcrypt');
+      const newPasswordHash = await bcrypt.hash(password, 10);
+      
+      const success = await storage.resetPassword(token, newPasswordHash);
+      
+      if (!success) {
+        return res.status(400).json({ 
+          error: 'Token yaroqsiz yoki muddati tugagan' 
+        });
+      }
+
+      res.json({ message: 'Parol muvaffaqiyatli o\'zgartirildi' });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      res.status(500).json({ error: 'Parol o\'zgartirishda xatolik yuz berdi' });
+    }
+  });
+
+  app.get('/api/auth/verify-reset-token/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+      const user = await storage.getUserByResetToken(token);
+      
+      if (!user) {
+        return res.status(400).json({ 
+          error: 'Token yaroqsiz yoki muddati tugagan' 
+        });
+      }
+
+      res.json({ valid: true });
+    } catch (error) {
+      console.error('Verify reset token error:', error);
+      res.status(500).json({ error: 'Token tekshirishda xatolik' });
+    }
+  });
+
   return httpServer;
 }
