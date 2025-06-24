@@ -431,6 +431,76 @@ export class DatabaseStorage implements IStorage {
     return children;
   }
 
+  async createResetToken(email: string): Promise<string | null> {
+    try {
+      const user = await this.getUserByEmail(email);
+      if (!user) {
+        return null;
+      }
+
+      // Generate reset token
+      const crypto = await import('crypto');
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+      await this.db
+        .update(schema.users)
+        .set({ 
+          resetToken, 
+          resetTokenExpiry,
+          updatedAt: new Date()
+        })
+        .where(eq(schema.users.id, user.id));
+
+      return resetToken;
+    } catch (error) {
+      console.error('Error creating reset token:', error);
+      return null;
+    }
+  }
+
+  async getUserByResetToken(token: string): Promise<schema.User | undefined> {
+    try {
+      const [user] = await this.db
+        .select()
+        .from(schema.users)
+        .where(
+          and(
+            eq(schema.users.resetToken, token),
+            gt(schema.users.resetTokenExpiry, new Date())
+          )
+        );
+      return user;
+    } catch (error) {
+      console.error('Error getting user by reset token:', error);
+      return undefined;
+    }
+  }
+
+  async resetPassword(token: string, newPasswordHash: string): Promise<boolean> {
+    try {
+      const user = await this.getUserByResetToken(token);
+      if (!user) {
+        return false;
+      }
+
+      await this.db
+        .update(schema.users)
+        .set({ 
+          passwordHash: newPasswordHash,
+          resetToken: null,
+          resetTokenExpiry: null,
+          updatedAt: new Date()
+        })
+        .where(eq(schema.users.id, user.id));
+
+      return true;
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      return false;
+    }
+  }
+
   async getUserByTelegramId(telegramId: string): Promise<schema.User | undefined> {
     const [user] = await db.select().from(schema.users).where(eq(schema.users.telegramId, telegramId));
     return user;

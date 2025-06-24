@@ -23,13 +23,15 @@ export const testStatusEnum = pgEnum('test_status', ['draft', 'active', 'complet
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  email: text("email").notNull().unique(),
+  email: text("email").unique(),
   passwordHash: text("password_hash").notNull(),
   role: roleEnum("role").notNull(),
   fullName: text("full_name").notNull(),
   profileImage: text("profile_image"),
   phone: text("phone"),
   telegramId: text("telegram_id").unique(),
+  resetToken: text("reset_token").unique(),
+  resetTokenExpiry: timestamp("reset_token_expiry"),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -276,6 +278,19 @@ export const loginSchema = z.object({
   username: z.string().min(3, "Foydalanuvchi nomi kamida 3 ta belgidan iborat bo'lishi kerak"),
   password: z.string().min(6, "Parol kamida 6 ta belgidan iborat bo'lishi kerak"),
   rememberMe: z.boolean().optional().default(false),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('To\'g\'ri email manzilini kiriting'),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token majburiy'),
+  password: z.string().min(6, 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak'),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Parollar mos kelmadi',
+  path: ['confirmPassword'],
 });
 
 // Types
