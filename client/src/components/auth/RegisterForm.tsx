@@ -122,28 +122,52 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
                 <FormItem className="space-y-2">
                   <FormLabel className="text-sm font-semibold text-gray-800">Foydalanuvchi turi</FormLabel>
                   <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="grid grid-cols-2 gap-2"
-                    >
-                      <label htmlFor="teacher" className="flex items-center space-x-2 p-2 border border-gray-300 rounded-md hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-colors">
-                        <RadioGroupItem value="teacher" id="teacher" className="w-4 h-4" />
-                        <span className="text-sm">Ustoz</span>
-                      </label>
-                      <label htmlFor="student" className="flex items-center space-x-2 p-2 border border-gray-300 rounded-md hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-colors">
-                        <RadioGroupItem value="student" id="student" className="w-4 h-4" />
-                        <span className="text-sm">O'quvchi</span>
-                      </label>
-                      <label htmlFor="parent" className="flex items-center space-x-2 p-2 border border-gray-300 rounded-md hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-colors">
-                        <RadioGroupItem value="parent" id="parent" className="w-4 h-4" />
-                        <span className="text-sm">Ota-ona</span>
-                      </label>
-                      <label htmlFor="center" className="flex items-center space-x-2 p-2 border border-gray-300 rounded-md hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-colors">
-                        <RadioGroupItem value="center" id="center" className="w-4 h-4" />
-                        <span className="text-sm">O'quv markaz</span>
-                      </label>
-                    </RadioGroup>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => field.onChange('teacher')}
+                        className={`p-3 text-sm border rounded-md cursor-pointer transition-all duration-200 text-center ${
+                          field.value === 'teacher' 
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' 
+                            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                        }`}
+                      >
+                        Ustoz
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => field.onChange('student')}
+                        className={`p-3 text-sm border rounded-md cursor-pointer transition-all duration-200 text-center ${
+                          field.value === 'student' 
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' 
+                            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                        }`}
+                      >
+                        O'quvchi
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => field.onChange('parent')}
+                        className={`p-3 text-sm border rounded-md cursor-pointer transition-all duration-200 text-center ${
+                          field.value === 'parent' 
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' 
+                            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                        }`}
+                      >
+                        Ota-ona
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => field.onChange('center')}
+                        className={`p-3 text-sm border rounded-md cursor-pointer transition-all duration-200 text-center ${
+                          field.value === 'center' 
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' 
+                            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                        }`}
+                      >
+                        O'quv markaz
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

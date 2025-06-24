@@ -177,6 +177,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
   - Profile button uses gray styling, logout button uses red styling for clear distinction
   - Works for all user roles: teacher, student, parent, and center
 
+- June 24, 2025: Optimized mobile form elements with custom role selection
+  - Removed radio buttons and replaced with clickable buttons for role selection
+  - Implemented visual feedback for selected roles (blue border and background)
+  - Removed "Meni eslab qolish" checkbox from login form for cleaner interface
+  - Reduced all form element sizes for mobile optimization (h-11, text-sm, px-3)
+  - Enhanced touch targets with hover effects and smooth transitions
+  - User feedback: "Foydalanuvchi turini kerakli rol nomiga tegish orqali tanlansin"
+
 - June 24, 2025: Implemented accessibility-focused form design with clear visual hierarchy
   - Added comprehensive ARIA labels, descriptions, and landmarks for screen readers
   - Implemented proper focus management with visible focus indicators and logical tab order
@@ -187,7 +195,6 @@ Dashboard design: User requested improved navigation without dropdown menus for 
   - Implemented proper form labeling with required field indicators
   - Enhanced touch targets and interactive element spacing for motor accessibility
   - Added keyboard navigation support for all interactive elements
-  - User request: "Accessibility-focused form design with clear visual hierarchy"
 
 - June 24, 2025: Enhanced mobile-optimized login form with modern design
   - Completely redesigned LoginForm component for mobile-first experience
