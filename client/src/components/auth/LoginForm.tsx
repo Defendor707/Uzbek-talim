@@ -106,7 +106,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
                       type={showPassword ? "text" : "password"}
                       placeholder="Parolingizni kiriting" 
                       {...field} 
-                      className="h-14 px-4 pr-14 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-3 focus:ring-blue-500/30 focus:border-blue-600 text-gray-900 bg-white transition-all duration-200 hover:border-gray-400"
+                      className="h-11 px-3 pr-10 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-600 text-gray-900 bg-white transition-all duration-200 hover:border-gray-400"
                       aria-describedby="password-error password-help"
                       aria-invalid={!!form.formState.errors.password}
                       autoComplete="current-password"
@@ -114,16 +114,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded p-1"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded p-1"
                       aria-label={showPassword ? "Parolni yashirish" : "Parolni ko'rsatish"}
                       tabIndex={0}
                     >
                       {showPassword ? (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                         </svg>
                       ) : (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
@@ -143,13 +143,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             control={form.control}
             name="rememberMe"
             render={({ field }) => (
-              <FormItem className="mt-6">
-                <div className="flex items-start space-x-3 p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+              <FormItem className="mt-4">
+                <div className="flex items-start space-x-2 p-2 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
                   <FormControl>
                     <Checkbox 
                       checked={field.value} 
                       onCheckedChange={field.onChange} 
-                      className="h-5 w-5 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 border-2 border-gray-400 rounded focus:ring-3 focus:ring-blue-500/30 focus:ring-offset-2 mt-0.5"
+                      className="h-4 w-4 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 border-2 border-gray-400 rounded focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 mt-0.5"
                       id="rememberMe"
                       aria-describedby="remember-help"
                     />
@@ -161,7 +161,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
                     >
                       Meni eslab qolish
                     </FormLabel>
-                    <p id="remember-help" className="text-xs text-gray-500 mt-1">
+                    <p id="remember-help" className="text-xs text-gray-500 mt-0.5">
                       Keyingi safar avtomatik tizimga kirish
                     </p>
                   </div>
@@ -172,7 +172,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
           <Button 
             type="submit" 
-            className="w-full h-14 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-semibold text-lg rounded-lg transition-all duration-200 mt-8 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:ring-offset-2"
+            className="w-full h-12 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-semibold text-base rounded-lg transition-all duration-200 mt-6 shadow-lg hover:shadow-xl focus:outline-none focus:ring-3 focus:ring-blue-500/30 focus:ring-offset-2"
             disabled={isLoggingIn}
             aria-describedby={isLoggingIn ? "loading-status" : undefined}
           >
