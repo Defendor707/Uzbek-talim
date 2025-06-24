@@ -134,6 +134,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 24, 2025: Fixed test navigation and routing issues
+  - Fixed "undefined" testId error when navigating from test list to test taking page
+  - Replaced Link components with Button onClick handlers for better navigation control
+  - Removed unwanted grade field display from test cards ("daraja" issue)
+  - Added proper test ID validation and error handling in TakeTestPage
+  - Enhanced test card display with test codes and descriptions instead of grade levels
+  - User feedback: "Notigri test deb javob beryapti test id mavjud emas yoki notugri demoqda"
+
 - June 24, 2025: Fixed database schema and enhanced test answering system
   - Fixed database tables creation issue that was preventing user registration
   - Enhanced test answering interface with improved image display and A,B,C,D option selection

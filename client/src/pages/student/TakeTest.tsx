@@ -50,6 +50,9 @@ const TakeTestPage: React.FC = () => {
   const [attemptId, setAttemptId] = useState<number | null>(null);
   const [showQuestionOverview, setShowQuestionOverview] = useState(false);
 
+  // Debug testId
+  console.log('TakeTestPage rendered with testId:', testId);
+
   // Fetch test details
   const { data: test, isLoading: testLoading } = useQuery<Test>({
     queryKey: ['/api/tests', testId],
@@ -178,12 +181,13 @@ const TakeTestPage: React.FC = () => {
   };
 
   // Handle invalid testId early
-  if (!testId || testId === 'undefined') {
+  if (!testId || testId === 'undefined' || testId === 'null') {
+    console.log('Invalid testId detected:', testId);
     return (
       <ResponsiveDashboard userRole="student" sections={[]} currentPage="Test">
         <div className="text-center py-8">
           <h2 className="text-xl font-semibold mb-4">Noto'g'ri test</h2>
-          <p className="text-gray-600 mb-4">Test ID mavjud emas yoki noto'g'ri</p>
+          <p className="text-gray-600 mb-4">Test ID mavjud emas yoki noto'g'ri: {testId}</p>
           <Button onClick={() => setLocation('/student/tests')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Testlarga qaytish
