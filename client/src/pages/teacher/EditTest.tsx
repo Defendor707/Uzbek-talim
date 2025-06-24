@@ -357,8 +357,6 @@ const EditTestPage: React.FC = () => {
       sections={dashboardSections}
       currentPage="Test tahrirlash"
     >
-      <div>
-
       {/* Progress indicator */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -714,7 +712,6 @@ const EditTestPage: React.FC = () => {
             </CardContent>
           </Card>
         )}
-      </div>
       </div>
     </ResponsiveDashboard>
   );
