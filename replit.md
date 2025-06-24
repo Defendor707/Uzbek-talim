@@ -177,14 +177,15 @@ Dashboard design: User requested improved navigation without dropdown menus for 
   - Profile button uses gray styling, logout button uses red styling for clear distinction
   - Works for all user roles: teacher, student, parent, and center
 
-- June 24, 2025: Modern login page design with enhanced visual appeal
-  - Removed blue background information section after onboarding per user request
-  - Created modern gradient background with floating elements and subtle animations
-  - Custom logo design based on user-provided image (book with tech circuit elements)
-  - Glass morphism login form container with backdrop blur and shadows
-  - Enhanced branding with gradient text effects and hover animations
-  - Maintained onboarding replay option with improved button styling
-  - User feedback: "Kirish qismidan sal kunglim tulmayaptida zamonaviyroq qilish kerak" - implemented modern design
+- June 24, 2025: Implemented swipe-based login navigation with book page turning effect
+  - Created horizontal swipe navigation between logo/intro and login form pages
+  - Logo and "Tanishtirishni qayta ko'rish" on right page (swipe right to access)
+  - Login form on left page (swipe left to access)
+  - Touch and mouse drag support for seamless navigation
+  - Visual indicators show current page and swipe directions
+  - Book-like page turning animation with smooth transitions
+  - Mobile-first design ensures login form fits screen without vertical scrolling
+  - User feedback: "Qisqasi kirish qismi alohida bukish kerak ekranga sigishi kerak" - implemented swipe navigation
   
 - June 20, 2025: Created modern onboarding experience with fully responsive design
   - Developed stunning slide presentation showcasing each user role and benefits
