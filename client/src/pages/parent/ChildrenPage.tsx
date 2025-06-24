@@ -13,6 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { Plus, Users, ArrowLeft, User } from 'lucide-react';
+import ResponsiveDashboard from '@/components/dashboard/ResponsiveDashboard';
 
 const addChildSchema = z.object({
   childUsername: z.string().min(1, "Farzand username kiriting"),
@@ -62,43 +63,75 @@ const ChildrenPage: React.FC = () => {
     addChildMutation.mutate(data);
   };
 
+  // Dashboard sections for navigation
+  const dashboardSections = [
+    {
+      id: 'dashboard',
+      title: 'Bosh sahifa',
+      icon: (
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+        </svg>
+      ),
+      href: '/dashboard/parent',
+    },
+    {
+      id: 'children',
+      title: 'Farzandlar',
+      icon: (
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      ),
+      href: '/parent/children',
+      badge: children?.length || 0
+    },
+    {
+      id: 'results',
+      title: 'Natijalar',
+      icon: (
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      ),
+      href: '/parent/test-results',
+    }
+  ];
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Yuklanmoqda...</p>
+      <ResponsiveDashboard 
+        userRole="parent" 
+        sections={dashboardSections}
+        currentPage="Farzandlarim"
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Yuklanmoqda...</p>
+          </div>
         </div>
-      </div>
+      </ResponsiveDashboard>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 space-y-3 sm:space-y-0">
-            <div className="flex items-center space-x-3">
-              <Link href="/dashboard/parent">
-                <Button variant="ghost" size="sm" className="p-2 sm:px-3">
-                  <ArrowLeft className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Orqaga</span>
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Farzandlarim</h1>
-                <p className="text-sm sm:text-base text-gray-600 hidden sm:block">Farzandlar ro'yxati va boshqaruv</p>
-              </div>
-            </div>
+    <ResponsiveDashboard 
+      userRole="parent" 
+      sections={dashboardSections}
+      currentPage="Farzandlarim"
+    >
+      <div>
+        {/* Add Child Button */}
+        <div className="mb-6 flex justify-end">
             
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-green-600 hover:bg-green-700 w-full sm:w-auto py-3 sm:py-2 text-base sm:text-sm">
-                  <Plus className="w-5 h-5 mr-2" />
-                  Farzand qo'shish
-                </Button>
-              </DialogTrigger>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-green-600 hover:bg-green-700">
+                <Plus className="w-5 h-5 mr-2" />
+                Farzand qo'shish
+              </Button>
+            </DialogTrigger>
               <DialogContent className="w-[95%] max-w-md mx-auto rounded-lg">
                 <DialogHeader className="space-y-3">
                   <DialogTitle className="text-lg sm:text-xl">Farzand qo'shish</DialogTitle>
@@ -147,11 +180,8 @@ const ChildrenPage: React.FC = () => {
               </DialogContent>
             </Dialog>
           </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Children List */}
         {children && children.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {children.map((child: any) => (
@@ -209,7 +239,7 @@ const ChildrenPage: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </ResponsiveDashboard>
   );
 };
 

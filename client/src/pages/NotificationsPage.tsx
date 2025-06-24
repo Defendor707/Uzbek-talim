@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation } from 'wouter';
 import { useMobile } from '@/hooks/use-mobile';
 import useAuth from '@/hooks/useAuth';
+import ResponsiveDashboard from '@/components/dashboard/ResponsiveDashboard';
 
 interface Notification {
   id: number;
