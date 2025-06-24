@@ -33,7 +33,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const { user, logout } = useAuth();
   const [location] = useLocation();
   const isMobile = useMobile();
-  const [sidebarHidden, setSidebarHidden] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const getRoleTitle = (role: string) => {
     switch (role) {
@@ -178,64 +178,48 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
   // Desktop Layout
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
-      {/* Menu Button - Fixed position when sidebar is hidden */}
-      {sidebarHidden && (
-        <div className="fixed top-4 left-4 z-50">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSidebarHidden(false)}
-            className="p-2 h-10 w-10 bg-white shadow-lg border border-gray-300 hover:bg-gray-50 rounded-lg"
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-
+    <div className="flex h-screen bg-gray-50">
       {/* Desktop Sidebar */}
-      <div className={cn(
-        "bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out w-64",
-        sidebarHidden ? "-ml-64 w-0 overflow-hidden" : ""
-      )}>
-        {/* Sidebar Header */}
-        <div className="p-3 border-b border-gray-200 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">O</span>
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">O'zbek Talim</h2>
-              <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSidebarHidden(true)}
-            className="p-1 h-8 w-8 rounded-lg hover:bg-gray-100"
-            title="Sidebar ni yashirish"
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* User Info with Dropdown */}
-        <div className="p-3 border-b border-gray-200">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <div className="flex items-center space-x-3 rounded-lg p-2 hover:bg-gray-50 cursor-pointer transition-colors">
-                <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-                  <User className="w-4 h-4 text-gray-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {user?.fullName || user?.username}
-                  </p>
-                  <p className="text-xs text-gray-500">Faol foydalanuvchi</p>
-                </div>
+      {sidebarOpen && (
+        <div className="w-64 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
+          {/* Sidebar Header */}
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">O</span>
               </div>
-            </DropdownMenuTrigger>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">O'zbek Talim</h2>
+                <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 h-8 w-8 rounded-lg hover:bg-gray-100"
+              title="Sidebar yopish"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* User Info with Dropdown */}
+          <div className="p-4 border-b border-gray-200">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex items-center space-x-3 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors">
+                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-gray-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {user?.fullName || user?.username}
+                    </p>
+                    <p className="text-xs text-gray-500">Faol foydalanuvchi</p>
+                  </div>
+                </div>
+              </DropdownMenuTrigger>
             <DropdownMenuContent side="right" align="start" className="w-56">
               <div className="px-3 py-2 border-b">
                 <p className="text-sm font-medium">{user?.fullName || user?.username}</p>
@@ -275,91 +259,98 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-        {/* Desktop Navigation */}
-        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {sections.map((section) => {
-            const isActive = location === section.href || location.startsWith(section.href + '/');
-            return (
-              <Link key={section.id} href={section.href}>
-                <div className={cn(
-                  "flex items-center px-3 py-3 space-x-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer group",
-                  isActive 
-                    ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm" 
-                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                )}>
-                  <span className={cn(
-                    "w-5 h-5 transition-colors flex-shrink-0",
-                    isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"
+          {/* Desktop Navigation */}
+          <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
+            {sections.map((section) => {
+              const isActive = location === section.href || location.startsWith(section.href + '/');
+              return (
+                <Link key={section.id} href={section.href}>
+                  <div className={cn(
+                    "flex items-center px-4 py-3 space-x-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer group",
+                    isActive 
+                      ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm" 
+                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                   )}>
-                    {section.icon}
-                  </span>
-                  <span className="flex-1 truncate">{section.title}</span>
-                  {section.badge && (
                     <span className={cn(
-                      "px-2 py-1 text-xs rounded-full font-medium",
-                      isActive 
-                        ? "bg-blue-100 text-blue-700" 
-                        : "bg-gray-100 text-gray-600"
+                      "w-5 h-5 transition-colors flex-shrink-0",
+                      isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"
                     )}>
-                      {section.badge}
+                      {section.icon}
                     </span>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
+                    <span className="flex-1 truncate">{section.title}</span>
+                    {section.badge && (
+                      <span className={cn(
+                        "px-2 py-1 text-xs rounded-full font-medium",
+                        isActive 
+                          ? "bg-blue-100 text-blue-700" 
+                          : "bg-gray-100 text-gray-600"
+                      )}>
+                        {section.badge}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </nav>
 
-        {/* Footer */}
-        <div className="px-4 pb-4">
-          <div className="text-xs text-gray-500 text-center">
-            O'zbek Talim v1.0
+          {/* Footer */}
+          <div className="px-4 pb-4">
+            <div className="text-xs text-gray-500 text-center">
+              O'zbek Talim v1.0
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Desktop Main Content */}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Desktop Header */}
-        <header className="bg-white border-b border-gray-200 px-8 py-6">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{currentPage}</h1>
-              <p className="text-gray-600 mt-1">
-                {getWelcomeMessage(userRole)}
-              </p>
+            <div className="flex items-center space-x-4">
+              {!sidebarOpen && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSidebarOpen(true)}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  title="Sidebar ochish"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              )}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{currentPage}</h1>
+                <p className="text-gray-600">{getWelcomeMessage(userRole)}</p>
+              </div>
             </div>
-            
-            {/* Notifications Button - PC Version */}
-            <Link href={`/${userRole}/notifications`}>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "relative p-2 h-8 w-8",
-                  location === `/${userRole}/notifications`
-                    ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                )}
-              >
-                <Bell className="h-4 w-4" />
-              </Button>
-            </Link>
+            <div className="flex items-center space-x-4">
+              <Link href={`/${userRole}/notifications`}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "relative p-2",
+                    location === `/${userRole}/notifications`
+                      ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                      : "text-gray-500 hover:text-gray-700"
+                  )}
+                >
+                  <Bell className="h-5 w-5" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </header>
 
-        {/* Desktop Page Content */}
-        <main className="flex-1 overflow-y-auto p-8">
-          <div className={cn(
-            "transition-all duration-300",
-            sidebarHidden ? "max-w-6xl mx-auto" : ""
-          )}>
-            {children}
-          </div>
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-6">
+          {children}
         </main>
       </div>
     </div>
