@@ -56,6 +56,13 @@ const ForgotPasswordPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl overflow-hidden">
+            <img 
+              src="/attached_assets/IMG_20250624_114711_600_1750757183585.jpg" 
+              alt="O'zbek Talim Logo" 
+              className="w-full h-full object-cover"
+            />
+          </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-3">
             Parolni tiklash
           </h1>

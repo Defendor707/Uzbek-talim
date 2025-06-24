@@ -8,7 +8,16 @@ const RegisterPage: React.FC = () => {
       {/* Left side - Image and Welcome Text - Hidden on mobile */}
       <div className="login-bg hidden md:flex md:w-1/2 p-10 text-white justify-center items-center">
         <div className="max-w-md">
-          <h1 className="text-4xl font-heading font-bold mb-4">O'zbek Talim</h1>
+          <div className="flex items-center mb-6">
+            <div className="w-16 h-16 mr-4 rounded-2xl overflow-hidden">
+              <img 
+                src="/attached_assets/IMG_20250624_114711_600_1750757183585.jpg" 
+                alt="O'zbek Talim Logo" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <h1 className="text-4xl font-heading font-bold">O'zbek Talim</h1>
+          </div>
           <p className="text-xl mb-6">O'zbekistondagi ta'lim jarayonini zamonaviylashtirish va samaradorligini oshirish uchun yagona platforma</p>
           <div className="space-y-4 mt-8">
             <div className="bg-white bg-opacity-20 rounded-lg p-4">

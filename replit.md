@@ -177,13 +177,26 @@ Dashboard design: User requested improved navigation without dropdown menus for 
   - Profile button uses gray styling, logout button uses red styling for clear distinction
   - Works for all user roles: teacher, student, parent, and center
 
+- June 24, 2025: Updated brand identity with custom logo across all pages
+  - Replaced generic icons with custom O'zbek Talim logo throughout the application
+  - Added logo to login page, registration, forgot password, and onboarding screens
+  - Logo features book and technology elements representing educational technology
+  - Improved brand consistency and professional appearance
+  - User feedback: "Bu meni logo yim emas ku . Mana bu meni logoyim"
+
+- June 24, 2025: Simplified authentication system to username-only
+  - Completely removed email fields from registration and authentication
+  - Updated forgot password system to work with username instead of email
+  - Modified database schema to remove email requirement
+  - Streamlined user registration process for better usability
+  - User feedback: "Tizimdan email manzil degan nersani olib tashla"
+
 - June 24, 2025: Optimized mobile form elements with custom role selection
   - Removed radio buttons and replaced with clickable buttons for role selection
   - Implemented visual feedback for selected roles (blue border and background)
   - Removed "Meni eslab qolish" checkbox from login form for cleaner interface
   - Reduced all form element sizes for mobile optimization (h-11, text-sm, px-3)
   - Enhanced touch targets with hover effects and smooth transitions
-  - User feedback: "Foydalanuvchi turini kerakli rol nomiga tegish orqali tanlansin"
 
 - June 24, 2025: Implemented accessibility-focused form design with clear visual hierarchy
   - Added comprehensive ARIA labels, descriptions, and landmarks for screen readers
