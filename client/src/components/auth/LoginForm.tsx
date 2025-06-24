@@ -70,7 +70,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
                   <Input 
                     placeholder="foydalanuvchi_nomi" 
                     {...field} 
-                    className="h-12 px-4 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                    className="h-11 px-3 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                   />
                 </FormControl>
                 <FormMessage className="text-sm" />
@@ -139,36 +139,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             )}
           />
             
-          <FormField
-            control={form.control}
-            name="rememberMe"
-            render={({ field }) => (
-              <FormItem className="mt-4">
-                <div className="flex items-start space-x-2 p-2 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
-                  <FormControl>
-                    <Checkbox 
-                      checked={field.value} 
-                      onCheckedChange={field.onChange} 
-                      className="h-4 w-4 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 border-2 border-gray-400 rounded focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 mt-0.5"
-                      id="rememberMe"
-                      aria-describedby="remember-help"
-                    />
-                  </FormControl>
-                  <div className="flex-1">
-                    <FormLabel 
-                      htmlFor="rememberMe" 
-                      className="text-sm font-medium text-gray-700 cursor-pointer leading-5"
-                    >
-                      Meni eslab qolish
-                    </FormLabel>
-                    <p id="remember-help" className="text-xs text-gray-500 mt-0.5">
-                      Keyingi safar avtomatik tizimga kirish
-                    </p>
-                  </div>
-                </div>
-              </FormItem>
-            )}
-          />
+
 
           <Button 
             type="submit" 
