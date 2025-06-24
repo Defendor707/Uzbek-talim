@@ -56,6 +56,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   };
 
   const handleLogout = () => {
+    setSidebarOpen(false);
     logout();
   };
 
@@ -63,6 +64,106 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   if (isMobile) {
     return (
       <div className="min-h-screen bg-gray-50 pb-20">
+        {/* Mobile Sidebar Overlay */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-50">
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" 
+              onClick={() => setSidebarOpen(false)} 
+            />
+            <div className="fixed left-0 top-0 bottom-0 w-64 bg-white shadow-xl transform transition-transform">
+              {/* Mobile Sidebar Header */}
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">O</span>
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">O'zbek Talim</h2>
+                    <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSidebarOpen(false)}
+                  className="p-2 h-8 w-8 rounded-lg hover:bg-gray-100"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Mobile Sidebar Navigation */}
+              <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
+                {sections.map((section) => {
+                  const isActive = location === section.href || location.startsWith(section.href + '/');
+                  return (
+                    <Link key={section.id} href={section.href} onClick={() => setSidebarOpen(false)}>
+                      <div className={cn(
+                        "flex items-center px-4 py-3 space-x-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer group",
+                        isActive 
+                          ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm" 
+                          : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                      )}>
+                        <span className={cn(
+                          "w-5 h-5 transition-colors flex-shrink-0",
+                          isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"
+                        )}>
+                          {section.icon}
+                        </span>
+                        <span className="flex-1 truncate">{section.title}</span>
+                        {section.badge && (
+                          <span className={cn(
+                            "px-2 py-1 text-xs rounded-full font-medium",
+                            isActive 
+                              ? "bg-blue-100 text-blue-700" 
+                              : "bg-gray-100 text-gray-600"
+                          )}>
+                            {section.badge}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              {/* Mobile Sidebar Footer - Profile Section */}
+              <div className="p-4 border-t border-gray-200">
+                <div className="space-y-2">
+                  <Link href={`/${userRole}/profile`} onClick={() => setSidebarOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start text-gray-700">
+                      <User className="w-4 h-4 mr-2" />
+                      Profil
+                    </Button>
+                  </Link>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50">
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Chiqish
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Tizimdan chiqish</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Haqiqatan ham tizimdan chiqishni xohlaysizmi? Barcha ochilgan sahifalar yopiladi.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700">
+                          Ha, chiqish
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Mobile Header */}
         <header className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-40">
           <div className="flex items-center justify-between">
