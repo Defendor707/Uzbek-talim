@@ -354,7 +354,12 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
         {/* Desktop Page Content */}
         <main className="flex-1 overflow-y-auto p-8">
-          {children}
+          <div className={cn(
+            "transition-all duration-300",
+            sidebarHidden ? "max-w-6xl mx-auto" : ""
+          )}>
+            {children}
+          </div>
         </main>
       </div>
     </div>
