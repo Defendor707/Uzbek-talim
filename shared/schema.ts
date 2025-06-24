@@ -41,7 +41,7 @@ export const studentProfiles = pgTable("student_profiles", {
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   phoneNumber: text("phone_number"), // Telefon raqam
   grade: text("grade"), // O'quv darajasi
-  level: text("level"), // O'quv bosqichi
+  classroom: text("classroom"), // O'quv bosqichi
   certificates: text("certificates").array(),
   bio: text("bio"),
   parentId: integer("parent_id").references(() => users.id),
