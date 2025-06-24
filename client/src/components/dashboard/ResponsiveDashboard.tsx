@@ -67,9 +67,14 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         <header className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-40">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSidebarOpen(true)}
+                className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors duration-200 p-0"
+              >
                 <span className="text-white font-bold text-sm">O</span>
-              </div>
+              </Button>
               <div>
                 <h1 className="text-lg font-bold text-gray-900">O'zbek Talim</h1>
                 <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
@@ -185,9 +190,14 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           {/* Sidebar Header */}
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSidebarOpen(false)}
+                className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors duration-200 p-0"
+              >
                 <span className="text-white font-bold text-sm">O</span>
-              </div>
+              </Button>
               <div>
                 <h2 className="text-lg font-bold text-gray-900">O'zbek Talim</h2>
                 <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
