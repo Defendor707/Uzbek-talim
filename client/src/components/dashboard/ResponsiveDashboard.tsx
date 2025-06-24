@@ -75,8 +75,12 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               {/* Mobile Sidebar Header */}
               <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">O</span>
+                  <div className="w-8 h-8 rounded-lg overflow-hidden">
+                    <img 
+                      src="/attached_assets/IMG_20250624_114711_600_1750757183585.jpg" 
+                      alt="O'zbek Talim Logo" 
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">O'zbek Talim</h2>
@@ -147,8 +151,12 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               >
                 <Menu className="h-4 w-4 text-gray-600" />
               </Button>
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">O</span>
+              <div className="w-8 h-8 rounded-lg overflow-hidden">
+                <img 
+                  src="/attached_assets/IMG_20250624_114711_600_1750757183585.jpg" 
+                  alt="O'zbek Talim Logo" 
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-gray-900">O'zbek Talim</h1>
@@ -428,8 +436,12 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 </Button>
               )}
               {!sidebarOpen && (
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-                  <span className="text-white font-bold text-sm">O</span>
+                <div className="w-8 h-8 rounded-lg overflow-hidden mr-3">
+                  <img 
+                    src="/attached_assets/IMG_20250624_114711_600_1750757183585.jpg" 
+                    alt="O'zbek Talim Logo" 
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               )}
               <div>
