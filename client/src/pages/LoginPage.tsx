@@ -238,20 +238,7 @@ const LoginPage: React.FC = () => {
               <LoginForm />
             </div>
             
-            {/* Swipe Indicator */}
-            <div className="flex items-center justify-center space-x-2 mt-6">
-              <div className="flex items-center text-gray-500 animate-bounce">
-                <div className="mr-2 flex space-x-1">
-                  <div className="w-1 h-1 bg-current rounded-full animate-ping"></div>
-                  <div className="w-1 h-1 bg-current rounded-full animate-ping delay-75"></div>
-                  <div className="w-1 h-1 bg-current rounded-full animate-ping delay-150"></div>
-                </div>
-                <span className="text-sm font-medium">O'nga torting</span>
-                <svg className="w-6 h-6 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </div>
+
             
             {/* Page Indicators */}
             <div className="flex justify-center space-x-3 mt-4">
