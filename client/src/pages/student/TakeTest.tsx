@@ -258,13 +258,13 @@ const TakeTestPage: React.FC = () => {
     );
   }
 
-  if (testLoading || questionsLoading) {
+  if (testLoading || questionsLoading || startAttemptMutation.isPending) {
     return (
       <ResponsiveDashboard userRole="student" sections={[]} currentPage="Test">
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p>Test yuklanmoqda...</p>
+            <p>{startAttemptMutation.isPending ? 'Test boshlanmoqda...' : 'Test yuklanmoqda...'}</p>
           </div>
         </div>
       </ResponsiveDashboard>
@@ -410,20 +410,20 @@ const TakeTestPage: React.FC = () => {
           <CardContent className="p-3 md:p-6">
             {/* Question Image */}
             {currentQuestion.questionImage && (
-              <div className="mb-3 md:mb-4">
-                <div className="relative">
+              <div className="mb-4 md:mb-6">
+                <div className="relative bg-gray-50 rounded-lg p-4 border">
                   <img 
                     src={`/${currentQuestion.questionImage}`}
                     alt="Savol rasmi" 
-                    className="w-full h-auto rounded-lg border shadow-sm cursor-pointer hover:shadow-md transition-shadow max-h-64 md:max-h-96 object-contain mx-auto"
+                    className="w-full h-auto rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-all max-h-80 md:max-h-[500px] object-contain mx-auto block"
                     onClick={() => window.open(`/${currentQuestion.questionImage}`, '_blank')}
                   />
-                  <div className="absolute top-1 right-1 md:top-2 md:right-2 opacity-80 hover:opacity-100 transition-opacity">
-                    <ZoomIn className="w-4 h-4 md:w-5 md:h-5 text-white drop-shadow-lg" />
+                  <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white p-2 rounded-full opacity-80 hover:opacity-100 transition-opacity">
+                    <ZoomIn className="w-4 h-4 md:w-5 md:h-5" />
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1 text-center">
-                  Rasmni kattalashtirish uchun ustiga bosing
+                <p className="text-sm text-gray-600 mt-2 text-center font-medium">
+                  📸 Rasmni kattalashtirish uchun ustiga bosing
                 </p>
               </div>
             )}
@@ -521,36 +521,39 @@ const TakeTestPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Test Images - Display at top for better visibility */}
+        {/* Test Images - Display at top prominently */}
         {test.testImages && test.testImages.length > 0 && (
-          <Card className="mb-3 md:mb-4 border-blue-200 bg-blue-50">
-            <CardHeader className="pb-2 md:pb-3 p-3 md:p-6">
-              <CardTitle className="text-sm md:text-base flex items-center gap-2">
-                <ImageIcon className="w-4 h-4 text-blue-600" />
-                Test materiallari
+          <Card className="mb-4 md:mb-6 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-md">
+            <CardHeader className="pb-3 p-4 md:p-6">
+              <CardTitle className="text-base md:text-lg flex items-center gap-2 text-blue-700">
+                <ImageIcon className="w-5 h-5 text-blue-600" />
+                📋 Test materiallari
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-3 md:p-6">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3">
+            <CardContent className="p-4 md:p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {test.testImages.map((image, index) => (
-                  <div key={index} className="relative">
+                  <div key={index} className="relative bg-white p-3 rounded-xl shadow-md hover:shadow-lg transition-shadow">
                     <img 
                       src={`/${image}`}
                       alt={`Test materiali ${index + 1}`}
-                      className="w-full h-auto rounded-lg border shadow-sm cursor-pointer hover:shadow-md transition-shadow aspect-square object-cover"
+                      className="w-full h-48 md:h-64 rounded-lg border-2 border-gray-200 shadow-sm cursor-pointer hover:border-blue-400 transition-all object-contain bg-gray-50"
                       onClick={() => window.open(`/${image}`, '_blank')}
                     />
-                    <div className="absolute top-0.5 right-0.5 md:top-1 md:right-1 bg-black bg-opacity-70 text-white text-xs px-1 md:px-1.5 py-0.5 rounded text-center min-w-[16px]">
+                    <div className="absolute top-1 right-1 bg-blue-600 text-white text-sm px-2 py-1 rounded-full font-bold">
                       {index + 1}
                     </div>
-                    <div className="absolute top-0.5 left-0.5 md:top-1 md:left-1 opacity-80 hover:opacity-100 transition-opacity">
-                      <ZoomIn className="w-3 h-3 md:w-4 md:h-4 text-white drop-shadow-lg" />
+                    <div className="absolute top-1 left-1 bg-black bg-opacity-60 text-white p-1.5 rounded-full opacity-80 hover:opacity-100 transition-opacity">
+                      <ZoomIn className="w-4 h-4" />
                     </div>
+                    <p className="text-xs text-gray-600 mt-2 text-center font-medium">
+                      Material {index + 1}
+                    </p>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-gray-600 mt-2 text-center">
-                Rasmlarni kattalashtirish uchun ustiga bosing
+              <p className="text-sm text-blue-700 mt-4 text-center font-medium bg-blue-100 py-2 px-4 rounded-lg">
+                💡 Rasmlarni kattalashtirish uchun ustiga bosing
               </p>
             </CardContent>
           </Card>

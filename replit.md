@@ -134,6 +134,15 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 24, 2025: Enhanced test image display and fixed attempt creation issues
+  - Significantly increased question image size (max-h-80 on mobile, max-h-[500px] on desktop)
+  - Improved image positioning with proper background, padding, and centered display
+  - Enhanced test materials section with larger grid layout and better visual hierarchy
+  - Fixed test attempt creation timing issues with proper loading states
+  - Added loading state feedback for test start process
+  - Improved image containers with proper aspect ratios and object-contain
+  - User feedback: "Test rasmini yana kattaroq qil va tugri joyga joylashtir test boshlada xatolik ham bor deyapti"
+
 - June 24, 2025: Enhanced mobile responsiveness for test-taking experience
   - Implemented comprehensive mobile-first responsive design for all test components
   - Optimized touch targets and spacing for mobile devices (44px minimum touch targets)
