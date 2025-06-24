@@ -33,7 +33,6 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const { user, logout } = useAuth();
   const [location] = useLocation();
   const isMobile = useMobile();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarHidden, setSidebarHidden] = useState(false);
 
   const getRoleTitle = (role: string) => {
@@ -196,68 +195,45 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
       {/* Desktop Sidebar */}
       <div className={cn(
-        "bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out",
-        sidebarHidden ? "-ml-64 w-0 overflow-hidden" : sidebarCollapsed ? "w-16" : "w-64"
+        "bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out w-64",
+        sidebarHidden ? "-ml-64 w-0 overflow-hidden" : ""
       )}>
         {/* Sidebar Header */}
         <div className="p-3 border-b border-gray-200 flex items-center justify-between">
-          <div className={cn(
-            "flex items-center space-x-3 transition-opacity duration-200",
-            sidebarCollapsed ? "opacity-0" : "opacity-100"
-          )}>
+          <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">O</span>
             </div>
-            {!sidebarCollapsed && (
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">O'zbek Talim</h2>
-                <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
-              </div>
-            )}
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">O'zbek Talim</h2>
+              <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
+            </div>
           </div>
-          <div className="flex items-center space-x-1">
-            {!sidebarCollapsed && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSidebarHidden(true)}
-                className="p-1 h-8 w-8 rounded-lg hover:bg-gray-100"
-                title="Sidebar ni yashirish"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-1 h-8 w-8 rounded-lg hover:bg-gray-100"
-              title={sidebarCollapsed ? "Kengaytirish" : "Kichraytirish"}
-            >
-              {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSidebarHidden(true)}
+            className="p-1 h-8 w-8 rounded-lg hover:bg-gray-100"
+            title="Sidebar ni yashirish"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
         </div>
 
         {/* User Info with Dropdown */}
         <div className="p-3 border-b border-gray-200">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <div className={cn(
-                "flex items-center space-x-3 rounded-lg p-2 hover:bg-gray-50 cursor-pointer transition-colors",
-                sidebarCollapsed ? "justify-center" : ""
-              )}>
+              <div className="flex items-center space-x-3 rounded-lg p-2 hover:bg-gray-50 cursor-pointer transition-colors">
                 <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
                   <User className="w-4 h-4 text-gray-600" />
                 </div>
-                {!sidebarCollapsed && (
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {user?.fullName || user?.username}
-                    </p>
-                    <p className="text-xs text-gray-500">Faol foydalanuvchi</p>
-                  </div>
-                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {user?.fullName || user?.username}
+                  </p>
+                  <p className="text-xs text-gray-500">Faol foydalanuvchi</p>
+                </div>
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="right" align="start" className="w-56">
@@ -310,8 +286,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             return (
               <Link key={section.id} href={section.href}>
                 <div className={cn(
-                  "flex items-center rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer group relative",
-                  sidebarCollapsed ? "px-3 py-3 justify-center" : "px-3 py-3 space-x-3",
+                  "flex items-center px-3 py-3 space-x-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer group",
                   isActive 
                     ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm" 
                     : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
@@ -322,30 +297,16 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                   )}>
                     {section.icon}
                   </span>
-                  {!sidebarCollapsed && (
-                    <>
-                      <span className="flex-1 truncate">{section.title}</span>
-                      {section.badge && (
-                        <span className={cn(
-                          "px-2 py-1 text-xs rounded-full font-medium",
-                          isActive 
-                            ? "bg-blue-100 text-blue-700" 
-                            : "bg-gray-100 text-gray-600"
-                        )}>
-                          {section.badge}
-                        </span>
-                      )}
-                    </>
-                  )}
-                  {sidebarCollapsed && (
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
-                      {section.title}
-                      {section.badge && (
-                        <span className="ml-1 px-1.5 py-0.5 bg-blue-600 rounded-full text-xs">
-                          {section.badge}
-                        </span>
-                      )}
-                    </div>
+                  <span className="flex-1 truncate">{section.title}</span>
+                  {section.badge && (
+                    <span className={cn(
+                      "px-2 py-1 text-xs rounded-full font-medium",
+                      isActive 
+                        ? "bg-blue-100 text-blue-700" 
+                        : "bg-gray-100 text-gray-600"
+                    )}>
+                      {section.badge}
+                    </span>
                   )}
                 </div>
               </Link>
