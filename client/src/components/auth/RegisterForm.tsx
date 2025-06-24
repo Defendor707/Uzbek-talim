@@ -106,7 +106,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
         <div className="hidden md:block text-center mb-8">
           <div className="mx-auto w-16 h-16 rounded-2xl overflow-hidden mb-4">
             <img 
-              src="/attached_assets/IMG_20250624_114711_600_1750757183585.jpg" 
+              src="/logo.jpg" 
               alt="O'zbek Talim Logo" 
               className="w-full h-full object-cover"
             />

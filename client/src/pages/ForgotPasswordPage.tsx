@@ -58,7 +58,7 @@ const ForgotPasswordPage: React.FC = () => {
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl overflow-hidden">
             <img 
-              src="/attached_assets/IMG_20250624_114711_600_1750757183585.jpg" 
+              src="/logo.jpg" 
               alt="O'zbek Talim Logo" 
               className="w-full h-full object-cover"
             />
