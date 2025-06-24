@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { ChevronLeft, ChevronRight, Flag, Check, ArrowLeft, Image as ImageIcon, Grid3X3, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flag, Check, ArrowLeft, Image as ImageIcon, Grid3X3, Eye, Download, ZoomIn } from 'lucide-react';
 import ResponsiveDashboard from '@/components/dashboard/ResponsiveDashboard';
 
 interface Question {
@@ -127,21 +127,44 @@ const TakeTestPage: React.FC = () => {
   // Complete test
   const completeTestMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/test-attempts/${attemptId}/complete`, {
-        method: 'POST',
+      if (!attemptId) throw new Error('No attempt ID');
+      
+      console.log('Completing test with answers:', answers);
+      
+      // Calculate score based on correct answers
+      let score = 0;
+      if (questionsData?.data) {
+        questionsData.data.forEach((question: any) => {
+          const userAnswer = answers[question.id];
+          if (userAnswer === question.correctAnswer) {
+            score++;
+          }
+        });
+      }
+      
+      console.log('Calculated score:', score, 'out of', questionsData?.data?.length);
+      
+      return apiRequest(`/api/test-attempts/${attemptId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          status: 'completed',
+          score,
+        }),
       });
     },
     onSuccess: (data) => {
+      console.log('Test completion successful:', data);
       toast({
         title: "Test yakunlandi",
-        description: `Sizning natijangiz: ${data.score}%`,
+        description: "Natijangiz saqlandi",
       });
       setLocation('/student/tests');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Test completion error:', error);
       toast({
-        title: "Xato",
-        description: "Testni yakunlashda xatolik",
+        title: "Xatolik",
+        description: "Test yakunlashda xatolik yuz berdi",
         variant: "destructive",
       });
     },
@@ -177,9 +200,28 @@ const TakeTestPage: React.FC = () => {
   };
 
   const handleCompleteTest = () => {
-    if (attemptId) {
-      completeTestMutation.mutate();
+    console.log('Test yakunlash boshlandi:', { attemptId, answers });
+    
+    if (Object.keys(answers).length === 0) {
+      toast({
+        title: "Diqqat",
+        description: "Hech bo'lmaganda bitta savolga javob bering",
+        variant: "destructive",
+      });
+      return;
     }
+    
+    if (!attemptId) {
+      toast({
+        title: "Xatolik",
+        description: "Test urinishi topilmadi",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    console.log('Test yakunlanmoqda...');
+    completeTestMutation.mutate();
   };
 
   // Handle invalid testId early
@@ -347,18 +389,52 @@ const TakeTestPage: React.FC = () => {
             {/* Question Image */}
             {currentQuestion.questionImage && (
               <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-                <div className="flex items-center gap-2 mb-3">
-                  <ImageIcon className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700">Savol rasmi:</span>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-700">Savol rasmi:</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open(`/${currentQuestion.questionImage}`, '_blank')}
+                      className="flex items-center gap-2"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                      Kattalashtirish
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = `/${currentQuestion.questionImage}`;
+                        link.download = `savol-${currentQuestion.id}-rasm.jpg`;
+                        link.click();
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      Yuklab olish
+                    </Button>
+                  </div>
                 </div>
-                <img 
-                  src={`/${currentQuestion.questionImage}`}
-                  alt="Savol rasmi" 
-                  className="max-w-full h-auto rounded-lg border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => window.open(`/${currentQuestion.questionImage}`, '_blank')}
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Rasmni kattalashtirish uchun ustiga bosing
+                <div className="relative group">
+                  <img 
+                    src={`/${currentQuestion.questionImage}`}
+                    alt="Savol rasmi" 
+                    className="max-w-full h-auto rounded-lg border-2 border-gray-200 shadow-sm hover:border-blue-400 transition-all cursor-pointer"
+                    onClick={() => window.open(`/${currentQuestion.questionImage}`, '_blank')}
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ZoomIn className="w-8 h-8 text-white drop-shadow-lg" />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  Rasmni kattalashtirish uchun ustiga bosing yoki tugmalardan foydalaning
                 </p>
               </div>
             )}
@@ -436,12 +512,12 @@ const TakeTestPage: React.FC = () => {
             {currentQuestionIndex === questions.length - 1 ? (
               <Button 
                 onClick={handleCompleteTest}
-                disabled={answeredCount < questions.length}
-                className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+                disabled={completeTestMutation.isPending}
+                className="bg-green-600 hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
               >
                 <Flag className="w-4 h-4" />
-                Testni yakunlash
-                {answeredCount < questions.length && (
+                {completeTestMutation.isPending ? 'Yakunlanmoqda...' : 'Testni yakunlash'}
+                {answeredCount < questions.length && !completeTestMutation.isPending && (
                   <span className="ml-2 text-xs bg-red-500 text-white px-2 py-1 rounded">
                     {questions.length - answeredCount} javobsiz
                   </span>
@@ -472,21 +548,55 @@ const TakeTestPage: React.FC = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {test.testImages.map((image, index) => (
-                  <div key={index} className="relative">
+                  <div key={index} className="relative group">
                     <img 
                       src={`/${image}`}
                       alt={`Test materiali ${index + 1}`}
-                      className="w-full h-auto rounded-lg border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                      className="w-full h-auto rounded-lg border-2 border-gray-200 shadow-sm hover:border-blue-400 transition-all cursor-pointer"
                       onClick={() => window.open(`/${image}`, '_blank')}
                     />
                     <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
                       {index + 1}
                     </div>
+                    <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="bg-white/90 backdrop-blur-sm p-2 h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(`/${image}`, '_blank');
+                          }}
+                        >
+                          <ZoomIn className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="bg-white/90 backdrop-blur-sm p-2 h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const link = document.createElement('a');
+                            link.href = `/${image}`;
+                            link.download = `test-material-${index + 1}.jpg`;
+                            link.click();
+                          }}
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ZoomIn className="w-8 h-8 text-white drop-shadow-lg" />
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
-              <p className="text-sm text-gray-600 mt-3">
-                Rasmlarni kattalashtirish uchun ustiga bosing
+              <p className="text-sm text-gray-600 mt-3 text-center">
+                Rasmlarni kattalashtirish uchun ustiga bosing yoki tugmalardan foydalaning
               </p>
             </CardContent>
           </Card>
