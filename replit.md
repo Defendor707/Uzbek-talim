@@ -134,6 +134,17 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 24, 2025: Implemented personalized dashboard widgets with quick actions for all user roles
+  - Created DashboardWidget component with customizable gradients, icons, and actions
+  - Built role-specific widget components: TeacherWidgets, StudentWidgets, ParentWidgets, CenterWidgets
+  - Teacher widgets: Quick actions (create test/lesson), statistics (tests/lessons), recent activity
+  - Student widgets: Progress tracking, average scores, available tests, test results
+  - Parent widgets: Children management, progress overview, recent activities
+  - Center widgets: Teacher/student management, statistics, activity overview
+  - Enhanced visual design with gradient backgrounds, modern cards, and smooth animations
+  - Integrated quick action buttons with proper navigation and user-friendly interfaces
+  - Replaced static dashboard content with dynamic, personalized widgets across all dashboards
+
 - June 24, 2025: Enhanced mobile notifications page with modern design and fixed authentication
   - Fixed notifications API authentication by properly sending Bearer token in headers
   - Enhanced mobile notifications interface with gradient backgrounds and modern cards

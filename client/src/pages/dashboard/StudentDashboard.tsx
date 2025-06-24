@@ -1,11 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import useAuth from '@/hooks/useAuth';
 import ResponsiveDashboard from '@/components/dashboard/ResponsiveDashboard';
+import StudentWidgets from '@/components/dashboard/StudentWidgets';
 
 const StudentDashboard: React.FC = () => {
   const { toast } = useToast();
@@ -68,148 +66,7 @@ const StudentDashboard: React.FC = () => {
       sections={dashboardSections}
       currentPage="O'quvchi paneli"
     >
-      <div>
-        {/* Quick Stats Cards */}
-        <div className="responsive-grid-2-4 mb-6 lg:mb-8">
-          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-blue-100 text-xs">Jami urinishlar</p>
-                <p className="text-2xl font-bold">{attempts?.length || 0}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-green-100 text-xs">O'rtacha ball</p>
-                <p className="text-2xl font-bold">
-                  {attempts && attempts.length > 0 ? 
-                    Math.round(attempts.reduce((sum, a) => sum + (a.score || 0), 0) / attempts.length) + '%' 
-                    : '0%'
-                  }
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-purple-100 text-xs">Mavjud testlar</p>
-                <p className="text-2xl font-bold">{tests?.length || 0}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-orange-100 text-xs">Darsliklar</p>
-                <p className="text-2xl font-bold">{lessons?.length || 0}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                </svg>
-                <span>Test ishlash</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 text-sm mb-4">Mavjud testlarni ishlang va natijalaringizni yaxshilang</p>
-              <Link href="/student/tests">
-                <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                  Testlarga o'tish
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-                <span>Darslik o'qish</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 text-sm mb-4">O'qituvchilar tomonidan yuklangan darsliklarni o'rganing</p>
-              <Link href="/student/lessons">
-                <Button className="w-full bg-green-600 hover:bg-green-700">
-                  Darsliklarga o'tish
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <span>Natijalar</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 text-sm mb-4">Test natijalaringiz va o'sish ko'rsatkichlaringizni ko'ring</p>
-              <Link href="/student/results">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                  Ko'rish
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle>So'nggi test natijalari</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {attempts && attempts.length > 0 ? (
-              <div className="space-y-4">
-                {attempts.slice(0, 5).map((attempt, index) => (
-                  <div key={index} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Test #{attempt.id}</p>
-                      <p className="text-sm text-gray-600">Ball: {attempt.score || 0}%</p>
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {new Date(attempt.createdAt).toLocaleDateString('uz-UZ')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                </svg>
-                <p className="text-gray-500">Hali test ishlamagansiz</p>
-                <p className="text-sm text-gray-400 mt-1">Birinchi testingizni ishlashdan boshlang</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <StudentWidgets />
     </ResponsiveDashboard>
   );
 };
