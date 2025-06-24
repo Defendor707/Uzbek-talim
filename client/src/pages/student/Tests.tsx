@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Clock, FileText, Users, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import useAuth from '@/hooks/useAuth';
-import MobileDashboard from '@/components/dashboard/MobileDashboard';
+import ResponsiveDashboard from '@/components/dashboard/ResponsiveDashboard';
 
 const StudentTestsPage: React.FC = () => {
   const { user } = useAuth();
@@ -137,25 +137,16 @@ const StudentTestsPage: React.FC = () => {
       ),
       href: '/student/lessons',
     },
-    {
-      id: 'profile',
-      title: 'Profil',
-      icon: (
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      ),
-      href: '/student/profile',
-    }
+
   ];
 
   return (
-    <MobileDashboard
+    <ResponsiveDashboard
       userRole="student"
       sections={dashboardSections}
       currentPage="Testlar"
     >
-      <div className="p-4 lg:p-0">
+      <div>
         {/* Search Section */}
         <div className="mb-6 lg:mb-8">
           <h2 className="text-lg lg:text-xl font-semibold mb-3">Test qidirish</h2>
@@ -266,7 +257,7 @@ const StudentTestsPage: React.FC = () => {
           </div>
         )}
       </div>
-    </MobileDashboard>
+    </ResponsiveDashboard>
   );
 };
 
