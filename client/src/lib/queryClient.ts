@@ -4,13 +4,9 @@ async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
     
-    // Handle authentication errors
+    // Handle authentication errors but don't clear token here - let useAuth handle it
     if (res.status === 401) {
-      // Clear invalid token
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-      }
-      throw new Error('Avtorizatsiya talab qilinadi');
+      throw new Error('401: Avtorizatsiya talab qilinadi');
     }
     
     // Try to parse error message from response

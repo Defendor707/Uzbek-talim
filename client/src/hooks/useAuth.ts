@@ -44,8 +44,16 @@ const useAuth = () => {
   const { data: user, isLoading: isLoadingUser, error: userError, refetch: refetchUser } = useQuery<User>({
     queryKey: ['/api/auth/me'],
     enabled: !!token,
-    retry: false,
-    staleTime: 0, // Always refetch to ensure fresh data
+    retry: (failureCount, error: any) => {
+      // Don't retry on auth errors
+      if (error?.message?.includes('401') || error?.message?.includes('Avtorizatsiya')) {
+        return false;
+      }
+      return failureCount < 1;
+    },
+    staleTime: 30000, // 30 seconds cache to reduce unnecessary requests
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Login mutation
@@ -132,8 +140,10 @@ const useAuth = () => {
   const logout = () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
+      localStorage.removeItem('userSession');
     }
     setToken(null);
+    setCachedUser(null);
     queryClient.clear();
     setLocation('/login');
     
@@ -144,29 +154,75 @@ const useAuth = () => {
     });
   };
 
-  // Handle token validation errors
+  // Handle token validation errors with better error checking
   useEffect(() => {
     if (userError && token) {
-      // If user query fails with token present, likely invalid token
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
+      // Only logout on authentication errors, not network errors
+      const isAuthError = userError.message?.includes('401') || 
+                         userError.message?.includes('Authentication') ||
+                         userError.message?.includes('Unauthorized');
+      
+      if (isAuthError) {
+        console.log('Authentication error detected, logging out');
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userSession');
+        }
+        setToken(null);
+        setCachedUser(null);
+        queryClient.clear();
+        setLocation('/login');
+      } else {
+        console.log('Network error, keeping session:', userError.message);
       }
-      setToken(null);
-      queryClient.clear();
-      setLocation('/login');
     }
   }, [userError, token, setLocation]);
 
-  // Auto-login effect for persistent sessions
+  // Auto-login effect for persistent sessions with better debugging
   useEffect(() => {
     if (token && !user && !isLoadingUser && !userError) {
-      // If we have a token but no user data, try to refetch
+      console.log('Auto-refetching user data...');
       refetchUser();
     }
   }, [token, user, isLoadingUser, userError, refetchUser]);
 
+  // Session persistence - save user data locally for offline access
+  useEffect(() => {
+    if (user && typeof window !== 'undefined') {
+      localStorage.setItem('userSession', JSON.stringify({
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        fullName: user.fullName,
+        timestamp: Date.now()
+      }));
+    }
+  }, [user]);
+
+  // Load cached user data if available while fetching fresh data
+  const [cachedUser, setCachedUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('userSession');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          // Only use cached data if it's less than 5 minutes old
+          if (Date.now() - parsed.timestamp < 5 * 60 * 1000) {
+            return parsed;
+          }
+        } catch (e) {
+          localStorage.removeItem('userSession');
+        }
+      }
+    }
+    return null;
+  });
+
+  // Use cached user data while loading if available
+  const currentUser = user || (isLoadingUser && token ? cachedUser : null);
+
   return {
-    user,
+    user: currentUser,
     token,
     isAuthenticated: !!token,
     isLoadingUser,
