@@ -291,36 +291,39 @@ const TakeTestPage: React.FC = () => {
 
   return (
     <ResponsiveDashboard userRole="student" sections={[]} currentPage={test.title}>
-      <div className="max-w-4xl mx-auto p-4">
+      <div className="max-w-4xl mx-auto p-2 md:p-4">
         {/* Test Header */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle className="text-xl">{test.title}</CardTitle>
-                <p className="text-gray-600 mt-2">{test.description}</p>
+        <Card className="mb-4 md:mb-6">
+          <CardHeader className="p-3 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+              <div className="flex-1">
+                <CardTitle className="text-lg md:text-xl">{test.title}</CardTitle>
+                <p className="text-gray-600 mt-1 md:mt-2 text-sm md:text-base">{test.description}</p>
                 <Badge className="mt-2">{test.type}</Badge>
               </div>
               <Button 
                 variant="outline" 
+                size="sm"
                 onClick={() => setLocation('/student/tests')}
+                className="self-start"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Chiqish
+                <span className="hidden sm:inline">Chiqish</span>
+                <span className="sm:hidden">Orqaga</span>
               </Button>
             </div>
           </CardHeader>
         </Card>
 
         {/* Progress */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center mb-2">
+        <Card className="mb-4 md:mb-6">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
               <span className="text-sm font-medium">
                 Savol {currentQuestionIndex + 1} / {questions.length}
               </span>
-              <div className="flex items-center gap-4">
-                <span className={`text-sm ${answeredCount === questions.length ? 'text-green-600 font-medium' : 'text-gray-600'}`}>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <span className={`text-xs sm:text-sm ${answeredCount === questions.length ? 'text-green-600 font-medium' : 'text-gray-600'}`}>
                   Javob berilgan: {answeredCount} / {questions.length}
                   {answeredCount === questions.length && ' ✓'}
                 </span>
@@ -328,14 +331,15 @@ const TakeTestPage: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowQuestionOverview(!showQuestionOverview)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 text-xs sm:text-sm"
                 >
-                  <Grid3X3 className="w-4 h-4" />
-                  {showQuestionOverview ? 'Yashirish' : 'Barcha savollar'}
+                  <Grid3X3 className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">{showQuestionOverview ? 'Yashirish' : 'Barcha savollar'}</span>
+                  <span className="sm:hidden">{showQuestionOverview ? 'Yashirish' : 'Savollar'}</span>
                 </Button>
               </div>
             </div>
-            <Progress value={progress} className="mb-2" />
+            <Progress value={progress} className="h-2" />
           </CardContent>
         </Card>
 
@@ -397,25 +401,25 @@ const TakeTestPage: React.FC = () => {
         )}
 
         {/* Current Question */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">
+        <Card className="mb-4 md:mb-6">
+          <CardHeader className="p-3 md:p-6">
+            <CardTitle className="text-base md:text-lg leading-relaxed">
               {currentQuestionIndex + 1}. {currentQuestion.questionText}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 md:p-6">
             {/* Question Image */}
             {currentQuestion.questionImage && (
-              <div className="mb-4">
+              <div className="mb-3 md:mb-4">
                 <div className="relative">
                   <img 
                     src={`/${currentQuestion.questionImage}`}
                     alt="Savol rasmi" 
-                    className="w-full h-auto rounded-lg border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                    className="w-full h-auto rounded-lg border shadow-sm cursor-pointer hover:shadow-md transition-shadow max-h-64 md:max-h-96 object-contain mx-auto"
                     onClick={() => window.open(`/${currentQuestion.questionImage}`, '_blank')}
                   />
-                  <div className="absolute top-2 right-2 opacity-80 hover:opacity-100 transition-opacity">
-                    <ZoomIn className="w-5 h-5 text-white drop-shadow-lg" />
+                  <div className="absolute top-1 right-1 md:top-2 md:right-2 opacity-80 hover:opacity-100 transition-opacity">
+                    <ZoomIn className="w-4 h-4 md:w-5 md:h-5 text-white drop-shadow-lg" />
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-1 text-center">
@@ -519,28 +523,28 @@ const TakeTestPage: React.FC = () => {
 
         {/* Test Images - Display at top for better visibility */}
         {test.testImages && test.testImages.length > 0 && (
-          <Card className="mb-4 border-blue-200 bg-blue-50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
+          <Card className="mb-3 md:mb-4 border-blue-200 bg-blue-50">
+            <CardHeader className="pb-2 md:pb-3 p-3 md:p-6">
+              <CardTitle className="text-sm md:text-base flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-blue-600" />
                 Test materiallari
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <CardContent className="p-3 md:p-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3">
                 {test.testImages.map((image, index) => (
                   <div key={index} className="relative">
                     <img 
                       src={`/${image}`}
                       alt={`Test materiali ${index + 1}`}
-                      className="w-full h-auto rounded-lg border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                      className="w-full h-auto rounded-lg border shadow-sm cursor-pointer hover:shadow-md transition-shadow aspect-square object-cover"
                       onClick={() => window.open(`/${image}`, '_blank')}
                     />
-                    <div className="absolute top-1 right-1 bg-black bg-opacity-60 text-white text-xs px-1.5 py-0.5 rounded">
+                    <div className="absolute top-0.5 right-0.5 md:top-1 md:right-1 bg-black bg-opacity-70 text-white text-xs px-1 md:px-1.5 py-0.5 rounded text-center min-w-[16px]">
                       {index + 1}
                     </div>
-                    <div className="absolute top-1 left-1 opacity-80 hover:opacity-100 transition-opacity">
-                      <ZoomIn className="w-4 h-4 text-white drop-shadow-lg" />
+                    <div className="absolute top-0.5 left-0.5 md:top-1 md:left-1 opacity-80 hover:opacity-100 transition-opacity">
+                      <ZoomIn className="w-3 h-3 md:w-4 md:h-4 text-white drop-shadow-lg" />
                     </div>
                   </div>
                 ))}
