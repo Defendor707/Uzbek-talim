@@ -129,7 +129,7 @@ function Router() {
           <StudentTestsPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/student/test/:id">
+      <Route path="/student/test/:testId">
         <ProtectedRoute allowedRoles={["student"]}>
           <TakeTestPage />
         </ProtectedRoute>

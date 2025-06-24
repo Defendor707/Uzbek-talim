@@ -41,7 +41,8 @@ interface TestAttempt {
 }
 
 const TakeTestPage: React.FC = () => {
-  const { testId } = useParams<{ testId: string }>();
+  const params = useParams();
+  const testId = params.testId || params.id; // Handle both :testId and :id
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -50,8 +51,9 @@ const TakeTestPage: React.FC = () => {
   const [attemptId, setAttemptId] = useState<number | null>(null);
   const [showQuestionOverview, setShowQuestionOverview] = useState(false);
 
-  // Debug testId
-  console.log('TakeTestPage rendered with testId:', testId);
+  // Debug testId and params
+  console.log('TakeTestPage rendered with params:', params);
+  console.log('TakeTestPage testId:', testId);
 
   // Fetch test details
   const { data: test, isLoading: testLoading } = useQuery<Test>({
