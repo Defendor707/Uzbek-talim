@@ -177,6 +177,12 @@ Dashboard design: User requested improved navigation without dropdown menus for 
   - Profile button uses gray styling, logout button uses red styling for clear distinction
   - Works for all user roles: teacher, student, parent, and center
 
+- June 24, 2025: Simplified login page after onboarding completion
+  - Removed blue background information section after onboarding
+  - Clean, centered login form with minimal branding
+  - Maintained onboarding replay option for users who want to see it again
+  - User feedback: "Prizentatsiya tugagach faqat kirish qismi qoldirilsin kuk fonli ma'lumot noma kerak emas"
+  
 - June 20, 2025: Created modern onboarding experience with fully responsive design
   - Developed stunning slide presentation showcasing each user role and benefits
   - Automatic progression every 5 seconds with manual controls (play/pause, next/previous, skip)
@@ -186,9 +192,6 @@ Dashboard design: User requested improved navigation without dropdown menus for 
   - Touch-friendly navigation with 44px minimum touch targets for mobile
   - Adaptive typography and spacing across all screen sizes
   - First-time visitors see onboarding, returning users go directly to login
-  - Added option to replay onboarding from login page
-  - Maintains simple, convenient login form after onboarding completion
-  - Perfect blend of marketing appeal and practical functionality
 
 - June 20, 2025: Added educational centers count to platform statistics
   - Enhanced Telegram bot statistics to include O'quv markazlari (educational centers) count
