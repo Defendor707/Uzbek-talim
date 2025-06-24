@@ -119,29 +119,29 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
               control={form.control}
               name="role"
               render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel className="text-gray-700 font-medium">Foydalanuvchi turi</FormLabel>
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-sm font-semibold text-gray-800">Foydalanuvchi turi</FormLabel>
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      className="grid grid-cols-2 gap-3"
+                      className="grid grid-cols-2 gap-2"
                     >
-                      <div className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value="teacher" id="teacher" className="text-blue-600" />
-                        <label htmlFor="teacher" className="cursor-pointer text-sm font-medium">Ustoz</label>
+                      <div className="flex items-center space-x-2 p-2 border border-gray-300 rounded-md hover:border-gray-400 transition-colors">
+                        <RadioGroupItem value="teacher" id="teacher" className="w-4 h-4" />
+                        <label htmlFor="teacher" className="cursor-pointer text-sm">Ustoz</label>
                       </div>
-                      <div className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value="student" id="student" className="text-blue-600" />
-                        <label htmlFor="student" className="cursor-pointer text-sm font-medium">O'quvchi</label>
+                      <div className="flex items-center space-x-2 p-2 border border-gray-300 rounded-md hover:border-gray-400 transition-colors">
+                        <RadioGroupItem value="student" id="student" className="w-4 h-4" />
+                        <label htmlFor="student" className="cursor-pointer text-sm">O'quvchi</label>
                       </div>
-                      <div className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value="parent" id="parent" className="text-blue-600" />
-                        <label htmlFor="parent" className="cursor-pointer text-sm font-medium">Ota-ona</label>
+                      <div className="flex items-center space-x-2 p-2 border border-gray-300 rounded-md hover:border-gray-400 transition-colors">
+                        <RadioGroupItem value="parent" id="parent" className="w-4 h-4" />
+                        <label htmlFor="parent" className="cursor-pointer text-sm">Ota-ona</label>
                       </div>
-                      <div className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value="center" id="center" className="text-blue-600" />
-                        <label htmlFor="center" className="cursor-pointer text-sm font-medium">O'quv markaz</label>
+                      <div className="flex items-center space-x-2 p-2 border border-gray-300 rounded-md hover:border-gray-400 transition-colors">
+                        <RadioGroupItem value="center" id="center" className="w-4 h-4" />
+                        <label htmlFor="center" className="cursor-pointer text-sm">O'quv markaz</label>
                       </div>
                     </RadioGroup>
                   </FormControl>
