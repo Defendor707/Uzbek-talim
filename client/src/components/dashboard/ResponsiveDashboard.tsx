@@ -293,8 +293,12 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           {/* Sidebar Header */}
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">O</span>
+              <div className="w-8 h-8 rounded-lg overflow-hidden">
+                <img 
+                  src="/attached_assets/IMG_20250624_114711_600_1750757183585.jpg" 
+                  alt="O'zbek Talim Logo" 
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-gray-900">O'zbek Talim</h2>

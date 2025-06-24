@@ -180,8 +180,9 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 - June 24, 2025: Updated brand identity with custom logo across all pages
   - Replaced generic icons with custom O'zbek Talim logo throughout the application
   - Added logo to login page, registration, forgot password, and onboarding screens
+  - Updated all dashboard headers (mobile and desktop) with real logo
   - Logo features book and technology elements representing educational technology
-  - Improved brand consistency and professional appearance
+  - Improved brand consistency and professional appearance across entire platform
   - User feedback: "Bu meni logo yim emas ku . Mana bu meni logoyim"
 
 - June 24, 2025: Simplified authentication system to username-only
