@@ -1010,6 +1010,153 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // Start test endpoint - used by TakeTest component
+  app.post(
+    "/api/tests/:testId/start",
+    authenticate,
+    authorize(["student"]),
+    async (req, res) => {
+      try {
+        const testId = parseInt(req.params.testId);
+        if (isNaN(testId)) {
+          return res.status(400).json({ message: "Invalid test ID" });
+        }
+
+        // Check if test exists and is active
+        const test = await storage.getTestById(testId);
+        if (!test) {
+          return res.status(404).json({ message: "Test not found" });
+        }
+
+        if (test.status !== "active") {
+          return res.status(400).json({ message: "Test is not active" });
+        }
+
+        // Create test attempt
+        const attemptData = schema.insertTestAttemptSchema.parse({
+          testId,
+          studentId: req.user!.userId,
+          totalQuestions: test.totalQuestions,
+          status: "in_progress",
+        });
+
+        const newAttempt = await storage.createTestAttempt(attemptData);
+        return res.status(201).json(newAttempt);
+      } catch (error) {
+        if (error instanceof ZodError) {
+          return res.status(400).json({
+            message: "Validation error",
+            errors: fromZodError(error).details,
+          });
+        }
+        console.error("Error starting test:", error);
+        return res.status(500).json({ message: "Failed to start test" });
+      }
+    }
+  );
+
+  // Submit answer endpoint - used by TakeTest component
+  app.post(
+    "/api/test-attempts/:attemptId/answers",
+    authenticate,
+    authorize(["student"]),
+    async (req, res) => {
+      try {
+        const attemptId = parseInt(req.params.attemptId);
+        const { questionId, answer } = req.body;
+        
+        if (isNaN(attemptId) || !questionId || !answer) {
+          return res.status(400).json({ message: "Attempt ID, Question ID and Answer are required" });
+        }
+
+        // Check if attempt exists and belongs to the student
+        const attempt = await storage.getTestAttemptById(attemptId);
+        if (!attempt) {
+          return res.status(404).json({ message: "Test attempt not found" });
+        }
+
+        if (attempt.studentId !== req.user!.userId) {
+          return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        // Create student answer
+        const answerData = schema.insertStudentAnswerSchema.parse({
+          attemptId,
+          questionId,
+          answer,
+        });
+
+        const newAnswer = await storage.createStudentAnswer(answerData);
+        return res.status(201).json(newAnswer);
+      } catch (error) {
+        if (error instanceof ZodError) {
+          return res.status(400).json({
+            message: "Validation error",
+            errors: fromZodError(error).details,
+          });
+        }
+        console.error("Error submitting answer:", error);
+        return res.status(500).json({ message: "Failed to submit answer" });
+      }
+    }
+  );
+
+  // Complete test endpoint - used by TakeTest component
+  app.post(
+    "/api/test-attempts/:attemptId/complete",
+    authenticate,
+    authorize(["student"]),
+    async (req, res) => {
+      try {
+        const attemptId = parseInt(req.params.attemptId);
+        if (isNaN(attemptId)) {
+          return res.status(400).json({ message: "Invalid attempt ID" });
+        }
+
+        // Check if attempt exists and belongs to the student
+        const attempt = await storage.getTestAttemptById(attemptId);
+        if (!attempt) {
+          return res.status(404).json({ message: "Test attempt not found" });
+        }
+
+        if (attempt.studentId !== req.user!.userId) {
+          return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        // Calculate score and update attempt
+        const test = await storage.getTestById(attempt.testId);
+        const questions = await storage.getQuestionsByTestId(attempt.testId);
+        const answers = await storage.getStudentAnswersByAttemptId(attemptId);
+
+        let score = 0;
+        let totalPoints = 0;
+
+        for (const question of questions) {
+          totalPoints += question.points;
+          const studentAnswer = answers.find(a => a.questionId === question.id);
+          
+          if (studentAnswer && studentAnswer.answer === question.correctAnswer) {
+            score += question.points;
+          }
+        }
+
+        const scorePercentage = totalPoints > 0 ? (score / totalPoints) * 100 : 0;
+
+        // Update attempt with final score and end time
+        const updatedAttempt = await storage.updateTestAttempt(attemptId, {
+          endTime: new Date(),
+          score: scorePercentage.toString(),
+          status: "completed",
+        });
+
+        return res.status(200).json({ ...updatedAttempt, score: scorePercentage });
+      } catch (error) {
+        console.error("Error completing test:", error);
+        return res.status(500).json({ message: "Failed to complete test" });
+      }
+    }
+  );
+
   // Student Answer Routes  
   app.post(
     "/api/student-answers",
