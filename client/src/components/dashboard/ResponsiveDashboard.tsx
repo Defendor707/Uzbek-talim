@@ -315,13 +315,11 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </nav>
 
         {/* Footer */}
-        {!sidebarCollapsed && (
-          <div className="px-4 pb-4">
-            <div className="text-xs text-gray-500 text-center">
-              O'zbek Talim v1.0
-            </div>
+        <div className="px-4 pb-4">
+          <div className="text-xs text-gray-500 text-center">
+            O'zbek Talim v1.0
           </div>
-        )}
+        </div>
       </div>
 
       {/* Desktop Main Content */}
