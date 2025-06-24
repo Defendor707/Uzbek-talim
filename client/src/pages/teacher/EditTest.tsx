@@ -580,13 +580,7 @@ const EditTestPage: React.FC = () => {
                 )}
 
                 <div className="flex justify-between">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setStep('info')}
-                  >
-                    Orqaga
-                  </Button>
+
                   <Button
                     type="button"
                     onClick={proceedToQuestions}
@@ -700,13 +694,7 @@ const EditTestPage: React.FC = () => {
                 )}
 
                 <div className="flex justify-between">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setStep('images')}
-                  >
-                    Orqaga
-                  </Button>
+
                 </div>
               </div>
             </CardContent>

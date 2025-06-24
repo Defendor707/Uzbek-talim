@@ -357,9 +357,6 @@ const CreateTestPage: React.FC = () => {
               )}
 
               <div className="flex gap-3">
-                <Button type="button" variant="outline" onClick={() => setStep('info')}>
-                  Orqaga
-                </Button>
                 <Button type="button" onClick={proceedToQuestions} className="flex-1">
                   Keyingi qadam: Savollar
                 </Button>
@@ -433,10 +430,7 @@ const CreateTestPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="flex justify-between">
-                <Button type="button" variant="outline" onClick={() => setStep('images')}>
-                  Orqaga
-                </Button>
+              <div className="flex justify-end">
                 
                 <div className="flex gap-3">
                   {currentQuestionIndex > 0 && (
