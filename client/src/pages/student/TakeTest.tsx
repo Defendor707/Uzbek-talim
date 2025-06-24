@@ -94,18 +94,23 @@ const TakeTestPage: React.FC = () => {
   // Start test attempt
   const startAttemptMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/tests/${testId}/start`, {
+      console.log('Creating test attempt for testId:', testId);
+      const response = await apiRequest(`/api/tests/${testId}/start`, {
         method: 'POST',
       });
+      console.log('Test attempt response:', response);
+      return response;
     },
     onSuccess: (data) => {
+      console.log('Test attempt created successfully:', data);
       setAttemptId(data.id);
       toast({
         title: "Test boshlandi",
         description: "Omad tilaymiz!",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Test attempt creation failed:', error);
       toast({
         title: "Xato",
         description: "Testni boshlashda xatolik",
@@ -401,53 +406,20 @@ const TakeTestPage: React.FC = () => {
           <CardContent>
             {/* Question Image */}
             {currentQuestion.questionImage && (
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4 text-gray-600" />
-                    <span className="text-sm font-medium text-gray-700">Savol rasmi:</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => window.open(`/${currentQuestion.questionImage}`, '_blank')}
-                      className="flex items-center gap-2"
-                    >
-                      <ZoomIn className="w-4 h-4" />
-                      Kattalashtirish
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = `/${currentQuestion.questionImage}`;
-                        link.download = `savol-${currentQuestion.id}-rasm.jpg`;
-                        link.click();
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <Download className="w-4 h-4" />
-                      Yuklab olish
-                    </Button>
-                  </div>
-                </div>
-                <div className="relative group">
+              <div className="mb-4">
+                <div className="relative">
                   <img 
                     src={`/${currentQuestion.questionImage}`}
                     alt="Savol rasmi" 
-                    className="max-w-full h-auto rounded-lg border-2 border-gray-200 shadow-sm hover:border-blue-400 transition-all cursor-pointer"
+                    className="w-full h-auto rounded-lg border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                     onClick={() => window.open(`/${currentQuestion.questionImage}`, '_blank')}
                   />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ZoomIn className="w-8 h-8 text-white drop-shadow-lg" />
-                    </div>
+                  <div className="absolute top-2 right-2 opacity-80 hover:opacity-100 transition-opacity">
+                    <ZoomIn className="w-5 h-5 text-white drop-shadow-lg" />
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  Rasmni kattalashtirish uchun ustiga bosing yoki tugmalardan foydalaning
+                <p className="text-xs text-gray-500 mt-1 text-center">
+                  Rasmni kattalashtirish uchun ustiga bosing
                 </p>
               </div>
             )}
@@ -547,65 +519,34 @@ const TakeTestPage: React.FC = () => {
 
         {/* Test Images - Display at top for better visibility */}
         {test.testImages && test.testImages.length > 0 && (
-          <Card className="mb-6 border-blue-200 bg-blue-50">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <ImageIcon className="w-5 h-5 text-blue-600" />
+          <Card className="mb-4 border-blue-200 bg-blue-50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-blue-600" />
                 Test materiallari
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {test.testImages.map((image, index) => (
-                  <div key={index} className="relative group">
+                  <div key={index} className="relative">
                     <img 
                       src={`/${image}`}
                       alt={`Test materiali ${index + 1}`}
-                      className="w-full h-auto rounded-lg border-2 border-gray-200 shadow-sm hover:border-blue-400 transition-all cursor-pointer"
+                      className="w-full h-auto rounded-lg border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                       onClick={() => window.open(`/${image}`, '_blank')}
                     />
-                    <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+                    <div className="absolute top-1 right-1 bg-black bg-opacity-60 text-white text-xs px-1.5 py-0.5 rounded">
                       {index + 1}
                     </div>
-                    <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="bg-white/90 backdrop-blur-sm p-2 h-8 w-8"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(`/${image}`, '_blank');
-                          }}
-                        >
-                          <ZoomIn className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="bg-white/90 backdrop-blur-sm p-2 h-8 w-8"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const link = document.createElement('a');
-                            link.href = `/${image}`;
-                            link.download = `test-material-${index + 1}.jpg`;
-                            link.click();
-                          }}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ZoomIn className="w-8 h-8 text-white drop-shadow-lg" />
-                      </div>
+                    <div className="absolute top-1 left-1 opacity-80 hover:opacity-100 transition-opacity">
+                      <ZoomIn className="w-4 h-4 text-white drop-shadow-lg" />
                     </div>
                   </div>
                 ))}
               </div>
-              <p className="text-sm text-gray-600 mt-3 text-center">
-                Rasmlarni kattalashtirish uchun ustiga bosing yoki tugmalardan foydalaning
+              <p className="text-xs text-gray-600 mt-2 text-center">
+                Rasmlarni kattalashtirish uchun ustiga bosing
               </p>
             </CardContent>
           </Card>
