@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import LoginForm from '@/components/auth/LoginForm';
+import MobileLoginPage from '@/components/auth/MobileLoginPage';
 import OnboardingSlides from '@/components/onboarding/OnboardingSlides';
 
 const LoginPage: React.FC = () => {
@@ -8,6 +9,16 @@ const LoginPage: React.FC = () => {
   });
   
   const [showPresentation, setShowPresentation] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 1024);
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleOnboardingComplete = () => {
     localStorage.setItem('visited', 'true');
@@ -30,6 +41,12 @@ const LoginPage: React.FC = () => {
     return <OnboardingSlides onComplete={handlePresentationComplete} />;
   }
 
+  // Mobile version - unified experience
+  if (isMobile) {
+    return <MobileLoginPage onShowPresentation={handleShowPresentation} />;
+  }
+
+  // Desktop version - original design
   return (
     <div className="min-h-screen flex">
       {/* Left side - Logo and O'zbek Talim branding */}
@@ -84,27 +101,6 @@ const LoginPage: React.FC = () => {
       {/* Right side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
         <div className="w-full max-w-md">
-          {/* Mobile Logo - Only visible on mobile */}
-          <div className="lg:hidden text-center mb-8">
-            <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl flex items-center justify-center mx-auto mb-4 overflow-hidden">
-              <img 
-                src="/logo.jpg" 
-                alt="O'zbek Talim Logo" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">O'zbek Talim</h1>
-            <p className="text-gray-600">Zamonaviy ta'lim platformasi</p>
-            
-            {/* Mobile Presentation Button */}
-            <button
-              onClick={handleShowPresentation}
-              className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
-            >
-              Tanishtirishni ko'rish
-            </button>
-          </div>
-
           <LoginForm />
         </div>
       </div>

@@ -129,7 +129,10 @@ const OnboardingSlides: React.FC<OnboardingSlidesProps> = ({ onComplete }) => {
             setCurrentSlide(currentSlide + 1);
             return 0;
           } else {
-            onComplete();
+            // Use setTimeout to avoid state update during render
+            setTimeout(() => {
+              onComplete();
+            }, 0);
             return 100;
           }
         }
