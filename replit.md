@@ -134,6 +134,16 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 24, 2025: Fixed database schema and enhanced test answering system
+  - Fixed database tables creation issue that was preventing user registration
+  - Enhanced test answering interface with improved image display and A,B,C,D option selection
+  - Added comprehensive question overview panel for easy navigation between questions
+  - Implemented proper answer submission API endpoints for seamless test taking
+  - Test images now display correctly with click-to-enlarge functionality
+  - Answer selection works like test creation process with clear visual feedback
+  - Added quick navigation to unanswered questions and progress tracking
+  - User feedback: "Testga javob berish funksiyasi tugri ishlamiyapti huddi test yaratish jarayonida test javoblari kiritilgandek usulda javob berish imkoniyatini yarat test rasmlari ham kurinsin"
+
 - June 24, 2025: Fixed student test system and implemented complete test-taking functionality
   - Enhanced numerical test search with 6-digit code recognition and partial matching
   - Created comprehensive TakeTestPage component with real-time test taking
