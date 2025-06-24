@@ -134,14 +134,13 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
-- June 24, 2025: Created unified sidebar system for both desktop and mobile
-  - Desktop: Full sidebar with simple toggle (open/close only)
-  - Mobile: Overlay sidebar that slides in from left with backdrop
-  - Menu button in mobile header to open sidebar
-  - Sidebar contains all navigation links with profile and logout sections
-  - Bottom navigation preserved for primary mobile navigation
-  - Consistent experience across all device sizes
-  - User feedback: "Mobile versiyada mavjud emas" - now fixed with full mobile sidebar support
+- June 24, 2025: Created universal sidebar system for all pages
+  - ResponsiveDashboard component applied to ALL teacher pages (Dashboard, Tests, Lessons, CreateTest, EditTest, Profile)
+  - Mobile: Overlay sidebar slides from left with backdrop, menu button in header
+  - Desktop: Full sidebar with simple toggle, menu button when closed
+  - Sidebar works consistently across Dashboard, Create, Edit, and Profile pages
+  - User feedback: "Test yaratish ga kirganda sidebar overlay yuq" - now fixed with sidebar on every page
+  - Removed test search functionality from teacher dashboard as requested
 
 - June 20, 2025: Added comprehensive test editing functionality for teachers
   - Created EditTest.tsx component with full test information editing capabilities
