@@ -416,16 +416,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Teachers see their own tests
         tests = await storage.getTestsByTeacherId(req.user.userId);
       } else if (req.user?.role === "student") {
-        // Students see active tests for their grade and class
+        // Students see all active public tests + grade-specific tests
         const profile = await storage.getStudentProfile(req.user.userId);
+        const publicTests = await storage.getAllPublicTests();
+        
         if (profile?.grade) {
-          tests = await storage.getActiveTestsForStudent(
+          // Get grade-specific tests
+          const gradeTests = await storage.getActiveTestsForStudent(
             profile.grade,
             profile.classroom || undefined
           );
+          // Combine and deduplicate
+          const allTestIds = new Set();
+          tests = [...publicTests, ...gradeTests].filter(test => {
+            if (allTestIds.has(test.id)) {
+              return false;
+            }
+            allTestIds.add(test.id);
+            return true;
+          });
         } else {
-          // Return empty array if no profile exists instead of error
-          tests = [];
+          // If no profile, show all public tests anyway
+          tests = publicTests;
         }
       } else if (req.user?.role === "center" || req.user?.role === "parent") {
         // Centers and parents see all public tests
@@ -640,17 +652,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // Public tests endpoint
-  app.get("/api/tests/public", authenticate, async (req, res) => {
-    try {
-      // Get all public tests from all teachers
-      const publicTests = await storage.getAllPublicTests();
-      return res.status(200).json(publicTests);
-    } catch (error) {
-      console.error("Error fetching public tests:", error);
-      return res.status(500).json({ message: "Failed to fetch public tests" });
-    }
-  });
+  // Remove duplicate public tests endpoint - already defined above
 
   // Universal search endpoint - supports both name and code search
   app.get("/api/tests/search/:query", authenticate, async (req, res) => {

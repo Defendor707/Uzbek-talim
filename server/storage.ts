@@ -511,7 +511,7 @@ export class DatabaseStorage implements IStorage {
       .from(schema.tests)
       .where(and(
         eq(schema.tests.status, 'active'),
-        like(schema.tests.description, '%Ommaviy%')
+        eq(schema.tests.type, 'public')
       ))
       .orderBy(desc(schema.tests.createdAt));
     return tests;
