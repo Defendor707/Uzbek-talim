@@ -3,6 +3,7 @@ import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import useAuth from '@/hooks/useAuth';
+import ResponsiveDashboard from '@/components/dashboard/ResponsiveDashboard';
 
 const TestTypeSelection: React.FC = () => {
   const { logout } = useAuth();
@@ -52,26 +53,46 @@ const TestTypeSelection: React.FC = () => {
     }
   };
 
+  // Dashboard sections for navigation
+  const dashboardSections = [
+    {
+      id: 'dashboard',
+      title: 'Bosh sahifa',
+      icon: (
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+        </svg>
+      ),
+      href: '/dashboard/teacher',
+    },
+    {
+      id: 'lessons',
+      title: 'Darsliklar',
+      icon: (
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+      ),
+      href: '/teacher/lessons',
+    },
+    {
+      id: 'tests',
+      title: 'Testlar',
+      icon: (
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+      ),
+      href: '/teacher/tests'
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 gap-4 sm:gap-0">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Test turi tanlash</h1>
-              <p className="text-sm sm:text-base text-gray-600">Yaratmoqchi bo'lgan test turini tanlang</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-              <Link href="/teacher/tests" className="w-full sm:w-auto">
-                <Button variant="outline" className="w-full sm:w-auto">
-                  Orqaga
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+    <ResponsiveDashboard 
+      userRole="teacher" 
+      sections={dashboardSections}
+      currentPage="Test turi tanlash"
+    >
 
       {/* Test Types Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -126,7 +147,7 @@ const TestTypeSelection: React.FC = () => {
           </p>
         </div>
       </div>
-    </div>
+    </ResponsiveDashboard>
   );
 };
 
