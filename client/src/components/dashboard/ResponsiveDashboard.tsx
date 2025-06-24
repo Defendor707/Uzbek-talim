@@ -153,7 +153,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               </Button>
               <div className="w-8 h-8 rounded-lg overflow-hidden">
                 <img 
-                  src="/attached_assets/IMG_20250624_114711_600_1750757183585.jpg" 
+                  src="/logo.jpg" 
                   alt="O'zbek Talim Logo" 
                   className="w-full h-full object-cover"
                 />
@@ -295,7 +295,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 rounded-lg overflow-hidden">
                 <img 
-                  src="/attached_assets/IMG_20250624_114711_600_1750757183585.jpg" 
+                  src="/logo.jpg" 
                   alt="O'zbek Talim Logo" 
                   className="w-full h-full object-cover"
                 />
