@@ -213,9 +213,23 @@ const StudentTestsPage: React.FC = () => {
                         )}
                         <Badge className={getTestTypeColor(test.type)}>{test.type}</Badge>
                       </div>
-                      <Link href={`/student/test/${test.id}`}>
-                        <Button size="sm">Boshlash</Button>
-                      </Link>
+                      <Button 
+                        size="sm" 
+                        onClick={() => {
+                          console.log('Search result test boshlash:', test.id);
+                          if (!test.id) {
+                            toast({
+                              title: "Xatolik",
+                              description: "Test ID mavjud emas",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          setLocation(`/student/test/${test.id}`);
+                        }}
+                      >
+                        Boshlash
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -241,9 +255,23 @@ const StudentTestsPage: React.FC = () => {
                         )}
                         <Badge className={getTestTypeColor(test.type)}>{test.type}</Badge>
                       </div>
-                      <Link href={`/student/test/${test.id}`}>
-                        <Button size="sm">Boshlash</Button>
-                      </Link>
+                      <Button 
+                        size="sm" 
+                        onClick={() => {
+                          console.log('Available test boshlash:', test.id);
+                          if (!test.id) {
+                            toast({
+                              title: "Xatolik",
+                              description: "Test ID mavjud emas",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          setLocation(`/student/test/${test.id}`);
+                        }}
+                      >
+                        Boshlash
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
