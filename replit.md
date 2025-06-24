@@ -134,6 +134,15 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 24, 2025: Enhanced mobile notifications page with modern design and fixed authentication
+  - Fixed notifications API authentication by properly sending Bearer token in headers
+  - Enhanced mobile notifications interface with gradient backgrounds and modern cards
+  - Improved visual hierarchy with larger icons, better spacing, and rounded elements
+  - Added shadow effects and smooth transitions for better user experience
+  - Enhanced empty state with gradient background and better messaging
+  - Improved touch targets and button styling for mobile interaction
+  - User feedback: "Bildirishnomalar sahifasini mobile versiyasini ham ishlab chiq"
+
 - June 24, 2025: Created unified login experience with modern design for both mobile and desktop
   - Fixed React state update warning in OnboardingSlides component using setTimeout
   - Created dedicated MobileLoginPage and DesktopLoginPage components with modern card-based design

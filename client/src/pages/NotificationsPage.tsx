@@ -33,8 +33,18 @@ const NotificationsPage: React.FC = () => {
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['/api/notifications'],
     queryFn: async () => {
-      const response = await fetch('/api/notifications');
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/notifications', {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required');
+        }
         return [];
       }
       return response.json();
@@ -110,15 +120,15 @@ const NotificationsPage: React.FC = () => {
         </header>
 
         {/* Mobile Content */}
-        <main className="px-3 py-4 pb-20 max-w-full overflow-hidden">
+        <main className="px-4 py-4 pb-20 max-w-full overflow-hidden">
           {/* Filter Tabs */}
-          <div className="mb-4">
+          <div className="mb-6">
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               <Button
                 variant={filter === 'all' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilter('all')}
-                className="whitespace-nowrap min-h-[44px] px-4 text-sm font-medium flex-shrink-0"
+                className="whitespace-nowrap min-h-[44px] px-6 text-sm font-medium flex-shrink-0 rounded-full"
               >
                 Barchasi ({notifications.length})
               </Button>
@@ -126,7 +136,7 @@ const NotificationsPage: React.FC = () => {
                 variant={filter === 'unread' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilter('unread')}
-                className="whitespace-nowrap min-h-[44px] px-4 text-sm font-medium flex-shrink-0"
+                className="whitespace-nowrap min-h-[44px] px-6 text-sm font-medium flex-shrink-0 rounded-full"
               >
                 O'qilmagan ({unreadCount})
               </Button>
@@ -134,7 +144,7 @@ const NotificationsPage: React.FC = () => {
                 variant={filter === 'read' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilter('read')}
-                className="whitespace-nowrap min-h-[44px] px-4 text-sm font-medium flex-shrink-0"
+                className="whitespace-nowrap min-h-[44px] px-6 text-sm font-medium flex-shrink-0 rounded-full"
               >
                 O'qilgan ({notifications.length - unreadCount})
               </Button>
@@ -163,15 +173,15 @@ const NotificationsPage: React.FC = () => {
                 <p className="text-gray-500 mt-2 text-sm">Yuklanmoqda...</p>
               </div>
             ) : filteredNotifications.length === 0 ? (
-              <Card className="shadow-sm">
-                <CardContent className="p-6 text-center">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Bell className="w-6 h-6 text-gray-400" />
+              <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50">
+                <CardContent className="p-8 text-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Bell className="w-8 h-8 text-blue-500" />
                   </div>
-                  <h3 className="text-base font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">
                     Sizga habarlar mavjud emas
                   </h3>
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-gray-600 text-sm leading-relaxed">
                     {filter === 'unread' 
                       ? 'Barcha xabarlar o\'qilgan' 
                       : 'Hozircha sizga xabarlar kelmagan'}
@@ -182,56 +192,57 @@ const NotificationsPage: React.FC = () => {
               filteredNotifications.map((notification: Notification) => (
                 <Card 
                   key={notification.id} 
-                  className={`transition-all duration-200 shadow-sm ${
+                  className={`transition-all duration-300 shadow-md hover:shadow-lg border-0 ${
                     !notification.isRead 
-                      ? 'border-l-4 border-l-blue-500 bg-blue-50/30' 
-                      : ''
+                      ? 'border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50/50 to-transparent' 
+                      : 'bg-white'
                   }`}
                 >
-                  <CardContent className="p-3">
-                    <div className="flex items-start gap-3">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
                       {/* Icon */}
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getNotificationColor(notification.type)}`}>
-                        <span className="text-xs font-bold">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${getNotificationColor(notification.type)}`}>
+                        <span className="text-sm font-bold">
                           {getNotificationIcon(notification.type)}
                         </span>
                       </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-1">
-                          <h3 className="font-medium text-gray-900 text-sm leading-tight pr-2">
-                            {notification.title}
-                          </h3>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 text-sm leading-tight pr-2">
+                              {notification.title}
+                            </h3>
+                            {!notification.isRead && (
+                              <Badge variant="secondary" className="mt-1 text-xs bg-blue-100 text-blue-700">
+                                Yangi
+                              </Badge>
+                            )}
+                          </div>
                           {!notification.isRead && (
                             <div className="flex-shrink-0">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <div className="w-3 h-3 bg-blue-500 rounded-full shadow-sm"></div>
                             </div>
                           )}
                         </div>
                         
-                        {!notification.isRead && (
-                          <Badge variant="secondary" className="mb-2 text-xs">
-                            Yangi
-                          </Badge>
-                        )}
-                        
-                        <p className="text-xs text-gray-600 leading-relaxed mb-2">
+                        <p className="text-sm text-gray-600 leading-relaxed mb-3">
                           {notification.message}
                         </p>
                         
                         <div className="flex items-center justify-between">
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-gray-500 font-medium">
                             {formatDate(notification.createdAt)}
                           </p>
                           
                           {/* Action Buttons */}
-                          <div className="flex gap-1">
+                          <div className="flex gap-2">
                             {!notification.isRead && (
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
-                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
+                                className="h-9 w-9 p-0 text-blue-600 hover:bg-blue-100 rounded-full"
                               >
                                 <Check className="w-4 h-4" />
                               </Button>
@@ -239,7 +250,7 @@ const NotificationsPage: React.FC = () => {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="h-8 w-8 p-0 text-red-500 hover:bg-red-50"
+                              className="h-9 w-9 p-0 text-red-500 hover:bg-red-100 rounded-full"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
