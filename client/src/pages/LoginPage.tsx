@@ -233,25 +233,8 @@ const LoginPage: React.FC = () => {
                transition: isDragging ? 'none' : 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
              }}>
           <div className="w-full max-w-md relative z-10">
-            {/* Simple header */}
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 100 100">
-                  <path d="M20 15 L20 85 L50 80 L80 85 L80 15 L50 20 Z" fill="currentColor" fillOpacity="0.9"/>
-                  <g stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round">
-                    <circle cx="65" cy="25" r="2"/>
-                    <circle cx="75" cy="35" r="2"/>
-                    <circle cx="65" cy="45" r="2"/>
-                    <path d="M65 25 L75 35 L65 45"/>
-                  </g>
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Tizimga kirish</h2>
-              <p className="text-gray-600">Ma'lumotlaringizni kiriting</p>
-            </div>
-            
-            {/* Login Form Container */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-gray-500/10 border border-white/20 p-8">
+            {/* Login Form Container - Mobile Optimized */}
+            <div className="bg-white/90 backdrop-blur-xl rounded-2xl md:rounded-3xl shadow-xl shadow-gray-500/10 border border-white/20 p-4 md:p-6 lg:p-8 mx-auto max-w-sm md:max-w-md">
               <LoginForm />
             </div>
             
