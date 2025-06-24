@@ -11,6 +11,11 @@ export interface IStorage {
   createUser(user: schema.InsertUser): Promise<schema.User>;
   updateUser(id: number, userData: Partial<schema.InsertUser>): Promise<schema.User | undefined>;
   getUsersByRole(role: string): Promise<schema.User[]>;
+  
+  // Password reset methods
+  createResetToken(email: string): Promise<string | null>;
+  getUserByResetToken(token: string): Promise<schema.User | undefined>;
+  resetPassword(token: string, newPasswordHash: string): Promise<boolean>;
 
   // Profile related methods
   createStudentProfile(profile: schema.InsertStudentProfile): Promise<schema.StudentProfile>;

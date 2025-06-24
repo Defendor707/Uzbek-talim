@@ -60,6 +60,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
     defaultValues: {
       username: '',
       fullName: '',
+      email: '',
       password: '',
       confirmPassword: '',
       role: 'student',
@@ -91,6 +92,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
     const registerData = {
       username: values.username,
       fullName: values.fullName,
+      email: values.email || undefined,
       password: values.password,
       confirmPassword: values.confirmPassword,
       role: values.role,

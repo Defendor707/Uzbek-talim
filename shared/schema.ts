@@ -283,6 +283,8 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type LoginCredentials = z.infer<typeof loginSchema>;
+export type ForgotPasswordRequest = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordRequest = z.infer<typeof resetPasswordSchema>;
 
 export type StudentProfile = typeof studentProfiles.$inferSelect;
 export type InsertStudentProfile = z.infer<typeof insertStudentProfileSchema>;
