@@ -134,13 +134,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
-- June 24, 2025: Created universal sidebar system for all pages
-  - ResponsiveDashboard component applied to ALL teacher pages (Dashboard, Tests, Lessons, CreateTest, EditTest, Profile)
+- June 24, 2025: Created universal sidebar system for all pages with improved mobile profile management
+  - ResponsiveDashboard component applied to ALL teacher pages (Dashboard, Tests, Lessons, CreateTest, EditTest, Profile, TestTypeSelection, CreateTestSimple)
   - Mobile: Overlay sidebar slides from left with backdrop, menu button in header
   - Desktop: Full sidebar with simple toggle, menu button when closed
-  - Sidebar works consistently across Dashboard, Create, Edit, and Profile pages
-  - User feedback: "Test yaratish ga kirganda sidebar overlay yuq" - now fixed with sidebar on every page
-  - Removed test search functionality from teacher dashboard as requested
+  - Mobile header: Profile dropdown with User icon provides access to Profile, Settings, and Logout
+  - Mobile sidebar: Removed duplicate profile and logout buttons to avoid confusion
+  - Removed all "Orqaga" (Back) buttons from test creation/editing pages as sidebar provides navigation
+  - User feedback: "Mobile dashboartda profil belgili tugmacha profil, sozlamalar va chiqish imkoniyatini berish kerak" - implemented with blue profile icon and dropdown menu
 
 - June 20, 2025: Added comprehensive test editing functionality for teachers
   - Created EditTest.tsx component with full test information editing capabilities
