@@ -33,7 +33,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const { user, logout } = useAuth();
   const [location] = useLocation();
   const isMobile = useMobile();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const getRoleTitle = (role: string) => {
     switch (role) {
@@ -70,7 +70,10 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setSidebarOpen(true)}
+                onClick={() => {
+                  console.log('Mobile menu tugmasi bosildi, sidebarOpen:', sidebarOpen);
+                  setSidebarOpen(true);
+                }}
                 className="p-2 h-8 w-8 rounded-lg hover:bg-gray-100 mr-2"
               >
                 <Menu className="h-4 w-4 text-gray-600" />
@@ -325,7 +328,10 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setSidebarOpen(true)}
+                  onClick={() => {
+                    console.log('Desktop menu tugmasi bosildi, sidebarOpen:', sidebarOpen);
+                    setSidebarOpen(true);
+                  }}
                   className="p-2 hover:bg-gray-100 rounded-lg"
                   title="Sidebar ochish"
                 >
