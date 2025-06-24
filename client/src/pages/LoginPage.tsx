@@ -1,251 +1,111 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import LoginForm from '@/components/auth/LoginForm';
 import OnboardingSlides from '@/components/onboarding/OnboardingSlides';
 
 const LoginPage: React.FC = () => {
-  const [showOnboarding, setShowOnboarding] = useState(true);
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0); // 0 = logo/intro, 1 = login form
-  const [startX, setStartX] = useState(0);
-  const [currentX, setCurrentX] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-
-  useEffect(() => {
-    // Check if user has already seen onboarding
-    const seen = localStorage.getItem('hasSeenOnboarding');
-    if (seen === 'true') {
-      setShowOnboarding(false);
-      setHasSeenOnboarding(true);
-    }
-  }, []);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem('visited');
+  });
+  
+  const [showPresentation, setShowPresentation] = useState(false);
 
   const handleOnboardingComplete = () => {
-    localStorage.setItem('hasSeenOnboarding', 'true');
+    localStorage.setItem('visited', 'true');
     setShowOnboarding(false);
-    setHasSeenOnboarding(true);
   };
 
-  const handleShowOnboarding = () => {
-    setShowOnboarding(true);
+  const handleShowPresentation = () => {
+    setShowPresentation(true);
   };
 
-  // Touch and mouse event handlers for swipe navigation
-  const handleStart = (clientX: number) => {
-    setStartX(clientX);
-    setCurrentX(clientX);
-    setIsDragging(true);
-  };
-
-  const handleMove = (clientX: number) => {
-    if (!isDragging) return;
-    setCurrentX(clientX);
-  };
-
-  const handleEnd = () => {
-    if (!isDragging) return;
-    
-    const diff = currentX - startX;
-    const threshold = 50; // minimum swipe distance
-    
-    if (Math.abs(diff) > threshold) {
-      if (diff > 0 && currentSlide === 1) {
-        // Swipe right - go to logo/intro page
-        setCurrentSlide(0);
-      } else if (diff < 0 && currentSlide === 0) {
-        // Swipe left - go to login page
-        setCurrentSlide(1);
-      }
-    }
-    
-    setIsDragging(false);
-    setStartX(0);
-    setCurrentX(0);
-  };
-
-  // Touch event handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    handleStart(e.touches[0].clientX);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    handleMove(e.touches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    handleEnd();
-  };
-
-  // Mouse event handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    handleStart(e.clientX);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    handleMove(e.clientX);
-  };
-
-  const handleMouseUp = () => {
-    handleEnd();
+  const handlePresentationComplete = () => {
+    setShowPresentation(false);
   };
 
   if (showOnboarding) {
     return <OnboardingSlides onComplete={handleOnboardingComplete} />;
   }
 
-  const translateX = isDragging ? (currentX - startX) * 0.3 : 0;
-  const dragProgress = isDragging ? Math.min(Math.abs(translateX) / 100, 1) : 0;
+  if (showPresentation) {
+    return <OnboardingSlides onComplete={handlePresentationComplete} />;
+  }
 
   return (
-    <div 
-      className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden select-none"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onMouseDown={handleMouseDown}
-      onMouseMove={isDragging ? handleMouseMove : undefined}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-    >
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="grid-pattern" width="60" height="60" patternUnits="userSpaceOnUse">
-              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="1"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid-pattern)" />
-        </svg>
+    <div className="min-h-screen flex">
+      {/* Left side - Logo and O'zbek Talim branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-10 left-10 w-20 h-20 bg-white rounded-full animate-pulse"></div>
+          <div className="absolute top-32 right-16 w-12 h-12 bg-white rounded-full animate-pulse delay-75"></div>
+          <div className="absolute bottom-20 left-1/4 w-16 h-16 bg-white rounded-full animate-pulse delay-150"></div>
+          <div className="absolute bottom-32 right-1/3 w-8 h-8 bg-white rounded-full animate-pulse delay-300"></div>
+        </div>
+        
+        <div className="flex flex-col items-center justify-center h-full px-8 relative z-10 text-white text-center">
+          <div className="w-32 h-32 bg-white bg-opacity-20 rounded-3xl flex items-center justify-center backdrop-blur-sm border border-white border-opacity-30 overflow-hidden mb-8">
+            <img 
+              src="/logo.jpg" 
+              alt="O'zbek Talim Logo" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+          
+          <h1 className="text-5xl font-bold mb-4">O'zbek Talim</h1>
+          <p className="text-xl mb-8 opacity-90">Zamonaviy ta'lim platformasi</p>
+          
+          <div className="space-y-4 mb-8">
+            <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+              <p className="font-semibold">✨ O'qituvchilar uchun</p>
+              <p className="text-sm opacity-80">Test va darslarni yarating</p>
+            </div>
+            <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+              <p className="font-semibold">📚 O'quvchilar uchun</p>
+              <p className="text-sm opacity-80">Bilimingizni sinab ko'ring</p>
+            </div>
+            <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+              <p className="font-semibold">👨‍👩‍👧‍👦 Ota-onalar uchun</p>
+              <p className="text-sm opacity-80">Farzandingizni kuzatib boring</p>
+            </div>
+          </div>
+          
+          <button
+            onClick={handleShowPresentation}
+            className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-6 py-3 rounded-lg backdrop-blur-sm border border-white border-opacity-30 transition-all duration-200 flex items-center space-x-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.5a2 2 0 011.5 1.5V13" />
+            </svg>
+            <span>Tanishtirishni qayta ko'rish</span>
+          </button>
+        </div>
       </div>
 
-      {/* Floating Elements with enhanced animation */}
-      <div className="absolute top-20 left-20 w-32 h-32 bg-blue-200 rounded-full opacity-20 animate-pulse"
-           style={{
-             transform: isDragging ? `translateX(${translateX * 0.1}px) scale(${1 + dragProgress * 0.1})` : 'none',
-             transition: isDragging ? 'none' : 'all 0.5s ease-out'
-           }}></div>
-      <div className="absolute bottom-20 right-20 w-24 h-24 bg-purple-200 rounded-full opacity-20 animate-pulse delay-1000"
-           style={{
-             transform: isDragging ? `translateX(${translateX * -0.05}px) scale(${1 + dragProgress * 0.05})` : 'none',
-             transition: isDragging ? 'none' : 'all 0.5s ease-out'
-           }}></div>
-      <div className="absolute top-1/2 left-10 w-16 h-16 bg-indigo-200 rounded-full opacity-20 animate-pulse delay-500"
-           style={{
-             transform: isDragging ? `translateX(${translateX * 0.15}px) scale(${1 + dragProgress * 0.15})` : 'none',
-             transition: isDragging ? 'none' : 'all 0.5s ease-out'
-           }}></div>
-
-      {/* Slide Container */}
-      <div className="relative w-full h-full flex transition-all duration-500 ease-out"
-           style={{ 
-             transform: `translateX(${-currentSlide * 100 + translateX}vw)`,
-             transformStyle: 'preserve-3d',
-           }}>
-        
-        {/* Page 1: Logo and Introduction */}
-        <div className="w-screen h-screen flex items-center justify-center p-4 flex-shrink-0 relative"
-             style={{
-               transform: isDragging && currentSlide === 0 && translateX < 0 ? 
-                 `perspective(1000px) rotateY(${Math.min(dragProgress * 15, 15)}deg)` : 'none',
-               transformOrigin: 'right center',
-               filter: isDragging && currentSlide === 0 && translateX < 0 ? 
-                 `brightness(${1 - dragProgress * 0.2})` : 'none',
-               transition: isDragging ? 'none' : 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
-             }}>
-          <div className="w-full max-w-md text-center relative z-10">
-            {/* Logo and Title Section */}
-            <div className="mb-8">
-              <div className="relative mx-auto mb-6">
-                <div className="w-24 h-24 bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl flex items-center justify-center mx-auto shadow-2xl shadow-blue-600/30 transform rotate-3 hover:rotate-0 transition-all duration-500"
-                     style={{
-                       transform: `rotate(3deg) ${isDragging && currentSlide === 0 && translateX < 0 ? `scale(${1 - dragProgress * 0.1}) rotateY(${dragProgress * 10}deg)` : ''}`,
-                       filter: isDragging && currentSlide === 0 && translateX < 0 ? `brightness(${1 - dragProgress * 0.1})` : 'none'
-                     }}>
-                  {/* Custom Logo based on the image provided */}
-                  <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 100 100">
-                    {/* Book shape */}
-                    <path d="M20 15 L20 85 L50 80 L80 85 L80 15 L50 20 Z" fill="currentColor" fillOpacity="0.9"/>
-                    {/* Tech circuit lines */}
-                    <g stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round">
-                      <circle cx="65" cy="25" r="3"/>
-                      <circle cx="75" cy="35" r="3"/>
-                      <circle cx="65" cy="45" r="3"/>
-                      <path d="M65 25 L75 35 L65 45"/>
-                      <path d="M68 25 L72 35"/>
-                      <path d="M68 35 L72 45"/>
-                    </g>
-                  </svg>
-                </div>
-                
-                <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-green-400 to-green-500 rounded-full animate-bounce delay-300"></div>
-              </div>
-              
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-4">
-                O'zbek Talim
-              </h1>
-              <p className="text-gray-600 text-xl mb-8">Zamonaviy ta'lim platformasi</p>
-              
-              {/* Show Onboarding Again Button */}
-              {hasSeenOnboarding && (
-                <button
-                  onClick={handleShowOnboarding}
-                  className="group inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 hover:from-blue-100 hover:to-purple-100 transition-all duration-300 shadow-md hover:shadow-lg mb-8"
-                >
-                  <svg className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="font-medium">Tanishtirishni qayta ko'rish</span>
-                </button>
-              )}
+      {/* Right side - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
+        <div className="w-full max-w-md">
+          {/* Mobile Logo - Only visible on mobile */}
+          <div className="lg:hidden text-center mb-8">
+            <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl flex items-center justify-center mx-auto mb-4 overflow-hidden">
+              <img 
+                src="/logo.jpg" 
+                alt="O'zbek Talim Logo" 
+                className="w-full h-full object-cover"
+              />
             </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">O'zbek Talim</h1>
+            <p className="text-gray-600">Zamonaviy ta'lim platformasi</p>
             
-            {/* Swipe Indicator */}
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="flex items-center text-gray-500 animate-bounce">
-                <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                <span className="text-sm font-medium">Chapga torting</span>
-                <div className="ml-2 flex space-x-1">
-                  <div className="w-1 h-1 bg-current rounded-full animate-ping"></div>
-                  <div className="w-1 h-1 bg-current rounded-full animate-ping delay-75"></div>
-                  <div className="w-1 h-1 bg-current rounded-full animate-ping delay-150"></div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Page Indicators */}
-            <div className="flex justify-center space-x-3">
-              <div className={`w-4 h-4 rounded-full transition-all duration-500 transform ${currentSlide === 0 ? 'bg-blue-600 scale-125 shadow-lg shadow-blue-600/50' : 'bg-gray-300 scale-100'}`}></div>
-              <div className={`w-4 h-4 rounded-full transition-all duration-500 transform ${currentSlide === 1 ? 'bg-blue-600 scale-125 shadow-lg shadow-blue-600/50' : 'bg-gray-300 scale-100'}`}></div>
-            </div>
+            {/* Mobile Presentation Button */}
+            <button
+              onClick={handleShowPresentation}
+              className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              Tanishtirishni ko'rish
+            </button>
           </div>
-        </div>
 
-        {/* Page 2: Login Form */}
-        <div className="w-screen h-screen flex items-center justify-center p-4 flex-shrink-0 relative"
-             style={{
-               transform: isDragging && currentSlide === 1 && translateX > 0 ? 
-                 `perspective(1000px) rotateY(${Math.max(-dragProgress * 15, -15)}deg)` : 'none',
-               transformOrigin: 'left center',
-               filter: isDragging && currentSlide === 1 && translateX > 0 ? 
-                 `brightness(${1 - dragProgress * 0.2})` : 'none',
-               transition: isDragging ? 'none' : 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
-             }}>
-          <div className="w-full max-w-md relative z-10">
-            {/* Login Form Container - Mobile Optimized */}
-            <div className="bg-white/90 backdrop-blur-xl rounded-2xl md:rounded-3xl shadow-xl shadow-gray-500/10 border border-white/20 p-4 md:p-6 lg:p-8 mx-auto max-w-sm md:max-w-md">
-              <LoginForm />
-            </div>
-            
-
-            
-            {/* Page Indicators */}
-            <div className="flex justify-center space-x-3 mt-4">
-              <div className={`w-4 h-4 rounded-full transition-all duration-500 transform ${currentSlide === 0 ? 'bg-blue-600 scale-125 shadow-lg shadow-blue-600/50' : 'bg-gray-300 scale-100'}`}></div>
-              <div className={`w-4 h-4 rounded-full transition-all duration-500 transform ${currentSlide === 1 ? 'bg-blue-600 scale-125 shadow-lg shadow-blue-600/50' : 'bg-gray-300 scale-100'}`}></div>
-            </div>
-          </div>
+          <LoginForm />
         </div>
       </div>
     </div>
