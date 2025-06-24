@@ -695,21 +695,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         availableTests = await storage.getAllPublicTests();
       }
 
-      // Search by test code first (case-insensitive)
-      const testByCode = await storage.getTestByCode(query.toUpperCase());
-      if (testByCode && availableTests.some(test => test.id === testByCode.id)) {
-        searchResults.push(testByCode);
+      // Enhanced search for numerical tests and general search
+      // 1. First priority: Search by exact test code (numerical tests)
+      if (/^\d{6}$/.test(query)) {
+        const testByCode = await storage.getTestByCode(query);
+        if (testByCode && testByCode.status === 'active') {
+          searchResults.push(testByCode);
+        }
+      } else {
+        // 2. Search by partial test code (for numerical tests)
+        const codeMatches = availableTests.filter(test => 
+          test.testCode && test.testCode.includes(query)
+        );
+        searchResults = [...searchResults, ...codeMatches];
       }
 
-      // Search by title (case-insensitive)
+      // 3. Search by title (case-insensitive)
       const titleMatches = availableTests.filter(test => 
         test.title.toLowerCase().includes(query.toLowerCase()) &&
-        !searchResults.some(result => result.id === test.id) // Avoid duplicates
+        !searchResults.some(result => result.id === test.id)
       );
-      
       searchResults = [...searchResults, ...titleMatches];
 
-      // Search by description/category if no results yet
+      // 4. Search by description if no results yet
       if (searchResults.length === 0) {
         const descriptionMatches = availableTests.filter(test => 
           test.description && 
@@ -718,13 +726,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         searchResults = [...searchResults, ...descriptionMatches];
       }
 
-      // Search by grade if no results yet (for role-appropriate tests)
+      // 5. Search by type (public, numerical, etc.)
       if (searchResults.length === 0) {
-        const gradeMatches = availableTests.filter(test => 
-          test.grade && 
-          test.grade.toLowerCase().includes(query.toLowerCase())
+        const typeMatches = availableTests.filter(test => 
+          test.type && test.type.toLowerCase().includes(query.toLowerCase())
         );
-        searchResults = [...searchResults, ...gradeMatches];
+        searchResults = [...searchResults, ...typeMatches];
       }
 
       if (searchResults.length > 0) {

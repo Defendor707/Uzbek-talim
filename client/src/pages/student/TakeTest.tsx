@@ -1,28 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { useRoute, useLocation } from 'wouter';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useParams, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Clock, ChevronLeft, ChevronRight, Flag, Send, AlertCircle, Check } from 'lucide-react';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import useAuth from '@/hooks/useAuth';
+import { apiRequest } from '@/lib/queryClient';
+import { ChevronLeft, ChevronRight, Flag, Check, ArrowLeft } from 'lucide-react';
+import ResponsiveDashboard from '@/components/dashboard/ResponsiveDashboard';
 
 interface Question {
   id: number;
   questionText: string;
   questionImage?: string;
-  questionType: string;
-  options?: string[];
-  correctAnswer: any;
+  options: string[];
+  correctAnswer?: string;
   points: number;
   order: number;
+}
+
+interface Test {
+  id: number;
+  title: string;
+  description?: string;
+  testImages?: string[];
+  totalQuestions: number;
+  status: string;
+  type: string;
 }
 
 interface TestAttempt {
@@ -31,603 +36,315 @@ interface TestAttempt {
   studentId: number;
   startTime: string;
   endTime?: string;
-  score?: number;
-  status: 'in_progress' | 'completed' | 'submitted';
+  status: string;
+  totalQuestions: number;
 }
 
 const TakeTestPage: React.FC = () => {
-  const [, params] = useRoute('/student/test/:id');
+  const { testId } = useParams<{ testId: string }>();
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
   const { toast } = useToast();
-  
-  const testId = params?.id ? parseInt(params.id) : 0;
-  
+  const queryClient = useQueryClient();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, any>>({});
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [testAttempt, setTestAttempt] = useState<TestAttempt | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [answers, setAnswers] = useState<{ [questionId: number]: string }>({});
+  const [attemptId, setAttemptId] = useState<number | null>(null);
 
   // Fetch test details
-  const { data: test, isLoading: testLoading } = useQuery<any>({
+  const { data: test, isLoading: testLoading } = useQuery<Test>({
     queryKey: ['/api/tests', testId],
-    enabled: testId > 0,
+    queryFn: async () => {
+      const response = await fetch(`/api/tests/${testId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (!response.ok) throw new Error('Test topilmadi');
+      return response.json();
+    },
   });
 
-  // Fetch test questions
+  // Fetch questions
   const { data: questions, isLoading: questionsLoading } = useQuery<Question[]>({
     queryKey: ['/api/tests', testId, 'questions'],
-    enabled: testId > 0,
-  });
-
-  // Start test attempt mutation
-  const startAttemptMutation = useMutation<TestAttempt, Error, void>({
-    mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/test-attempts', {
-        testId,
-        studentId: user?.id,
+    queryFn: async () => {
+      const response = await fetch(`/api/tests/${testId}/questions`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
       });
+      if (!response.ok) throw new Error('Savollar topilmadi');
       return response.json();
     },
-    onSuccess: (data: TestAttempt) => {
-      setTestAttempt(data);
-      // Only set timer for tests with duration > 0 and not simple type
-      if (test?.type !== 'simple' && test?.duration > 0) {
-        setTimeLeft(test.duration * 60); // Convert minutes to seconds
-      } else {
-        setTimeLeft(0); // No time limit for simple tests
-      }
+    enabled: !!testId,
+  });
+
+  // Start test attempt
+  const startAttemptMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(`/api/tests/${testId}/start`, {
+        method: 'POST',
+      });
     },
-    onError: (error) => {
+    onSuccess: (data) => {
+      setAttemptId(data.id);
+      toast({
+        title: "Test boshlandi",
+        description: "Omad tilaymiz!",
+      });
+    },
+    onError: () => {
       toast({
         title: "Xato",
-        description: "Testni boshlashda xato yuz berdi",
+        description: "Testni boshlashda xatolik",
         variant: "destructive",
       });
     },
   });
 
-  // Submit answer mutation with enhanced error handling
+  // Submit answer
   const submitAnswerMutation = useMutation({
-    mutationFn: async ({ questionId, answer }: { questionId: number; answer: any }) => {
-      if (!testAttempt?.id) {
-        throw new Error('Test attempt not found');
-      }
-      
-      const response = await apiRequest('POST', '/api/student-answers', {
-        attemptId: testAttempt.id,
-        questionId,
-        answer: answer || '', // Ensure answer is never null/undefined
-      });
-      return response.json();
-    },
-    onSuccess: (data, variables) => {
-      // Visual feedback that answer was saved
-      const questionElement = document.querySelector(`[data-question-id="${variables.questionId}"]`);
-      if (questionElement) {
-        questionElement.classList.add('answer-saved');
-        setTimeout(() => {
-          questionElement.classList.remove('answer-saved');
-        }, 1000);
-      }
-    },
-    onError: (error, variables) => {
-      toast({
-        title: "Javob saqlanmadi",
-        description: `Savol ${variables.questionId} uchun javob saqlanishda xato yuz berdi`,
-        variant: "destructive",
+    mutationFn: async ({ questionId, answer }: { questionId: number; answer: string }) => {
+      return apiRequest(`/api/test-attempts/${attemptId}/answers`, {
+        method: 'POST',
+        body: JSON.stringify({ questionId, answer }),
       });
     },
   });
 
-  // Submit test mutation with comprehensive validation
-  const submitTestMutation = useMutation({
+  // Complete test
+  const completeTestMutation = useMutation({
     mutationFn: async () => {
-      if (!testAttempt?.id) {
-        throw new Error('Test attempt not found');
-      }
-
-      // Validate all answers before submission
-      const unansweredQuestions = questions?.filter(q => !answers[q.id]) || [];
-      
-      // For simple tests, allow partial submission but warn user
-      if (unansweredQuestions.length > 0 && test?.type === 'simple') {
-        const confirmSubmit = window.confirm(
-          `Siz ${unansweredQuestions.length} ta savolga javob bermadingiz. Testni baribir topshirmoqchimisiz?`
-        );
-        if (!confirmSubmit) {
-          throw new Error('Submission cancelled by user');
-        }
-      }
-
-      const response = await apiRequest('POST', `/api/test-attempts/${testAttempt.id}/submit`, { 
-        answers,
-        questionsCount: questions?.length || 0,
-        answeredCount: Object.keys(answers).length
+      return apiRequest(`/api/test-attempts/${attemptId}/complete`, {
+        method: 'POST',
       });
-      return response.json();
     },
     onSuccess: (data) => {
       toast({
-        title: "Muvaffaqiyat",
-        description: "Test muvaffaqiyatli topshirildi",
+        title: "Test yakunlandi",
+        description: `Sizning natijangiz: ${data.score}%`,
       });
       setLocation('/student/tests');
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Xato",
-        description: "Testni topshirishda xato yuz berdi",
+        description: "Testni yakunlashda xatolik",
         variant: "destructive",
       });
     },
   });
 
-  // Timer effect - only for timed tests
+  // Start test attempt on component mount
   useEffect(() => {
-    // Only run timer for non-simple tests with duration > 0
-    if (test?.type !== 'simple' && test?.duration > 0) {
-      if (timeLeft > 0 && testAttempt && !isSubmitting) {
-        const timer = setTimeout(() => {
-          setTimeLeft(timeLeft - 1);
-        }, 1000);
-        return () => clearTimeout(timer);
-      } else if (timeLeft === 0 && testAttempt && !isSubmitting) {
-        // Auto-submit when time is up (only for timed tests)
-        handleSubmitTest();
-      }
+    if (test && !attemptId) {
+      startAttemptMutation.mutate();
     }
-  }, [timeLeft, testAttempt, isSubmitting, test?.type, test?.duration]);
+  }, [test]);
 
-  // Handle answer selection with improved validation and feedback
-  const handleAnswerChange = (questionId: number, answer: any) => {
-    // Validate answer based on question type
-    const currentQuestion = questions?.find(q => q.id === questionId);
-    if (!currentQuestion) return;
-
-    // For multiple choice, ensure answer is selected
-    if ((currentQuestion.questionType === 'multiple_choice' || currentQuestion.questionType === 'simple') && !answer) {
-      return;
-    }
-
-    // For open questions, trim whitespace
-    if (currentQuestion.questionType === 'open' && typeof answer === 'string') {
-      answer = answer.trim();
-    }
-
-    // Update local state immediately for responsive UI
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: answer
-    }));
+  // Handle answer selection
+  const handleAnswerSelect = (questionId: number, answer: string) => {
+    setAnswers(prev => ({ ...prev, [questionId]: answer }));
     
-    // Debounced auto-save to reduce API calls
-    const timeoutId = setTimeout(() => {
-      if (answer !== undefined && answer !== null) {
-        submitAnswerMutation.mutate({ questionId, answer });
-      }
-    }, 800);
-
-    // Store timeout ID for cleanup
-    if (typeof window !== 'undefined') {
-      const previousTimeout = (window as any).answerTimeout;
-      if (previousTimeout) {
-        clearTimeout(previousTimeout);
-      }
-      (window as any).answerTimeout = timeoutId;
+    if (attemptId) {
+      submitAnswerMutation.mutate({ questionId, answer });
     }
   };
 
-  // Enhanced test submission with validation
-  const handleSubmitTest = async () => {
-    if (!testAttempt || !questions) return;
-    
-    const answeredCount = Object.keys(answers).length;
-    const totalQuestions = questions.length;
-    const unansweredCount = totalQuestions - answeredCount;
-    
-    // For simple tests, show detailed confirmation if there are unanswered questions
-    if (test?.type === 'simple' && unansweredCount > 0) {
-      const progress = Math.round((answeredCount / totalQuestions) * 100);
-      const confirmMessage = `Test holati:\n\n📊 Umumiy savollar: ${totalQuestions}\n✅ Javob berilgan: ${answeredCount} (${progress}%)\n❌ Javob berilmagan: ${unansweredCount}\n\nJavob berilmagan savollar uchun ball olmaysiz.\nTestni topshirmoqchimisiz?`;
-      
-      if (!window.confirm(confirmMessage)) {
-        return;
-      }
+  // Navigation functions
+  const goToNextQuestion = () => {
+    if (questions && currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
     }
-    
-    setIsSubmitting(true);
-    submitTestMutation.mutate();
   };
 
-  // Start test
-  const handleStartTest = () => {
-    startAttemptMutation.mutate();
-  };
-
-  // Format time
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  const goToPreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
     }
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  // Get progress percentage
-  const getProgress = () => {
-    if (!questions?.length) return 0;
-    const answeredCount = Object.keys(answers).length;
-    return (answeredCount / questions.length) * 100;
+  const handleCompleteTest = () => {
+    if (attemptId) {
+      completeTestMutation.mutate();
+    }
   };
 
   if (testLoading || questionsLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Test yuklanmoqda...</p>
+      <ResponsiveDashboard userRole="student" sections={[]} currentPage="Test">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p>Test yuklanmoqda...</p>
+          </div>
         </div>
-      </div>
+      </ResponsiveDashboard>
     );
   }
 
-  if (!test) {
+  if (!test || !questions || questions.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-6 text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">Test topilmadi</h2>
-            <p className="text-gray-600 mb-4">Kechirasiz, bu test mavjud emas yoki sizga ruxsat berilmagan.</p>
-            <Button onClick={() => setLocation('/student/tests')}>
-              Testlarga qaytish
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <ResponsiveDashboard userRole="student" sections={[]} currentPage="Test">
+        <div className="text-center py-8">
+          <h2 className="text-xl font-semibold mb-4">Test topilmadi</h2>
+          <Button onClick={() => setLocation('/student/tests')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Testlarga qaytish
+          </Button>
+        </div>
+      </ResponsiveDashboard>
     );
   }
 
-  // Pre-test screen
-  if (!testAttempt) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-2xl">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">{test?.title || 'Test'}</CardTitle>
-            <CardDescription>{test?.description || ''}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Test Images Display */}
-            {test?.testImages && test.testImages.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-center">Test rasmlari</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {test.testImages.map((image, index) => (
-                    <div key={index} className="text-center">
-                      <img
-                        src={`/uploads/${image}`}
-                        alt={`Test rasmi ${index + 1}`}
-                        className="max-w-full h-auto max-h-48 mx-auto rounded-lg border shadow-sm"
-                        onError={(e) => {
-                          // Fallback to root path if uploads path fails
-                          const img = e.target as HTMLImageElement;
-                          if (img.src.includes('/uploads/')) {
-                            img.src = `/${image}`;
-                          }
-                        }}
-                      />
-                      <p className="text-sm text-gray-500 mt-2">Rasm {index + 1}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Test Description */}
-            {test?.description && (
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-blue-900 mb-2">Test haqida</h3>
-                <p className="text-blue-800">{test.description}</p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <Clock className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                <p className="font-semibold">Vaqt</p>
-                <p className="text-sm text-gray-600">
-                  {test?.type === 'simple' || test?.duration === 0 
-                    ? 'Cheklanmagan' 
-                    : `${test?.duration || 0} daqiqa`
-                  }
-                </p>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <Flag className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <p className="font-semibold">Savollar</p>
-                <p className="text-sm text-gray-600">{questions?.length || 0} ta savol</p>
-              </div>
-            </div>
-            
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Diqqat:</strong> 
-                {test?.type === 'simple' || test?.duration === 0 
-                  ? 'Bu oddiy test bo\'lib, vaqt cheklanmagan. O\'z vaqtingizda savollarni yechib, javoblarni tekshirib topshiring.'
-                  : 'Test boshlanganidan keyin vaqt o\'ta boshlaydi. Testni yakunlashdan oldin barcha savollarni ko\'rib chiqishingiz tavsiya etiladi.'
-                }
-              </AlertDescription>
-            </Alert>
-
-            <div className="flex gap-4 justify-center">
-              <Button
-                variant="outline"
-                onClick={() => setLocation('/student/tests')}
-              >
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Orqaga
-              </Button>
-              <Button
-                onClick={handleStartTest}
-                disabled={startAttemptMutation.isPending}
-                className="bg-purple-600 hover:bg-purple-700"
-              >
-                {startAttemptMutation.isPending ? 'Boshlanmoqda...' : 'Testni boshlash'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const currentQuestion = questions?.[currentQuestionIndex];
-  const isLastQuestion = currentQuestionIndex === (questions?.length || 0) - 1;
+  const currentQuestion = questions[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  const answeredCount = Object.keys(answers).length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header with timer and progress */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{test?.title || 'Test'}</h1>
-              <p className="text-sm text-gray-600">
-                Savol {currentQuestionIndex + 1} / {questions?.length || 0}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              {/* Only show timer for timed tests */}
-              {test?.type !== 'simple' && test?.duration > 0 && (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <span className={`font-mono text-lg ${timeLeft < 300 ? 'text-red-600' : 'text-gray-900'}`}>
-                    {formatTime(timeLeft)}
-                  </span>
-                </div>
-              )}
-              {/* Show "No time limit" for simple tests */}
-              {(test?.type === 'simple' || test?.duration === 0) && (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-green-500" />
-                  <span className="text-sm text-green-600 font-medium">
-                    Vaqt cheklanmagan
-                  </span>
-                </div>
-              )}
-              <Button
-                variant="outline"
-                onClick={handleSubmitTest}
-                disabled={isSubmitting}
-                className="text-green-600 border-green-600 hover:bg-green-50"
+    <ResponsiveDashboard userRole="student" sections={[]} currentPage={test.title}>
+      <div className="max-w-4xl mx-auto p-4">
+        {/* Test Header */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle className="text-xl">{test.title}</CardTitle>
+                <p className="text-gray-600 mt-2">{test.description}</p>
+                <Badge className="mt-2">{test.type}</Badge>
+              </div>
+              <Button 
+                variant="outline" 
+                onClick={() => setLocation('/student/tests')}
               >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Topshirilmoqda...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Testni yakunlash
-                  </>
-                )}
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Chiqish
               </Button>
             </div>
-          </div>
-          
-          <div className="mt-4">
-            <Progress value={getProgress()} className="h-2" />
-            <p className="text-xs text-gray-500 mt-1">
-              Javob berilgan: {Object.keys(answers).length} / {questions?.length || 0}
-            </p>
+          </CardHeader>
+        </Card>
+
+        {/* Progress */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium">
+                Savol {currentQuestionIndex + 1} / {questions.length}
+              </span>
+              <span className="text-sm text-gray-600">
+                Javob berilgan: {answeredCount} / {questions.length}
+              </span>
+            </div>
+            <Progress value={progress} className="mb-2" />
+          </CardContent>
+        </Card>
+
+        {/* Current Question */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">
+              {currentQuestionIndex + 1}. {currentQuestion.questionText}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Question Image */}
+            {currentQuestion.questionImage && (
+              <div className="mb-4">
+                <img 
+                  src={currentQuestion.questionImage} 
+                  alt="Savol rasmi" 
+                  className="max-w-full h-auto rounded-lg"
+                />
+              </div>
+            )}
+
+            {/* Answer Options */}
+            <div className="space-y-3">
+              {currentQuestion.options.map((option, index) => {
+                const optionLetter = String.fromCharCode(65 + index); // A, B, C, D
+                const isSelected = answers[currentQuestion.id] === option;
+                
+                return (
+                  <div 
+                    key={index}
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      isSelected 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => handleAnswerSelect(currentQuestion.id, option)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-sm font-medium ${
+                        isSelected 
+                          ? 'border-blue-500 bg-blue-500 text-white' 
+                          : 'border-gray-300'
+                      }`}>
+                        {optionLetter}
+                      </div>
+                      <span>{option}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Navigation */}
+        <div className="flex justify-between items-center">
+          <Button 
+            variant="outline" 
+            onClick={goToPreviousQuestion}
+            disabled={currentQuestionIndex === 0}
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Oldingi
+          </Button>
+
+          <div className="flex space-x-3">
+            {currentQuestionIndex === questions.length - 1 ? (
+              <Button 
+                onClick={handleCompleteTest}
+                disabled={answeredCount < questions.length}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Flag className="w-4 h-4 mr-2" />
+                Testni yakunlash
+              </Button>
+            ) : (
+              <Button 
+                onClick={goToNextQuestion}
+                disabled={currentQuestionIndex === questions.length - 1}
+              >
+                Keyingi
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Question content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {currentQuestion && (
-          <Card data-question-id={currentQuestion.id} className="relative">
+        {/* Test Images */}
+        {test.testImages && test.testImages.length > 0 && (
+          <Card className="mt-6">
             <CardHeader>
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-lg">
-                  {currentQuestion.questionText}
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">
-                    {currentQuestion.points} ball
-                  </Badge>
-                  {answers[currentQuestion.id] && (
-                    <div className="flex items-center gap-1 text-green-600 text-sm">
-                      <Check className="h-4 w-4" />
-                      <span>Saqlandi</span>
-                    </div>
-                  )}
-                  {submitAnswerMutation.isPending && (
-                    <div className="flex items-center gap-1 text-blue-600 text-sm">
-                      <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      <span>Saqlanmoqda...</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              {currentQuestion.questionImage && (
-                <div className="mt-4">
-                  <img
-                    src={`/uploads/${currentQuestion.questionImage}`}
-                    alt="Savol rasmi"
-                    className="max-w-full h-auto rounded-lg shadow-sm"
-                    onError={(e) => {
-                      // Fallback to root path if uploads path fails
-                      const img = e.target as HTMLImageElement;
-                      if (img.src.includes('/uploads/')) {
-                        img.src = `/${currentQuestion.questionImage}`;
-                      }
-                    }}
-                  />
-                </div>
-              )}
+              <CardTitle className="text-lg">Test materiallari</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <RadioGroup
-                  value={answers[currentQuestion.id] || ''}
-                  onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
-                  className="space-y-3"
-                >
-                  {currentQuestion.options?.map((option, index) => {
-                    const optionLabels = ['A', 'B', 'C', 'D', 'E'];
-                    const isSelected = answers[currentQuestion.id] === option;
-                    return (
-                      <div 
-                        key={index} 
-                        className={`flex items-center space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer hover:bg-gray-50 ${
-                          isSelected 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-200'
-                        }`}
-                        onClick={() => handleAnswerChange(currentQuestion.id, option)}
-                      >
-                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold ${
-                          isSelected 
-                            ? 'border-blue-500 bg-blue-500 text-white' 
-                            : 'border-gray-300 text-gray-500'
-                        }`}>
-                          {optionLabels[index] || index + 1}
-                        </div>
-                        <RadioGroupItem value={option} id={`option-${index}`} className="sr-only" />
-                        <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer text-gray-900">
-                          {option}
-                        </Label>
-                        {isSelected && (
-                          <Check className="h-5 w-5 text-blue-500" />
-                        )}
-                      </div>
-                    );
-                  })}
-                </RadioGroup>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {test.testImages.map((image, index) => (
+                  <img 
+                    key={index}
+                    src={image} 
+                    alt={`Test materiali ${index + 1}`}
+                    className="w-full h-auto rounded-lg border"
+                  />
+                ))}
               </div>
             </CardContent>
           </Card>
         )}
-
-        {/* Enhanced Navigation */}
-        <div className="flex flex-col gap-6 mt-8">
-          {/* Question Navigation Buttons */}
-          <div className="flex justify-between items-center">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
-              disabled={currentQuestionIndex === 0}
-              size="lg"
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Oldingi savol
-            </Button>
-
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-600">
-                {currentQuestionIndex + 1} / {questions?.length}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentQuestionIndex(Math.min((questions?.length || 1) - 1, currentQuestionIndex + 1))}
-                disabled={isLastQuestion}
-              >
-                Keyingi
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-
-            <Button
-              variant="outline"
-              onClick={() => setCurrentQuestionIndex(Math.min((questions?.length || 1) - 1, currentQuestionIndex + 1))}
-              disabled={isLastQuestion}
-              size="lg"
-            >
-              Keyingi savol
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-
-          {/* Question Overview Grid */}
-          <div className="bg-white p-4 rounded-lg border">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">Savollar holati:</h4>
-            <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2">
-              {questions?.map((_, index) => {
-                const isAnswered = answers[questions[index].id];
-                const isCurrent = index === currentQuestionIndex;
-                return (
-                  <Button
-                    key={index}
-                    variant={isCurrent ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCurrentQuestionIndex(index)}
-                    className={`w-10 h-10 p-0 relative ${
-                      isAnswered 
-                        ? 'bg-green-100 border-green-500 text-green-700 hover:bg-green-200' 
-                        : isCurrent
-                        ? 'bg-blue-500 text-white'
-                        : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    {index + 1}
-                    {isAnswered && !isCurrent && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
-                        <Check className="h-2 w-2 text-white" />
-                      </div>
-                    )}
-                  </Button>
-                );
-              })}
-            </div>
-            <div className="flex items-center gap-4 mt-3 text-xs text-gray-600">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span>Javob berilgan</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span>Joriy savol</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 border border-gray-300 rounded-full"></div>
-                <span>Javob berilmagan</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
-    </div>
+    </ResponsiveDashboard>
   );
 };
 
