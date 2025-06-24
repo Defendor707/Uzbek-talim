@@ -71,10 +71,13 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => setSidebarOpen(true)}
-                className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors duration-200 p-0"
+                className="p-2 h-8 w-8 rounded-lg hover:bg-gray-100 mr-2"
               >
-                <span className="text-white font-bold text-sm">O</span>
+                <Menu className="h-4 w-4 text-gray-600" />
               </Button>
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">O</span>
+              </div>
               <div>
                 <h1 className="text-lg font-bold text-gray-900">O'zbek Talim</h1>
                 <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
@@ -190,14 +193,9 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           {/* Sidebar Header */}
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSidebarOpen(false)}
-                className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors duration-200 p-0"
-              >
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">O</span>
-              </Button>
+              </div>
               <div>
                 <h2 className="text-lg font-bold text-gray-900">O'zbek Talim</h2>
                 <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
@@ -210,7 +208,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               className="p-2 h-8 w-8 rounded-lg hover:bg-gray-100"
               title="Sidebar yopish"
             >
-              <Menu className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" />
             </Button>
           </div>
 
@@ -333,6 +331,11 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 >
                   <Menu className="h-5 w-5" />
                 </Button>
+              )}
+              {!sidebarOpen && (
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-white font-bold text-sm">O</span>
+                </div>
               )}
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{currentPage}</h1>
