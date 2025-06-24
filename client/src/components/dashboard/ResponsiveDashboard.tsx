@@ -34,6 +34,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const [location] = useLocation();
   const isMobile = useMobile();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarHidden, setSidebarHidden] = useState(false);
 
   const getRoleTitle = (role: string) => {
     switch (role) {
@@ -179,10 +180,24 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Desktop Layout
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
+      {/* Menu Button - Fixed position when sidebar is hidden */}
+      {sidebarHidden && (
+        <div className="fixed top-4 left-4 z-50">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSidebarHidden(false)}
+            className="p-2 h-10 w-10 bg-white shadow-lg border border-gray-300 hover:bg-gray-50 rounded-lg"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
       {/* Desktop Sidebar */}
       <div className={cn(
         "bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out",
-        sidebarCollapsed ? "w-16" : "w-64"
+        sidebarHidden ? "-ml-64 w-0 overflow-hidden" : sidebarCollapsed ? "w-16" : "w-64"
       )}>
         {/* Sidebar Header */}
         <div className="p-3 border-b border-gray-200 flex items-center justify-between">
@@ -193,19 +208,35 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">O</span>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">O'zbek Talim</h2>
-              <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
-            </div>
+            {!sidebarCollapsed && (
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">O'zbek Talim</h2>
+                <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
+              </div>
+            )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-1 h-8 w-8 rounded-lg hover:bg-gray-100"
-          >
-            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </Button>
+          <div className="flex items-center space-x-1">
+            {!sidebarCollapsed && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSidebarHidden(true)}
+                className="p-1 h-8 w-8 rounded-lg hover:bg-gray-100"
+                title="Sidebar ni yashirish"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="p-1 h-8 w-8 rounded-lg hover:bg-gray-100"
+              title={sidebarCollapsed ? "Kengaytirish" : "Kichraytirish"}
+            >
+              {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
 
         {/* User Info with Dropdown */}
