@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { ChevronLeft, ChevronRight, Flag, Check, ArrowLeft, Image as ImageIcon, Grid3X3, Eye, Download, ZoomIn } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flag, Check, ArrowLeft, Image as ImageIcon, Grid3X3, Eye, Download, ZoomIn, CheckCircle } from 'lucide-react';
 import ResponsiveDashboard from '@/components/dashboard/ResponsiveDashboard';
 
 interface Question {
@@ -154,11 +154,22 @@ const TakeTestPage: React.FC = () => {
     },
     onSuccess: (data) => {
       console.log('Test completion successful:', data);
+      
+      // Calculate percentage
+      const totalQuestions = questionsData?.data?.length || 0;
+      const correctAnswers = data.score || 0;
+      const percentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+      
       toast({
-        title: "Test yakunlandi",
-        description: "Natijangiz saqlandi",
+        title: "Test yakunlandi!",
+        description: `Natija: ${correctAnswers}/${totalQuestions} (${percentage}%)`,
+        duration: 5000,
       });
-      setLocation('/student/tests');
+      
+      // Redirect to main dashboard instead of tests page
+      setTimeout(() => {
+        setLocation('/dashboard/student');
+      }, 2000);
     },
     onError: (error) => {
       console.error('Test completion error:', error);
@@ -200,12 +211,13 @@ const TakeTestPage: React.FC = () => {
   };
 
   const handleCompleteTest = () => {
-    console.log('Test yakunlash boshlandi:', { attemptId, answers });
+    console.log('Test yakunlash boshlandi:', { attemptId, answers, totalQuestions: questions.length });
     
-    if (Object.keys(answers).length === 0) {
+    // Check if all questions are answered
+    if (Object.keys(answers).length !== questions.length) {
       toast({
         title: "Diqqat",
-        description: "Hech bo'lmaganda bitta savolga javob bering",
+        description: `Barcha savollarga javob bering (${Object.keys(answers).length}/${questions.length})`,
         variant: "destructive",
       });
       return;
@@ -303,8 +315,9 @@ const TakeTestPage: React.FC = () => {
                 Savol {currentQuestionIndex + 1} / {questions.length}
               </span>
               <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-600">
+                <span className={`text-sm ${answeredCount === questions.length ? 'text-green-600 font-medium' : 'text-gray-600'}`}>
                   Javob berilgan: {answeredCount} / {questions.length}
+                  {answeredCount === questions.length && ' ✓'}
                 </span>
                 <Button
                   variant="outline"
@@ -509,7 +522,8 @@ const TakeTestPage: React.FC = () => {
               </Button>
             )}
 
-            {currentQuestionIndex === questions.length - 1 ? (
+            {/* Show completion button only when all questions are answered */}
+            {answeredCount === questions.length ? (
               <Button 
                 onClick={handleCompleteTest}
                 disabled={completeTestMutation.isPending}
@@ -517,11 +531,6 @@ const TakeTestPage: React.FC = () => {
               >
                 <Flag className="w-4 h-4" />
                 {completeTestMutation.isPending ? 'Yakunlanmoqda...' : 'Testni yakunlash'}
-                {answeredCount < questions.length && !completeTestMutation.isPending && (
-                  <span className="ml-2 text-xs bg-red-500 text-white px-2 py-1 rounded">
-                    {questions.length - answeredCount} javobsiz
-                  </span>
-                )}
               </Button>
             ) : (
               <Button 
