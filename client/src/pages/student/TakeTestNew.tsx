@@ -181,11 +181,25 @@ const TakeTestNew: React.FC = () => {
     );
   }
 
-  if (!test || !questions || questions.length === 0) {
+  if (!test) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">Test topilmadi yoki savollar mavjud emas</p>
+          <p className="text-red-600 mb-4">Test topilmadi</p>
+          <Button onClick={() => setLocation('/student/dashboard')}>
+            Orqaga
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!questions || questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Testda savollar mavjud emas</p>
+          <p className="text-gray-600 mb-4">Test ID: {test.id}, Jami savollar: {test.totalQuestions}</p>
           <Button onClick={() => setLocation('/student/dashboard')}>
             Orqaga
           </Button>
@@ -251,11 +265,15 @@ const TakeTestNew: React.FC = () => {
           {(() => {
             let options: string[] = [];
             try {
-              options = Array.isArray(currentQuestion.options) 
-                ? currentQuestion.options 
-                : JSON.parse(currentQuestion.options);
+              if (Array.isArray(currentQuestion.options)) {
+                options = currentQuestion.options;
+              } else if (typeof currentQuestion.options === 'string') {
+                options = JSON.parse(currentQuestion.options);
+              } else {
+                options = ['A variant', 'B variant', 'C variant', 'D variant'];
+              }
             } catch {
-              options = ['A', 'B', 'C', 'D'];
+              options = ['A variant', 'B variant', 'C variant', 'D variant'];
             }
 
             const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F'].slice(0, options.length);
