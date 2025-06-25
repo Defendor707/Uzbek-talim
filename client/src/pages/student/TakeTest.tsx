@@ -69,11 +69,22 @@ const TakeTestPage: React.FC = () => {
   const startAttemptMutation = useMutation({
     mutationFn: async () => {
       console.log('Creating test attempt for testId:', testId);
-      const response = await apiRequest(`/api/tests/${testId}/start`, {
+      const response = await fetch(`/api/tests/${testId}/start`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
       });
-      console.log('Test attempt response:', response);
-      return response;
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Test boshlashda xatolik');
+      }
+      
+      const data = await response.json();
+      console.log('Test attempt response:', data);
+      return data;
     },
     onSuccess: (data) => {
       console.log('Test attempt created successfully:', data);
@@ -98,10 +109,21 @@ const TakeTestPage: React.FC = () => {
   const submitAnswerMutation = useMutation({
     mutationFn: async ({ questionId, answer }: { questionId: number; answer: string }) => {
       console.log('Submitting answer:', { questionId, answer, attemptId });
-      return apiRequest(`/api/test-attempts/${attemptId}/answers`, {
+      const response = await fetch(`/api/test-attempts/${attemptId}/answers`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
         body: JSON.stringify({ questionId, answer }),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Javob saqlashda xatolik');
+      }
+      
+      return response.json();
     },
     onSuccess: (data, variables) => {
       console.log('Answer submitted successfully:', data);
@@ -141,13 +163,24 @@ const TakeTestPage: React.FC = () => {
       
       console.log('Calculated score:', score, 'out of', questions?.length);
       
-      return apiRequest(`/api/test-attempts/${attemptId}`, {
+      const response = await fetch(`/api/test-attempts/${attemptId}`, {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
         body: JSON.stringify({
           status: 'completed',
           score,
         }),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Test yakunlashda xatolik');
+      }
+      
+      return response.json();
     },
     onSuccess: (data) => {
       console.log('Test completion successful:', data);

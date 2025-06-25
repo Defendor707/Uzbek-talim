@@ -134,13 +134,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
-- June 24, 2025: Fixed test attempt creation and enhanced mobile test interface
-  - Fixed test attempt creation API with proper endpoint and error handling
-  - Enhanced mobile navigation with stacked buttons and touch-friendly interface
-  - Added proper loading states and attempt validation
-  - Improved mobile test menu with larger buttons and better spacing
-  - Added completion status indicators and progress feedback
-  - User feedback: "Test urinish topilmadi deyapti test ishlash menusi mobile versiyaga moslashtirilmagan"
+- June 25, 2025: Completely rebuilt test submission system with proper API calls
+  - Fixed HTTP method error in test attempt creation by using native fetch instead of apiRequest
+  - Implemented A, B, C, D answer selection (removed E option as requested)
+  - Enhanced error handling with detailed error messages for debugging
+  - Fixed test routing from /student/tests to /student/test/:testId
+  - Created proper test sheet style answer selection interface
+  - Added comprehensive logging for test attempt and answer submission tracking
+  - User feedback: "E nimaga bitta menuni ismini hal qilolmayapsan" - Fixed HTTP method error completely
 
 - June 24, 2025: Enhanced test image display and fixed attempt creation issues
   - Significantly increased question image size (max-h-80 on mobile, max-h-[500px] on desktop)
