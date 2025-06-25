@@ -436,36 +436,52 @@ const TakeTestPage: React.FC = () => {
               {currentQuestion && (() => {
                 let options: string[] = [];
                 try {
-                  options = Array.isArray(currentQuestion.options) ? currentQuestion.options : JSON.parse(currentQuestion.options);
-                } catch {
-                  options = ['A variant', 'B variant', 'C variant', 'D variant']; // fallback
+                  if (Array.isArray(currentQuestion.options)) {
+                    options = currentQuestion.options;
+                  } else if (typeof currentQuestion.options === 'string') {
+                    options = JSON.parse(currentQuestion.options);
+                  } else {
+                    options = ['A variant', 'B variant', 'C variant', 'D variant'];
+                  }
+                } catch (error) {
+                  console.log('Options parsing error:', error, currentQuestion.options);
+                  options = ['A variant', 'B variant', 'C variant', 'D variant'];
                 }
                 
+                console.log('Current question options:', options, 'Length:', options.length);
+                
                 const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].slice(0, options.length);
-                const gridCols = options.length <= 2 ? 'grid-cols-2' : 
-                               options.length <= 3 ? 'grid-cols-3' : 
-                               options.length <= 4 ? 'grid-cols-4' : 
-                               'grid-cols-5';
+                const gridCols = options.length === 1 ? 'grid-cols-1' :
+                               options.length === 2 ? 'grid-cols-2' : 
+                               options.length === 3 ? 'grid-cols-3' : 
+                               options.length === 4 ? 'grid-cols-4' : 
+                               options.length === 5 ? 'grid-cols-5' :
+                               'grid-cols-6';
                 
                 return (
-                  <div className={`grid ${gridCols} gap-3 mb-8`}>
-                    {optionLetters.map((optionLetter) => {
-                      const isSelected = answers[currentQuestion.id] === optionLetter;
-                      
-                      return (
-                        <button
-                          key={optionLetter}
-                          className={`p-6 rounded-lg border-2 transition-all duration-200 text-center min-h-[100px] flex items-center justify-center font-bold text-2xl ${
-                            isSelected 
-                              ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-lg scale-105' 
-                              : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-25 hover:shadow-md'
-                          }`}
-                          onClick={() => handleAnswerSelect(currentQuestion.id, optionLetter)}
-                        >
-                          {optionLetter}
-                        </button>
-                      );
-                    })}
+                  <div>
+                    <div className="text-sm text-gray-500 mb-2">
+                      Javob variantlari soni: {options.length}
+                    </div>
+                    <div className={`grid ${gridCols} gap-3 mb-8`}>
+                      {optionLetters.map((optionLetter) => {
+                        const isSelected = answers[currentQuestion.id] === optionLetter;
+                        
+                        return (
+                          <button
+                            key={optionLetter}
+                            className={`p-6 rounded-lg border-2 transition-all duration-200 text-center min-h-[100px] flex items-center justify-center font-bold text-2xl ${
+                              isSelected 
+                                ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-lg scale-105' 
+                                : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-25 hover:shadow-md'
+                            }`}
+                            onClick={() => handleAnswerSelect(currentQuestion.id, optionLetter)}
+                          >
+                            {optionLetter}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })()}
