@@ -448,7 +448,7 @@ const TakeTestPage: React.FC = () => {
                   options = ['A variant', 'B variant', 'C variant', 'D variant'];
                 }
                 
-                console.log('Current question options:', options, 'Length:', options.length);
+                // console.log('Current question options:', options, 'Length:', options.length);
                 
                 const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].slice(0, options.length);
                 const gridCols = options.length === 1 ? 'grid-cols-1' :
@@ -460,9 +460,7 @@ const TakeTestPage: React.FC = () => {
                 
                 return (
                   <div>
-                    <div className="text-sm text-gray-500 mb-2">
-                      Javob variantlari soni: {options.length}
-                    </div>
+
                     <div className={`grid ${gridCols} gap-3 mb-8`}>
                       {optionLetters.map((optionLetter) => {
                         const isSelected = answers[currentQuestion.id] === optionLetter;
