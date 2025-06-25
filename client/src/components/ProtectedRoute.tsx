@@ -14,10 +14,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   useEffect(() => {
     if (!token) {
       // No token means user is not authenticated
-      setLocation('/login');
+      setLocation('/');
     } else if (!isLoadingUser && !user) {
       // Token exists but user data couldn't be loaded (invalid token)
-      setLocation('/login');
+      setLocation('/');
     } else if (!isLoadingUser && user && !allowedRoles.includes(user.role)) {
       // User authenticated but doesn't have required role
       setLocation(`/dashboard/${user.role}`);

@@ -145,7 +145,7 @@ const useAuth = () => {
     setToken(null);
     setCachedUser(null);
     queryClient.clear();
-    setLocation('/login');
+    setLocation('/');
     
     toast({
       title: 'Chiqish',
@@ -163,7 +163,7 @@ const useAuth = () => {
                          userError.message?.includes('Unauthorized');
       
       if (isAuthError) {
-        console.log('Authentication error detected, logging out');
+        // Authentication error detected, logging out
         if (typeof window !== 'undefined') {
           localStorage.removeItem('token');
           localStorage.removeItem('userSession');
@@ -171,9 +171,9 @@ const useAuth = () => {
         setToken(null);
         setCachedUser(null);
         queryClient.clear();
-        setLocation('/login');
+        setLocation('/');
       } else {
-        console.log('Network error, keeping session:', userError.message);
+        // Network error, keeping session
       }
     }
   }, [userError, token, setLocation]);
