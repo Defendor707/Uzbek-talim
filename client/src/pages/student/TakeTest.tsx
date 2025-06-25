@@ -42,7 +42,7 @@ interface TestAttempt {
 
 const TakeTestPage: React.FC = () => {
   const params = useParams();
-  const testId = params.testId || params.id; // Handle both :testId and :id
+  const testId = params.testId || params.id;
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -51,43 +51,17 @@ const TakeTestPage: React.FC = () => {
   const [attemptId, setAttemptId] = useState<number | null>(null);
   const [showQuestionOverview, setShowQuestionOverview] = useState(false);
 
-  // Debug testId and params
-  console.log('TakeTestPage rendered with params:', params);
-  console.log('TakeTestPage testId:', testId);
+  console.log('TakeTestPage rendered with testId:', testId);
 
   // Fetch test details
   const { data: test, isLoading: testLoading } = useQuery<Test>({
     queryKey: ['/api/tests', testId],
-    queryFn: async () => {
-      if (!testId || testId === 'undefined') {
-        throw new Error('Test ID mavjud emas');
-      }
-      const response = await fetch(`/api/tests/${testId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      if (!response.ok) throw new Error('Test topilmadi');
-      return response.json();
-    },
     enabled: !!testId && testId !== 'undefined',
   });
 
   // Fetch questions
   const { data: questions, isLoading: questionsLoading } = useQuery<Question[]>({
     queryKey: ['/api/tests', testId, 'questions'],
-    queryFn: async () => {
-      if (!testId || testId === 'undefined') {
-        throw new Error('Test ID mavjud emas');
-      }
-      const response = await fetch(`/api/tests/${testId}/questions`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      if (!response.ok) throw new Error('Savollar topilmadi');
-      return response.json();
-    },
     enabled: !!testId && testId !== 'undefined',
   });
 
@@ -95,21 +69,11 @@ const TakeTestPage: React.FC = () => {
   const startAttemptMutation = useMutation({
     mutationFn: async () => {
       console.log('Creating test attempt for testId:', testId);
-      const response = await fetch(`/api/tests/${testId}/start`, {
+      const response = await apiRequest(`/api/tests/${testId}/start`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Test attempt response:', data);
-      return data;
+      console.log('Test attempt response:', response);
+      return response;
     },
     onSuccess: (data) => {
       console.log('Test attempt created successfully:', data);
@@ -148,8 +112,8 @@ const TakeTestPage: React.FC = () => {
       
       // Calculate score based on correct answers
       let score = 0;
-      if (questionsData?.data) {
-        questionsData.data.forEach((question: any) => {
+      if (questions) {
+        questions.forEach((question: any) => {
           const userAnswer = answers[question.id];
           if (userAnswer === question.correctAnswer) {
             score++;
@@ -157,7 +121,7 @@ const TakeTestPage: React.FC = () => {
         });
       }
       
-      console.log('Calculated score:', score, 'out of', questionsData?.data?.length);
+      console.log('Calculated score:', score, 'out of', questions?.length);
       
       return apiRequest(`/api/test-attempts/${attemptId}`, {
         method: 'PUT',
@@ -171,7 +135,7 @@ const TakeTestPage: React.FC = () => {
       console.log('Test completion successful:', data);
       
       // Calculate percentage
-      const totalQuestions = questionsData?.data?.length || 0;
+      const totalQuestions = questions?.length || 0;
       const correctAnswers = data.score || 0;
       const percentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
       
@@ -227,13 +191,13 @@ const TakeTestPage: React.FC = () => {
   };
 
   const handleCompleteTest = () => {
-    console.log('Test yakunlash boshlandi:', { attemptId, answers, totalQuestions: questions.length });
+    console.log('Test yakunlash boshlandi:', { attemptId, answers, totalQuestions: questions?.length });
     
     // Check if all questions are answered
-    if (Object.keys(answers).length !== questions.length) {
+    if (Object.keys(answers).length !== questions?.length) {
       toast({
         title: "Diqqat",
-        description: `Barcha savollarga javob bering (${Object.keys(answers).length}/${questions.length})`,
+        description: `Barcha savollarga javob bering (${Object.keys(answers).length}/${questions?.length})`,
         variant: "destructive",
       });
       return;
@@ -330,273 +294,189 @@ const TakeTestPage: React.FC = () => {
           </CardHeader>
         </Card>
 
-        {/* Progress */}
-        <Card className="mb-4 md:mb-6">
+        {/* Progress Bar */}
+        <Card className="mb-4">
           <CardContent className="p-3 md:p-4">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
-              <span className="text-sm font-medium">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-600">
                 Savol {currentQuestionIndex + 1} / {questions.length}
               </span>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <span className={`text-xs sm:text-sm ${answeredCount === questions.length ? 'text-green-600 font-medium' : 'text-gray-600'}`}>
-                  Javob berilgan: {answeredCount} / {questions.length}
-                  {answeredCount === questions.length && ' ✓'}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowQuestionOverview(!showQuestionOverview)}
-                  className="flex items-center gap-2 text-xs sm:text-sm"
-                >
-                  <Grid3X3 className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">{showQuestionOverview ? 'Yashirish' : 'Barcha savollar'}</span>
-                  <span className="sm:hidden">{showQuestionOverview ? 'Yashirish' : 'Savollar'}</span>
-                </Button>
-              </div>
+              <span className="text-sm text-gray-600">
+                Javob berilgan: {answeredCount} / {questions.length}
+              </span>
             </div>
             <Progress value={progress} className="h-2" />
           </CardContent>
         </Card>
 
-        {/* Question Overview Panel */}
-        {showQuestionOverview && (
-          <Card className="mb-6 border-purple-200 bg-purple-50">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Grid3X3 className="w-5 h-5 text-purple-600" />
-                Barcha savollar
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                {questions.map((question, index) => {
-                  const isAnswered = answers[question.id];
-                  const isCurrent = currentQuestionIndex === index;
-                  
-                  return (
-                    <div
-                      key={question.id}
-                      className={`
-                        relative w-12 h-12 rounded-lg border-2 cursor-pointer transition-all duration-200 
-                        flex items-center justify-center text-sm font-bold
-                        ${isCurrent 
-                          ? 'border-blue-500 bg-blue-500 text-white shadow-lg' 
-                          : isAnswered 
-                            ? 'border-green-500 bg-green-100 text-green-700 hover:bg-green-200' 
-                            : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400 hover:bg-gray-50'
-                        }
-                      `}
-                      onClick={() => setCurrentQuestionIndex(index)}
-                      title={`Savol ${index + 1}${isAnswered ? ' - Javob berilgan' : ' - Javobsiz'}`}
-                    >
-                      {index + 1}
-                      {isAnswered && !isCurrent && (
-                        <Check className="w-3 h-3 absolute -top-1 -right-1 bg-green-500 text-white rounded-full p-0.5" />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex items-center gap-6 mt-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                  <span>Joriy savol</span>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          {/* Question Overview Panel */}
+          <div className={`lg:col-span-1 ${showQuestionOverview ? 'block' : 'hidden lg:block'}`}>
+            <Card>
+              <CardHeader className="p-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Grid3X3 className="w-4 h-4" />
+                  Savollar
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3">
+                <div className="grid grid-cols-5 lg:grid-cols-4 gap-2">
+                  {questions.map((question, index) => {
+                    const isAnswered = answers[question.id];
+                    const isCurrent = index === currentQuestionIndex;
+                    
+                    return (
+                      <Button
+                        key={question.id}
+                        variant={isCurrent ? "default" : isAnswered ? "secondary" : "outline"}
+                        size="sm"
+                        className={`h-8 w-8 p-0 text-xs ${
+                          isAnswered ? 'bg-green-100 border-green-300 text-green-700' : ''
+                        } ${
+                          isCurrent ? 'ring-2 ring-blue-500' : ''
+                        }`}
+                        onClick={() => setCurrentQuestionIndex(index)}
+                      >
+                        {index + 1}
+                        {isAnswered && <CheckCircle className="w-3 h-3 absolute -top-1 -right-1 text-green-600" />}
+                      </Button>
+                    );
+                  })}
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-100 border border-green-500 rounded"></div>
-                  <span>Javob berilgan</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-white border border-gray-300 rounded"></div>
-                  <span>Javobsiz</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Current Question */}
-        <Card className="mb-4 md:mb-6">
-          <CardHeader className="p-3 md:p-6">
-            <CardTitle className="text-base md:text-lg leading-relaxed">
-              {currentQuestionIndex + 1}. {currentQuestion.questionText}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 md:p-6">
-            {/* Question Image */}
-            {currentQuestion.questionImage && (
-              <div className="mb-4 md:mb-6">
-                <div className="relative bg-gray-50 rounded-lg p-4 border">
-                  <img 
-                    src={`/${currentQuestion.questionImage}`}
-                    alt="Savol rasmi" 
-                    className="w-full h-auto rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-all max-h-80 md:max-h-[500px] object-contain mx-auto block"
-                    onClick={() => window.open(`/${currentQuestion.questionImage}`, '_blank')}
-                  />
-                  <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white p-2 rounded-full opacity-80 hover:opacity-100 transition-opacity">
-                    <ZoomIn className="w-4 h-4 md:w-5 md:h-5" />
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 mt-2 text-center font-medium">
-                  📸 Rasmni kattalashtirish uchun ustiga bosing
-                </p>
-              </div>
-            )}
-
-            {/* Answer Options */}
-            <div className="space-y-3">
-              {currentQuestion.options.map((option, index) => {
-                const optionLetter = String.fromCharCode(65 + index); // A, B, C, D
-                const isSelected = answers[currentQuestion.id] === optionLetter;
                 
-                return (
-                  <div 
-                    key={index}
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md ${
-                      isSelected 
-                        ? 'border-blue-500 bg-blue-50 shadow-sm' 
-                        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                    }`}
-                    onClick={() => handleAnswerSelect(currentQuestion.id, optionLetter)}
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-all ${
-                        isSelected 
-                          ? 'border-blue-500 bg-blue-500 text-white scale-110' 
-                          : 'border-gray-400 bg-white text-gray-600'
-                      }`}>
-                        {optionLetter}
-                      </div>
-                      <span className={`flex-1 ${isSelected ? 'font-medium text-blue-900' : 'text-gray-700'}`}>
-                        {option}
-                      </span>
-                      {isSelected && (
-                        <Check className="w-5 h-5 text-blue-500" />
-                      )}
-                    </div>
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+                    <span>Javob berilgan</span>
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-3 h-3 border border-gray-300 rounded"></div>
+                    <span>Javob berilmagan</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                    <span>Joriy savol</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center">
-          <Button 
-            variant="outline" 
-            onClick={goToPreviousQuestion}
-            disabled={currentQuestionIndex === 0}
-            className="flex items-center gap-2"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Oldingi
-          </Button>
+          {/* Main Question Area */}
+          <div className="lg:col-span-3">
+            <Card>
+              <CardHeader className="p-3 md:p-6">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base md:text-lg">
+                    Savol {currentQuestionIndex + 1}
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowQuestionOverview(!showQuestionOverview)}
+                    className="lg:hidden"
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-3 md:p-6">
+                {/* Question Text */}
+                <div className="mb-6">
+                  <p className="text-base md:text-lg font-medium mb-4">
+                    {currentQuestion.questionText}
+                  </p>
+                  
+                  {/* Question Image */}
+                  {currentQuestion.questionImage && (
+                    <div className="mb-4">
+                      <img
+                        src={currentQuestion.questionImage}
+                        alt="Savol rasmi"
+                        className="max-w-full h-auto max-h-60 md:max-h-80 object-contain rounded-lg border cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => {
+                          // Handle image click for full view
+                          window.open(currentQuestion.questionImage, '_blank');
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
 
-          <div className="flex items-center gap-3">
-            {/* Quick jump to unanswered questions */}
-            {answeredCount < questions.length && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const unansweredIndex = questions.findIndex((q, index) => 
-                    !answers[q.id] && index !== currentQuestionIndex
-                  );
-                  if (unansweredIndex !== -1) {
-                    setCurrentQuestionIndex(unansweredIndex);
-                  }
-                }}
-                className="text-orange-600 hover:text-orange-700"
-              >
-                Javobsiz savolga o'tish
-              </Button>
-            )}
+                {/* Answer Options */}
+                <div className="space-y-3">
+                  {currentQuestion.options && JSON.parse(currentQuestion.options as string).map((option: string, index: number) => {
+                    const optionLetter = String.fromCharCode(65 + index); // A, B, C, D
+                    const isSelected = answers[currentQuestion.id] === optionLetter;
+                    
+                    return (
+                      <Button
+                        key={index}
+                        variant={isSelected ? "default" : "outline"}
+                        className={`w-full p-4 h-auto text-left justify-start text-sm md:text-base ${
+                          isSelected ? 'bg-blue-500 text-white border-blue-500' : 'hover:bg-gray-50'
+                        }`}
+                        onClick={() => handleAnswerSelect(currentQuestion.id, optionLetter)}
+                      >
+                        <span className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mr-3 text-xs font-semibold ${
+                          isSelected ? 'bg-white text-blue-500 border-white' : 'border-gray-300'
+                        }`}>
+                          {optionLetter}
+                        </span>
+                        <span className="flex-1">{option}</span>
+                      </Button>
+                    );
+                  })}
+                </div>
 
-            {/* Show completion button only when all questions are answered */}
-            {answeredCount === questions.length ? (
-              <Button 
-                onClick={handleCompleteTest}
-                disabled={completeTestMutation.isPending}
-                className="bg-green-600 hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
-              >
-                <Flag className="w-4 h-4" />
-                {completeTestMutation.isPending ? 'Yakunlanmoqda...' : 'Testni yakunlash'}
-              </Button>
-            ) : (
-              <Button 
-                onClick={goToNextQuestion}
-                disabled={currentQuestionIndex === questions.length - 1}
-                className="flex items-center gap-2"
-              >
-                Keyingi
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            )}
+                {/* Navigation */}
+                <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-6 border-t">
+                  <div className="flex gap-2 sm:flex-1">
+                    <Button
+                      variant="outline"
+                      onClick={goToPreviousQuestion}
+                      disabled={currentQuestionIndex === 0}
+                      className="flex-1 sm:flex-none"
+                    >
+                      <ChevronLeft className="w-4 h-4 mr-2" />
+                      Oldingi
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={goToNextQuestion}
+                      disabled={currentQuestionIndex === questions.length - 1}
+                      className="flex-1 sm:flex-none"
+                    >
+                      Keyingi
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                  
+                  {/* Complete Test Button */}
+                  {answeredCount === questions.length && (
+                    <Button
+                      onClick={handleCompleteTest}
+                      disabled={completeTestMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      {completeTestMutation.isPending ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Yakunlanmoqda...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4 mr-2" />
+                          Testni yakunlash
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-
-        {/* Test Images - Display at top prominently */}
-        {test.testImages && test.testImages.length > 0 && (
-          <Card className="mb-4 md:mb-6 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-md">
-            <CardHeader className="pb-3 p-4 md:p-6">
-              <CardTitle className="text-base md:text-lg flex items-center gap-2 text-blue-700">
-                <ImageIcon className="w-5 h-5 text-blue-600" />
-                📋 Test materiallari
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 md:p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {test.testImages.map((image, index) => (
-                  <div key={index} className="relative bg-white p-3 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-                    <img 
-                      src={`/${image}`}
-                      alt={`Test materiali ${index + 1}`}
-                      className="w-full h-48 md:h-64 rounded-lg border-2 border-gray-200 shadow-sm cursor-pointer hover:border-blue-400 transition-all object-contain bg-gray-50"
-                      onClick={() => window.open(`/${image}`, '_blank')}
-                    />
-                    <div className="absolute top-1 right-1 bg-blue-600 text-white text-sm px-2 py-1 rounded-full font-bold">
-                      {index + 1}
-                    </div>
-                    <div className="absolute top-1 left-1 bg-black bg-opacity-60 text-white p-1.5 rounded-full opacity-80 hover:opacity-100 transition-opacity">
-                      <ZoomIn className="w-4 h-4" />
-                    </div>
-                    <p className="text-xs text-gray-600 mt-2 text-center font-medium">
-                      Material {index + 1}
-                    </p>
-                  </div>
-                ))}
-              </div>
-              <p className="text-sm text-blue-700 mt-4 text-center font-medium bg-blue-100 py-2 px-4 rounded-lg">
-                💡 Rasmlarni kattalashtirish uchun ustiga bosing
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Navigation Helper */}
-        <Card className="mb-6 bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm font-medium text-green-800">Test jarayoni</span>
-              </div>
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span>A, B, C, D harflarini tanlang</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowQuestionOverview(!showQuestionOverview)}
-                  className="h-8 px-3 text-blue-600 hover:text-blue-700"
-                >
-                  <Eye className="w-4 h-4 mr-1" />
-                  Savollar ko'rinishi
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </ResponsiveDashboard>
   );

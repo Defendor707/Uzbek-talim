@@ -961,7 +961,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.put(
-    "/api/tests/attempts/:attemptId",
+    "/api/test-attempts/:attemptId",
     authenticate,
     authorize(["student"]),
     async (req, res) => {
@@ -991,6 +991,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.error("Error updating test attempt:", error);
         return res.status(500).json({ message: "Failed to update test attempt" });
+      }
+    }
+  );
+
+  // Submit answer to test attempt
+  app.post(
+    "/api/test-attempts/:attemptId/answers",
+    authenticate,
+    authorize(["student"]),
+    async (req, res) => {
+      try {
+        const attemptId = parseInt(req.params.attemptId);
+        if (isNaN(attemptId)) {
+          return res.status(400).json({ message: "Invalid attempt ID" });
+        }
+
+        const { questionId, answer } = req.body;
+        if (!questionId || !answer) {
+          return res.status(400).json({ message: "Question ID and answer are required" });
+        }
+
+        // Check if attempt exists and belongs to the student
+        const attempt = await storage.getTestAttemptById(attemptId);
+        if (!attempt) {
+          return res.status(404).json({ message: "Test attempt not found" });
+        }
+
+        if (attempt.studentId !== req.user!.userId) {
+          return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        // Create or update student answer
+        const answerData = schema.insertStudentAnswerSchema.parse({
+          attemptId,
+          questionId,
+          answer,
+        });
+
+        const newAnswer = await storage.createStudentAnswer(answerData);
+        return res.status(201).json(newAnswer);
+      } catch (error) {
+        if (error instanceof ZodError) {
+          return res.status(400).json({
+            message: "Validation error",
+            errors: fromZodError(error).details,
+          });
+        }
+        console.error("Error submitting answer:", error);
+        return res.status(500).json({ message: "Failed to submit answer" });
       }
     }
   );
@@ -1049,8 +1098,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             errors: fromZodError(error).details,
           });
         }
-        console.error("Error starting test:", error);
-        return res.status(500).json({ message: "Failed to start test" });
+        console.error("Error starting test attempt:", error);
+        return res.status(500).json({ message: "Failed to start test attempt" });
       }
     }
   );
