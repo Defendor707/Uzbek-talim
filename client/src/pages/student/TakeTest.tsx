@@ -380,7 +380,7 @@ const TakeTestPage: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
                 <span className="text-lg font-semibold text-gray-800">
-                  Savol {currentQuestionIndex + 1} / {questions.length}
+                  Savol {currentQuestionIndex + 1} / {questions?.length || 0}
                 </span>
                 <Badge variant="outline" className="text-blue-600 border-blue-300">
                   {Math.round(progress)}% tugallandi
@@ -389,7 +389,7 @@ const TakeTestPage: React.FC = () => {
               <div className="text-right">
                 <div className="text-sm text-gray-600">Javob berilgan</div>
                 <div className="text-lg font-semibold text-green-600">
-                  {answeredCount} / {questions.length}
+                  {answeredCount} / {questions?.length || 0}
                 </div>
               </div>
             </div>
