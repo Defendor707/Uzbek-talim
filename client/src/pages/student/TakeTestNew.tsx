@@ -51,7 +51,7 @@ const TakeTestNew: React.FC = () => {
 
   // Fetch questions
   const { data: questions, isLoading: questionsLoading } = useQuery<Question[]>({
-    queryKey: ['/api/tests', testId, 'questions'],
+    queryKey: [`/api/tests/${testId}/questions`],
     enabled: !!testId,
   });
 
@@ -176,6 +176,7 @@ const TakeTestNew: React.FC = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Test yuklanmoqda...</p>
+          {test && <p className="text-sm text-gray-500 mt-2">Test ID: {test.id}, Jami: {test.totalQuestions}</p>}
         </div>
       </div>
     );
