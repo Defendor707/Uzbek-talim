@@ -24,10 +24,14 @@ const TestResult: React.FC = () => {
   const { attemptId } = useParams<{ attemptId: string }>();
   const [, setLocation] = useLocation();
 
-  const { data: result, isLoading } = useQuery<TestResult>({
+  console.log("TestResult - attemptId:", attemptId);
+
+  const { data: result, isLoading, error } = useQuery<TestResult>({
     queryKey: [`/api/test-attempts/${attemptId}/result`],
-    enabled: !!attemptId,
+    enabled: !!attemptId && !isNaN(Number(attemptId)),
   });
+
+  console.log("TestResult - query result:", { result, isLoading, error });
 
   if (isLoading) {
     return (
@@ -40,11 +44,13 @@ const TestResult: React.FC = () => {
     );
   }
 
-  if (!result) {
+  if (error || !result) {
+    console.error("TestResult error:", error);
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">Test natijasi topilmadi</p>
+          <p className="text-gray-500 mb-4">Attempt ID: {attemptId}</p>
           <Button onClick={() => setLocation('/student/dashboard')}>
             Dashboard'ga qaytish
           </Button>

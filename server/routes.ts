@@ -1351,6 +1351,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // Get test attempt result
+  app.get("/api/test-attempts/:id/result", authenticate, async (req, res) => {
+    try {
+      const attemptId = parseInt(req.params.id);
+      if (isNaN(attemptId)) {
+        return res.status(400).json({ message: "Invalid attempt ID" });
+      }
+
+      const attempt = await storage.getTestAttemptById(attemptId);
+      if (!attempt) {
+        return res.status(404).json({ message: "Test attempt not found" });
+      }
+
+      if (attempt.studentId !== req.user!.userId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const test = await storage.getTestById(attempt.testId);
+      if (!test) {
+        return res.status(404).json({ message: "Test not found" });
+      }
+
+      const questions = await storage.getQuestionsByTestId(attempt.testId);
+      const answers = await storage.getStudentAnswersByAttemptId(attemptId);
+      
+      // Calculate correct answers if not already set
+      let correctAnswers = attempt.correctAnswers || 0;
+      if (!attempt.correctAnswers) {
+        correctAnswers = 0;
+        for (const answer of answers) {
+          const question = questions.find(q => q.id === answer.questionId);
+          if (question && answer.answer === question.correctAnswer) {
+            correctAnswers++;
+          }
+        }
+      }
+      
+      const result = {
+        id: attempt.id,
+        testId: attempt.testId,
+        studentId: attempt.studentId,
+        startTime: attempt.startTime,
+        endTime: attempt.endTime,
+        score: attempt.score,
+        correctAnswers,
+        totalQuestions: questions.length,
+        status: attempt.status,
+        completed: attempt.completed,
+        test: {
+          title: test.title,
+          description: test.description,
+        }
+      };
+
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error("Error fetching test result:", error);
+      return res.status(500).json({ message: "Failed to fetch test result" });
+    }
+  });
+
   app.get(
     "/api/attempts/:attemptId/answers",
     authenticate,
