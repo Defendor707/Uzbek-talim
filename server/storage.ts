@@ -422,7 +422,10 @@ export class DatabaseStorage implements IStorage {
       email: schema.users.email,
       createdAt: schema.users.createdAt,
       phoneNumber: schema.studentProfiles.phoneNumber,
-      bio: schema.studentProfiles.bio
+      bio: schema.studentProfiles.bio,
+      grade: schema.studentProfiles.grade,
+      firstName: schema.users.fullName,
+      lastName: schema.users.fullName
     })
     .from(schema.users)
     .innerJoin(schema.studentProfiles, eq(schema.users.id, schema.studentProfiles.userId))

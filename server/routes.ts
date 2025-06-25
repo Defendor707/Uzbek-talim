@@ -374,7 +374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           teacherId: req.user!.userId,
           type: req.body.type === 'public' ? 'public' : 'numerical',
           testCode: testCode,
-          grade: req.body.grade,
+          grade: req.body.grade || '1',
           classroom: req.body.classroom || null,
           duration: parseInt(req.body.duration) || 0,
           totalQuestions: parseInt(req.body.totalQuestions) || 0,
@@ -384,26 +384,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const newTest = await storage.createTest(testData);
         
         // Create questions
-        for (const question of questions) {
-          await storage.createQuestion({
-            testId: newTest.id,
-            questionText: question.questionText || `${question.order || 1}-savol`,
-            questionType: 'simple',
-            options: question.options || ['A', 'B', 'C', 'D'],
-            correctAnswer: question.correctAnswer,
-            points: question.points || 1,
-            order: question.order || 1
-          });
+        if (questions && questions.length > 0) {
+          for (const question of questions) {
+            await storage.createQuestion({
+              testId: newTest.id,
+              questionText: question.questionText || `${question.order || 1}-savol`,
+              questionType: 'simple',
+              options: question.options || ['A', 'B', 'C', 'D'],
+              correctAnswer: question.correctAnswer,
+              points: question.points || 1,
+              order: question.order || 1
+            });
+          }
         }
         
         // Notify bot users and sync with website
-        await botNotificationService.notifyTestCreated(newTest);
-        await syncService.notifyTestCreated(newTest);
+        try {
+          await botNotificationService.notifyTestCreated(newTest);
+          await syncService.notifyTestCreated(newTest);
+        } catch (notifyError) {
+          console.error("Notification error:", notifyError);
+          // Don't fail the request if notifications fail
+        }
         
-        return res.status(201).json(newTest);
+        return res.status(201).json({ 
+          ...newTest,
+          message: "Test muvaffaqiyatli yaratildi",
+          testCode: newTest.testCode || testCode
+        });
       } catch (error) {
+        if (error instanceof ZodError) {
+          return res.status(400).json({
+            message: "Ma'lumotlar to'g'ri emas",
+            errors: fromZodError(error).details,
+          });
+        }
         console.error("Error creating test with images:", error);
-        return res.status(500).json({ message: "Failed to create test" });
+        return res.status(500).json({ 
+          message: "Test yaratishda xatolik yuz berdi",
+          error: error instanceof Error ? error.message : "Noma'lum xatolik"
+        });
       }
     }
   );
