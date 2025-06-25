@@ -278,12 +278,15 @@ const TakeTestNew: React.FC = () => {
               options = ['A variant', 'B variant', 'C variant', 'D variant'];
             }
 
-            const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F'].slice(0, options.length);
+            // Always show A, B, C, D only
+            const optionLetters = ['A', 'B', 'C', 'D'];
             
             return (
               <div className="space-y-3">
-                {optionLetters.map((letter) => {
+                {optionLetters.map((letter, index) => {
                   const isSelected = answers[currentQuestion.id] === letter;
+                  const optionText = options[index] || `${letter} variant`;
+                  const isAvailable = index < options.length;
                   
                   return (
                     <button
