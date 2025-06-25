@@ -36,10 +36,10 @@ function Router() {
 
   // Auto-redirect authenticated users from login/register pages
   useEffect(() => {
-    if (token && user && (location === '/' || location === '/login' || location === '/register')) {
+    if (token && user && !isLoadingUser && (location === '/' || location === '/login' || location === '/register')) {
       setLocation(`/dashboard/${user.role}`);
     }
-  }, [token, user, location, setLocation]);
+  }, [token, user, isLoadingUser, location, setLocation]);
 
   return (
     <Switch>

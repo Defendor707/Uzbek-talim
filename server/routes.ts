@@ -1876,7 +1876,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Parent Children Management Routes
   app.get("/api/parent/children", authenticate, authorize(["parent"]), async (req, res) => {
     try {
+      console.log('Parent requesting children, user ID:', req.user!.userId);
       const children = await storage.getChildrenByParentId(req.user!.userId);
+      console.log('Returning children data:', children);
       return res.status(200).json(children);
     } catch (error) {
       console.error("Error fetching children:", error);

@@ -415,23 +415,32 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getChildrenByParentId(parentId: number): Promise<any[]> {
-    const children = await db.select({
-      id: schema.users.id,
-      fullName: schema.users.fullName,
-      username: schema.users.username,
-      email: schema.users.email,
-      createdAt: schema.users.createdAt,
-      phoneNumber: schema.studentProfiles.phoneNumber,
-      bio: schema.studentProfiles.bio,
-      grade: schema.studentProfiles.grade,
-      firstName: schema.users.fullName,
-      lastName: schema.users.fullName
-    })
-    .from(schema.users)
-    .innerJoin(schema.studentProfiles, eq(schema.users.id, schema.studentProfiles.userId))
-    .where(eq(schema.studentProfiles.parentId, parentId));
+    console.log('Getting children for parent ID:', parentId);
+    
+    // Use raw SQL to avoid Drizzle ORM field selection issues
+    const result = await db.execute(sql`
+      SELECT 
+        u.id,
+        u.full_name as "fullName",
+        u.username,
+        u.email,
+        u.created_at as "createdAt",
+        sp.phone_number as "phoneNumber",
+        sp.bio,
+        sp.grade
+      FROM users u
+      INNER JOIN student_profiles sp ON u.id = sp.user_id
+      WHERE sp.parent_id = ${parentId}
+    `);
 
-    return children;
+    console.log('Found children:', result.rows.length);
+    
+    // Transform data to match expected format
+    return result.rows.map((child: any) => ({
+      ...child,
+      firstName: child.fullName?.split(' ')[0] || child.username,
+      lastName: child.fullName?.split(' ').slice(1).join(' ') || ''
+    }));
   }
 
   async createResetToken(username: string): Promise<string | null> {
