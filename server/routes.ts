@@ -1229,8 +1229,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const percentage = Math.round(scorePercentage);
               console.log(`Sending test completion notification to parent ${studentProfile.parentId} about ${student.fullName}'s test: ${test.title} (${percentage}%)`);
               
-              // Here you could integrate with Telegram bot notifications or other notification systems
-              // For now, we'll log it and it can be picked up by the parent dashboard
+              // Send Telegram notification to parent
+              const { notifyParentOfTestCompletion } = require('./telegram/bot');
+              await notifyParentOfTestCompletion(req.user!.userId, test.title, student.fullName || student.username, scorePercentage);
             }
           }
         } catch (notificationError) {

@@ -162,7 +162,10 @@ const TestResult: React.FC = () => {
             </Button>
             <Button
               variant="outline"
-              onClick={() => setLocation('/student/dashboard')}
+              onClick={() => {
+                console.log('Dashboard tugmasi bosildi');
+                setLocation('/student/dashboard');
+              }}
               className="px-8 py-3"
             >
               Dashboard'ga qaytish
