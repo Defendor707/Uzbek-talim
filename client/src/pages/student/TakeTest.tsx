@@ -432,28 +432,43 @@ const TakeTestPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Answer Options - Simplified A,B,C,D Layout */}
-              <div className="grid grid-cols-4 gap-3 mb-8">
-                {['A', 'B', 'C', 'D'].map((optionLetter) => {
-                  if (!currentQuestion) return null;
-                  
-                  const isSelected = answers[currentQuestion.id] === optionLetter;
-                  
-                  return (
-                    <button
-                      key={optionLetter}
-                      className={`p-6 rounded-lg border-2 transition-all duration-200 text-center min-h-[100px] flex items-center justify-center font-bold text-2xl ${
-                        isSelected 
-                          ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-lg scale-105' 
-                          : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-25 hover:shadow-md'
-                      }`}
-                      onClick={() => handleAnswerSelect(currentQuestion.id, optionLetter)}
-                    >
-                      {optionLetter}
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Answer Options - Dynamic based on question options count */}
+              {currentQuestion && (() => {
+                let options: string[] = [];
+                try {
+                  options = Array.isArray(currentQuestion.options) ? currentQuestion.options : JSON.parse(currentQuestion.options);
+                } catch {
+                  options = ['A variant', 'B variant', 'C variant', 'D variant']; // fallback
+                }
+                
+                const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].slice(0, options.length);
+                const gridCols = options.length <= 2 ? 'grid-cols-2' : 
+                               options.length <= 3 ? 'grid-cols-3' : 
+                               options.length <= 4 ? 'grid-cols-4' : 
+                               'grid-cols-5';
+                
+                return (
+                  <div className={`grid ${gridCols} gap-3 mb-8`}>
+                    {optionLetters.map((optionLetter) => {
+                      const isSelected = answers[currentQuestion.id] === optionLetter;
+                      
+                      return (
+                        <button
+                          key={optionLetter}
+                          className={`p-6 rounded-lg border-2 transition-all duration-200 text-center min-h-[100px] flex items-center justify-center font-bold text-2xl ${
+                            isSelected 
+                              ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-lg scale-105' 
+                              : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-25 hover:shadow-md'
+                          }`}
+                          onClick={() => handleAnswerSelect(currentQuestion.id, optionLetter)}
+                        >
+                          {optionLetter}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
 
               {/* Navigation */}
               <div className="flex justify-between items-center">

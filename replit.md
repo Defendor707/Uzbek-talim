@@ -134,12 +134,19 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 25, 2025: Enhanced test interface with dynamic answer options based on question count
+  - Answer buttons now dynamically adapt to question options count (A,B,C for 3 options, A,B,C,D,E for 5 options, etc.)
+  - Improved grid layout that adjusts based on number of answer choices
+  - Added test questions with different option counts (2, 3, 4, 5 variants) for demonstration
+  - Grid automatically adjusts: 2 cols for 2 options, 3 cols for 3 options, etc.
+  - User feedback: "Savollar soniga mos ravishda javob berish tugmalarini berish kerak"
+
 - June 25, 2025: Implemented dynamic test pagination for multiple-question tests
   - Added smart pagination system showing 5 questions per page
   - Question overview panel for current page with answer status indicators
   - Page navigation in progress bar and question navigation controls
   - Direct question jumping within pages for easy navigation
-  - Enhanced test with 15 questions to demonstrate pagination
+  - Enhanced test with 18 questions to demonstrate pagination and different option counts
   - Visual indicators: answered (green), current (blue), unanswered (gray)
   - User feedback: "Please start implement the following feature: Dynamic test pagination for multiple-question tests"
 
