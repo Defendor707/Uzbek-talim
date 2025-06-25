@@ -110,7 +110,7 @@ const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation })
                             href="/forgot-password" 
                             className="text-xs text-blue-600 hover:text-blue-700 font-medium"
                           >
-                            Unutdingizmi?
+                            Parolingizni unutdingizmi?
                           </Link>
                         </div>
                         <FormControl>

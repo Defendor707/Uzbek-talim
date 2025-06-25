@@ -178,7 +178,7 @@ const DesktopLoginPage: React.FC<DesktopLoginPageProps> = ({ onShowPresentation 
                             href="/forgot-password" 
                             className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                           >
-                            Unutdingizmi?
+                            Parolingizni unutdingizmi?
                           </Link>
                         </div>
                         <FormControl>
