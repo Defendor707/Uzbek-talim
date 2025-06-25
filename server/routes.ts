@@ -160,16 +160,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/profile/center", authenticate, authorize(["center"]), async (req, res) => {
+  // Center profile routes
+  app.get("/api/center/profile", authenticate, authorize(["center"]), async (req, res) => {
     try {
       const profile = await storage.getCenterProfile(req.user!.userId);
+      return res.status(200).json(profile);
+    } catch (error) {
+      console.error("Error fetching center profile:", error);
+      return res.status(500).json({ message: "Failed to fetch center profile" });
+    }
+  });
+
+  app.post("/api/center/profile", authenticate, authorize(["center"]), async (req, res) => {
+    try {
+      const profileData = schema.insertCenterProfileSchema.parse({
+        ...req.body,
+        userId: req.user!.userId,
+      });
+      
+      const profile = await storage.createCenterProfile(profileData);
+      return res.status(201).json(profile);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: fromZodError(error).details,
+        });
+      }
+      console.error("Error creating center profile:", error);
+      return res.status(500).json({ message: "Failed to create center profile" });
+    }
+  });
+
+  app.put("/api/center/profile", authenticate, authorize(["center"]), async (req, res) => {
+    try {
+      const profileData = schema.insertCenterProfileSchema.partial().parse(req.body);
+      
+      const profile = await storage.updateCenterProfile(req.user!.userId, profileData);
       if (!profile) {
         return res.status(404).json({ message: "Center profile not found" });
       }
       return res.status(200).json(profile);
     } catch (error) {
-      console.error("Error fetching center profile:", error);
-      return res.status(500).json({ message: "Failed to fetch center profile" });
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: fromZodError(error).details,
+        });
+      }
+      console.error("Error updating center profile:", error);
+      return res.status(500).json({ message: "Failed to update center profile" });
+    }
+  });
+
+  // Center management routes
+  app.get("/api/center/teachers", authenticate, authorize(["center"]), async (req, res) => {
+    try {
+      const teachers = await storage.getTeachersByCenter(req.user!.userId);
+      return res.status(200).json(teachers);
+    } catch (error) {
+      console.error("Error fetching center teachers:", error);
+      return res.status(500).json({ message: "Failed to fetch teachers" });
+    }
+  });
+
+  app.get("/api/center/students", authenticate, authorize(["center"]), async (req, res) => {
+    try {
+      const students = await storage.getStudentsByCenter(req.user!.userId);
+      return res.status(200).json(students);
+    } catch (error) {
+      console.error("Error fetching center students:", error);
+      return res.status(500).json({ message: "Failed to fetch students" });
+    }
+  });
+
+  app.post("/api/center/assign-teacher", authenticate, authorize(["center"]), async (req, res) => {
+    try {
+      const { teacherId } = req.body;
+      if (!teacherId) {
+        return res.status(400).json({ message: "Teacher ID is required" });
+      }
+      
+      const success = await storage.assignTeacherToCenter(teacherId, req.user!.userId);
+      if (!success) {
+        return res.status(400).json({ message: "Failed to assign teacher to center" });
+      }
+      
+      return res.status(200).json({ message: "Teacher assigned successfully" });
+    } catch (error) {
+      console.error("Error assigning teacher to center:", error);
+      return res.status(500).json({ message: "Failed to assign teacher" });
+    }
+  });
+
+  app.post("/api/center/assign-student", authenticate, authorize(["center"]), async (req, res) => {
+    try {
+      const { studentId } = req.body;
+      if (!studentId) {
+        return res.status(400).json({ message: "Student ID is required" });
+      }
+      
+      const success = await storage.assignStudentToCenter(studentId, req.user!.userId);
+      if (!success) {
+        return res.status(400).json({ message: "Failed to assign student to center" });
+      }
+      
+      return res.status(200).json({ message: "Student assigned successfully" });
+    } catch (error) {
+      console.error("Error assigning student to center:", error);
+      return res.status(500).json({ message: "Failed to assign student" });
     }
   });
 

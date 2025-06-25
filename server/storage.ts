@@ -26,6 +26,13 @@ export interface IStorage {
   updateTeacherProfile(userId: number, profileData: Partial<schema.InsertTeacherProfile>): Promise<schema.TeacherProfile | undefined>;
   createCenterProfile(profile: schema.InsertCenterProfile): Promise<schema.CenterProfile>;
   getCenterProfile(userId: number): Promise<schema.CenterProfile | undefined>;
+  updateCenterProfile(userId: number, profileData: Partial<schema.InsertCenterProfile>): Promise<schema.CenterProfile | undefined>;
+  
+  // Center management methods
+  getTeachersByCenter(centerId: number): Promise<schema.User[]>;
+  getStudentsByCenter(centerId: number): Promise<schema.User[]>;
+  assignTeacherToCenter(teacherId: number, centerId: number): Promise<boolean>;
+  assignStudentToCenter(studentId: number, centerId: number): Promise<boolean>;
 
   // Lesson related methods
   createLesson(lesson: schema.InsertLesson): Promise<schema.Lesson>;
@@ -186,6 +193,93 @@ export class DatabaseStorage implements IStorage {
   async getCenterProfile(userId: number): Promise<schema.CenterProfile | undefined> {
     const [profile] = await db.select().from(schema.centerProfiles).where(eq(schema.centerProfiles.userId, userId));
     return profile;
+  }
+
+  async updateCenterProfile(userId: number, profileData: Partial<schema.InsertCenterProfile>): Promise<schema.CenterProfile | undefined> {
+    const [updatedProfile] = await db
+      .update(schema.centerProfiles)
+      .set({ ...profileData, updatedAt: new Date() })
+      .where(eq(schema.centerProfiles.userId, userId))
+      .returning();
+    return updatedProfile;
+  }
+
+  // Center management methods
+  async getTeachersByCenter(centerId: number): Promise<any[]> {
+    const results = await db.select({
+      id: schema.users.id,
+      username: schema.users.username,
+      role: schema.users.role,
+      fullName: schema.users.fullName,
+      profileImage: schema.users.profileImage,
+      phone: schema.users.phone,
+      isActive: schema.users.isActive,
+      createdAt: schema.users.createdAt,
+      // Teacher profile fields
+      phoneNumber: schema.teacherProfiles.phoneNumber,
+      specialty: schema.teacherProfiles.specialty,
+      subjects: schema.teacherProfiles.subjects,
+      bio: schema.teacherProfiles.bio,
+      experience: schema.teacherProfiles.experience,
+      certificates: schema.teacherProfiles.certificates,
+    })
+    .from(schema.users)
+    .innerJoin(schema.teacherProfiles, eq(schema.users.id, schema.teacherProfiles.userId))
+    .where(and(
+      eq(schema.users.role, 'teacher'),
+      eq(schema.teacherProfiles.centerId, centerId)
+    ));
+    return results;
+  }
+
+  async getStudentsByCenter(centerId: number): Promise<any[]> {
+    const results = await db.select({
+      id: schema.users.id,
+      username: schema.users.username,
+      role: schema.users.role,
+      fullName: schema.users.fullName,
+      profileImage: schema.users.profileImage,
+      phone: schema.users.phone,
+      isActive: schema.users.isActive,
+      createdAt: schema.users.createdAt,
+      // Student profile fields
+      phoneNumber: schema.studentProfiles.phoneNumber,
+      grade: schema.studentProfiles.grade,
+      classroom: schema.studentProfiles.classroom,
+      certificates: schema.studentProfiles.certificates,
+      bio: schema.studentProfiles.bio,
+    })
+    .from(schema.users)
+    .innerJoin(schema.studentProfiles, eq(schema.users.id, schema.studentProfiles.userId))
+    .where(and(
+      eq(schema.users.role, 'student'),
+      eq(schema.studentProfiles.centerId, centerId)
+    ));
+    return results;
+  }
+
+  async assignTeacherToCenter(teacherId: number, centerId: number): Promise<boolean> {
+    try {
+      await db.update(schema.teacherProfiles)
+        .set({ centerId })
+        .where(eq(schema.teacherProfiles.userId, teacherId));
+      return true;
+    } catch (error) {
+      console.error('Error assigning teacher to center:', error);
+      return false;
+    }
+  }
+
+  async assignStudentToCenter(studentId: number, centerId: number): Promise<boolean> {
+    try {
+      await db.update(schema.studentProfiles)
+        .set({ centerId })
+        .where(eq(schema.studentProfiles.userId, studentId));
+      return true;
+    } catch (error) {
+      console.error('Error assigning student to center:', error);
+      return false;
+    }
   }
 
   // Lesson related methods

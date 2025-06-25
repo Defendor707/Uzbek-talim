@@ -15,6 +15,9 @@ import CenterDashboard from "@/pages/dashboard/CenterDashboard";
 import TeacherProfile from "@/pages/teacher/TeacherProfile";
 import StudentProfile from "@/pages/student/StudentProfile";
 import ParentProfile from "@/pages/parent/ParentProfile";
+import CenterProfile from "@/pages/center/CenterProfile";
+import Teachers from "@/pages/center/Teachers";
+import Students from "@/pages/center/Students";
 import ChildrenPage from "@/pages/parent/ChildrenPage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import NotificationSettings from "@/pages/parent/NotificationSettings";
@@ -165,9 +168,24 @@ function Router() {
       </Route>
       
       {/* Center routes */}
+      <Route path="/center/profile">
+        <ProtectedRoute allowedRoles={["center"]}>
+          <CenterProfile />
+        </ProtectedRoute>
+      </Route>
       <Route path="/center/notifications">
         <ProtectedRoute allowedRoles={["center"]}>
           <NotificationsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/center/teachers">
+        <ProtectedRoute allowedRoles={["center"]}>
+          <Teachers />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/center/students">
+        <ProtectedRoute allowedRoles={["center"]}>
+          <Students />
         </ProtectedRoute>
       </Route>
       

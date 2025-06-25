@@ -69,8 +69,21 @@ export const teacherProfiles = pgTable("teacher_profiles", {
 export const centerProfiles = pgTable("center_profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  centerName: text("center_name").notNull(),
   address: text("address").notNull(),
+  phoneNumber: text("phone_number"),
+  email: text("email"),
+  website: text("website"),
   description: text("description"),
+  director: text("director"), // Markaz direktori
+  establishedYear: integer("established_year"),
+  licenseNumber: text("license_number"),
+  capacity: integer("capacity"), // O'quvchilar sig'imi
+  specializations: text("specializations").array(), // Mutaxassisliklar
+  facilities: text("facilities").array(), // Imkoniyatlar
+  workingHours: text("working_hours"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Subjects table
@@ -238,7 +251,22 @@ export const insertTeacherProfileSchema = createInsertSchema(teacherProfiles)
 
 // Schema for inserting center profiles
 export const insertCenterProfileSchema = createInsertSchema(centerProfiles)
-  .omit({ id: true });
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    centerName: z.string().min(2, "Markaz nomi kamida 2 ta belgidan iborat bo'lishi kerak"),
+    address: z.string().min(10, "Manzil kamida 10 ta belgidan iborat bo'lishi kerak"),
+    phoneNumber: z.string().optional(),
+    email: z.string().email("Noto'g'ri email format").optional().or(z.literal("")),
+    website: z.string().url("Noto'g'ri veb-sayt URL").optional().or(z.literal("")),
+    description: z.string().optional(),
+    director: z.string().optional(),
+    establishedYear: z.number().min(1900).max(new Date().getFullYear()).optional(),
+    licenseNumber: z.string().optional(),
+    capacity: z.number().min(1).optional(),
+    specializations: z.array(z.string()).optional(),
+    facilities: z.array(z.string()).optional(),
+    workingHours: z.string().optional(),
+  });
 
 // Schema for inserting lessons
 export const insertLessonSchema = createInsertSchema(lessons)

@@ -134,6 +134,16 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 25, 2025: Implemented complete center (O'quv markazi) role functionality
+  - Enhanced center profile schema with comprehensive fields (name, address, director, capacity, etc.)
+  - Created CenterProfile page with full profile management and editing capabilities
+  - Added Teachers and Students management pages for centers
+  - Implemented backend API endpoints for center profile CRUD operations
+  - Added center management methods for teacher/student assignment
+  - Updated ResponsiveDashboard to include center profile navigation
+  - Center role now has complete functionality similar to other roles
+  - User feedback: "Uquv markaz rolini ham ishlab chiq qolgan rollardagidek qil profil malumotlari qushish vahakazo funksiyalarni ishga tushir"
+
 - June 25, 2025: Cleaned up Telegram bot interface and completed parent notification system
   - Removed unnecessary test creation and editing inline buttons from Telegram bot
   - Simplified bot interface to focus only on test viewing and essential features
@@ -141,7 +151,6 @@ Dashboard design: User requested improved navigation without dropdown menus for 
   - Added comprehensive parent notification settings page with score thresholds
   - Created API endpoints for managing notification preferences (Telegram/website)
   - Enhanced Telegram bot with notification filtering based on parent settings
-  - User feedback: "Telegram botda test tahrirlash inline tugmalari faqat testni tahrirlashda yordam bersa buldi qolgan vazifalarini olib tashla ular uchun yanglish bulgan Bosh menu test yaratish degan yanglish bulimlar ham qushilib qolgan ularni vazifasini kirmaydi bu qismlar."
 
 - June 25, 2025: Completely fixed parent-child relationship system with proper restrictions and notifications
   - Fixed database query error by removing non-existent email column reference
