@@ -6,7 +6,8 @@ import OnboardingSlides from '@/components/onboarding/OnboardingSlides';
 
 const LoginPage: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState(() => {
-    return !localStorage.getItem('visited');
+    // Force skip onboarding for now to fix mobile issue
+    return false;
   });
   
   const [showPresentation, setShowPresentation] = useState(false);

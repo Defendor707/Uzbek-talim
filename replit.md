@@ -134,6 +134,11 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 25, 2025: Fixed mobile login issue and improved test interface
+  - Temporarily disabled onboarding to fix mobile holiday screen issue
+  - Mobile users now see login page directly without onboarding delay
+  - User feedback: "Mobile versiyada sayt halo ham usha holiday turibdi"
+
 - June 25, 2025: Created completely new minimalist test interface with clean design
   - Removed all complex layouts, cards, and unnecessary decorative elements
   - Clean white background with minimal header showing only test title and description
