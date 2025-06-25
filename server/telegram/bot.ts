@@ -4094,7 +4094,7 @@ async function showTestsPage(ctx: any, page: number = 0) {
     
     // Add inline buttons for each test
     inlineButtons.push([
-      Markup.button.callback(`📝 Tahrirlash`, `edit_test_${test.id}`),
+      // Test editing removed
       Markup.button.callback(`📊 Ko'rish`, `view_test_${test.id}`),
       Markup.button.callback(`🗑️ O'chirish`, `delete_test_${test.id}`)
     ]);
@@ -4115,7 +4115,6 @@ async function showTestsPage(ctx: any, page: number = 0) {
   
   // Add bottom action buttons
   inlineButtons.push([
-    Markup.button.callback('➕ Yangi test', 'create_new_test'),
     Markup.button.callback('🔙 Orqaga', 'back_to_teacher_menu')
   ]);
   
@@ -4145,31 +4144,7 @@ bot.action(/tests_page_(\d+)/, async (ctx) => {
   }
 });
 
-// Callback handler for creating new test
-bot.action('create_new_test', async (ctx) => {
-  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
-    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
-    return;
-  }
-  
-  // Clear existing test data
-  (ctx.session as any).existingTests = undefined;
-  (ctx.session as any).currentTestPage = undefined;
-  
-  // Show test creation menu
-  await ctx.editMessageText(
-    '📝 *Test yaratish*\n\nQaysi turdagi test yaratmoqchisiz?',
-    {
-      parse_mode: 'Markdown',
-      ...Markup.inlineKeyboard([
-        [Markup.button.callback('📝 Oddiy test', 'create_simple_test')],
-        [Markup.button.callback('🔓 Ochiq test', 'create_public_test')],
-        [Markup.button.callback('🔙 Orqaga', 'back_to_tests')]
-      ])
-    }
-  );
-  await ctx.answerCbQuery();
-});
+// Test creation functionality removed
 
 // Callback handler for going back to teacher menu
 bot.action('back_to_teacher_menu', async (ctx) => {
@@ -4183,7 +4158,7 @@ bot.action('back_to_teacher_menu', async (ctx) => {
     {
       parse_mode: 'Markdown',
       ...Markup.inlineKeyboard([
-        [Markup.button.callback('📝 Test yaratish', 'show_test_creation')],
+        // Test creation removed
         [Markup.button.callback('📋 Mavjud testlar', 'show_existing_tests')],
         [Markup.button.callback('👥 O\'quvchilar', 'show_students')]
       ])
@@ -4192,58 +4167,7 @@ bot.action('back_to_teacher_menu', async (ctx) => {
   await ctx.answerCbQuery();
 });
 
-// Callback handler for test editing
-bot.action(/edit_test_(\d+)/, async (ctx) => {
-  if (!ctx.session.userId || ctx.session.role !== 'teacher') {
-    await ctx.answerCbQuery('❌ Bu funksiya faqat o\'qituvchilar uchun.');
-    return;
-  }
-  
-  const testId = parseInt(ctx.match[1]);
-  
-  try {
-    const test = await storage.getTestById(testId);
-    if (!test || test.teacherId !== ctx.session.userId) {
-      await ctx.answerCbQuery('❌ Test topilmadi yoki sizga tegishli emas.');
-      return;
-    }
-    
-    // Set up editing session
-    (ctx.session as any).editingTest = {
-      testId: test.id,
-      step: 'menu'
-    };
-    
-    const category = test.description?.split(' | ')[0] || '';
-    const testType = test.description?.includes('Ommaviy') ? '🔓 Ochiq' : '🔒 Maxsus';
-    const status = test.status === 'active' ? '✅ Faol' : test.status === 'draft' ? '📝 Loyiha' : '🔚 Tugagan';
-    
-    let testInfo = `📝 *Test tahrirlash*\n\n`;
-    testInfo += `📋 *Nomi*: ${test.title}\n`;
-    if (category && !category.includes('test')) {
-      testInfo += `📚 *Tasnif*: ${category}\n`;
-    }
-    testInfo += `🔓 *Turi*: ${testType}\n`;
-    testInfo += `📊 *Savollar*: ${test.totalQuestions}\n`;
-    testInfo += `📊 *Holat*: ${status}\n`;
-    testInfo += `📅 *Yaratilgan*: ${new Date(test.createdAt).toLocaleDateString('uz-UZ')}\n\n`;
-    testInfo += `Qaysi qismini o'zgartirmoqchisiz?`;
-    
-    await ctx.editMessageText(testInfo, {
-      parse_mode: 'Markdown',
-      ...Markup.inlineKeyboard([
-        [Markup.button.callback('📝 Nom', `edit_name_${test.id}`), Markup.button.callback('📚 Tasnif', `edit_category_${test.id}`)],
-        [Markup.button.callback('🔄 Holat', `edit_status_${test.id}`), Markup.button.callback('📊 Ko\'rish', `view_test_${test.id}`)],
-        [Markup.button.callback('🔙 Orqaga', 'back_to_tests')]
-      ])
-    });
-    await ctx.answerCbQuery();
-    
-  } catch (error) {
-    console.error('Error editing test:', error);
-    await ctx.answerCbQuery('❌ Test ma\'lumotlarini yuklashda xatolik yuz berdi.');
-  }
-});
+// Test editing functionality removed
 
 // Callback handler for test deletion
 bot.action(/delete_test_(\d+)/, async (ctx) => {
@@ -4392,7 +4316,7 @@ bot.action(/view_test_(\d+)/, async (ctx) => {
     await ctx.editMessageText(testInfo, {
       parse_mode: 'Markdown',
       ...Markup.inlineKeyboard([
-        [Markup.button.callback('📝 Tahrirlash', `edit_test_${test.id}`)],
+        // Test editing removed
         [Markup.button.callback('📊 Statistika', `test_stats_${test.id}`)],
         [Markup.button.callback('🔙 Orqaga', 'back_to_tests')]
       ])
@@ -4424,11 +4348,10 @@ bot.action('back_to_tests', async (ctx) => {
       await ctx.editMessageText(
         '📋 *Mavjud testlar*\n\n' +
         'Sizda hali yaratilgan testlar yo\'q.\n\n' +
-        'Test yaratish uchun "Yangi test" tugmasini bosing.',
+        'Testlarni veb-sayt orqali yaratishingiz mumkin.',
         {
           parse_mode: 'Markdown',
           ...Markup.inlineKeyboard([
-            [Markup.button.callback('➕ Yangi test', 'create_new_test')],
             [Markup.button.callback('🔙 Orqaga', 'back_to_teacher_menu')]
           ])
         }
@@ -4560,7 +4483,7 @@ bot.action(/set_status_(active|draft|completed)_(\d+)/, async (ctx) => {
             await ctx.editMessageText(testInfo, {
               parse_mode: 'Markdown',
               ...Markup.inlineKeyboard([
-                [Markup.button.callback('📝 Tahrirlash', `edit_test_${test.id}`)],
+                // Test editing removed
                 [Markup.button.callback('📊 Statistika', `test_stats_${test.id}`)],
                 [Markup.button.callback('🔙 Orqaga', 'back_to_tests')]
               ])

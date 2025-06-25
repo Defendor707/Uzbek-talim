@@ -134,13 +134,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
-- June 25, 2025: Implemented complete parent notification customization system
+- June 25, 2025: Cleaned up Telegram bot interface and completed parent notification system
+  - Removed unnecessary test creation and editing inline buttons from Telegram bot
+  - Simplified bot interface to focus only on test viewing and essential features
+  - Fixed test result dashboard navigation to redirect to correct student dashboard route
   - Added comprehensive parent notification settings page with score thresholds
   - Created API endpoints for managing notification preferences (Telegram/website)
   - Enhanced Telegram bot with notification filtering based on parent settings
-  - Added notification settings to parent navigation menu
-  - Fixed test result dashboard navigation to redirect to correct student dashboard route
-  - User feedback: "Test ishlab bulingach test natijasi chiqqanda chiqadigan Dashboard ga qaytish tugmasi Student/dashboartga olib beryapti bu sahifa mavjud emas dashboard/student sahifasi mavjud shu sahifaga olib kelishi kerak."
+  - User feedback: "Telegram botda test tahrirlash inline tugmalari faqat testni tahrirlashda yordam bersa buldi qolgan vazifalarini olib tashla ular uchun yanglish bulgan Bosh menu test yaratish degan yanglish bulimlar ham qushilib qolgan ularni vazifasini kirmaydi bu qismlar."
 
 - June 25, 2025: Completely fixed parent-child relationship system with proper restrictions and notifications
   - Fixed database query error by removing non-existent email column reference
