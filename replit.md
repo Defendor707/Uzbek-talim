@@ -134,6 +134,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 25, 2025: Implemented complete parent notification customization system
+  - Added comprehensive parent notification settings page with score thresholds
+  - Created API endpoints for managing notification preferences (Telegram/website)
+  - Enhanced Telegram bot with notification filtering based on parent settings
+  - Added notification settings to parent navigation menu
+  - Fixed test result dashboard navigation to redirect to correct student dashboard route
+  - User feedback: "Test ishlab bulingach test natijasi chiqqanda chiqadigan Dashboard ga qaytish tugmasi Student/dashboartga olib beryapti bu sahifa mavjud emas dashboard/student sahifasi mavjud shu sahifaga olib kelishi kerak."
+
 - June 25, 2025: Completely fixed parent-child relationship system with proper restrictions and notifications
   - Fixed database query error by removing non-existent email column reference
   - Implemented one-to-one parent-child restriction (one child can only have one parent)

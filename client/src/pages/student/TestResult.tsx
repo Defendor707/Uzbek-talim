@@ -51,7 +51,7 @@ const TestResult: React.FC = () => {
         <div className="text-center">
           <p className="text-red-600 mb-4">Test natijasi topilmadi</p>
           <p className="text-gray-500 mb-4">Attempt ID: {attemptId}</p>
-          <Button onClick={() => setLocation('/student/dashboard')}>
+          <Button onClick={() => setLocation('/dashboard/student')}>
             Dashboard'ga qaytish
           </Button>
         </div>
@@ -164,7 +164,7 @@ const TestResult: React.FC = () => {
               variant="outline"
               onClick={() => {
                 console.log('Dashboard tugmasi bosildi');
-                setLocation('/student/dashboard');
+                setLocation('/dashboard/student');
               }}
               className="px-8 py-3"
             >
