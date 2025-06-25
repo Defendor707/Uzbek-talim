@@ -85,9 +85,10 @@ const TakeTestPage: React.FC = () => {
     },
     onError: (error) => {
       console.error('Test attempt creation failed:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       toast({
         title: "Xato",
-        description: "Testni boshlashda xatolik yuz berdi",
+        description: `Testni boshlashda xatolik yuz berdi: ${error.message || 'Noma\'lum xato'}`,
         variant: "destructive",
       });
     },
@@ -179,11 +180,12 @@ const TakeTestPage: React.FC = () => {
 
   // Start test attempt on component mount
   useEffect(() => {
-    if (test && !attemptId && !startAttemptMutation.isPending && !startAttemptMutation.isError) {
+    if (test && !attemptId && !startAttemptMutation.isPending) {
       console.log('Attempting to start test for:', test.id);
+      console.log('Test data:', test);
       startAttemptMutation.mutate();
     }
-  }, [test, attemptId, startAttemptMutation.isPending, startAttemptMutation.isError]);
+  }, [test, attemptId]);
 
   // Handle answer selection
   const handleAnswerSelect = (questionId: number, answer: string) => {
@@ -446,11 +448,11 @@ const TakeTestPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* Answer Options - Test Sheet Style with A, B, C, D, E */}
+                {/* Answer Options - Test Sheet Style with A, B, C, D */}
                 <div className="space-y-3">
                   <p className="text-sm font-medium text-gray-700 mb-4">Javobni tanlang:</p>
                   <div className="grid grid-cols-1 gap-3">
-                    {['A', 'B', 'C', 'D', 'E'].map((optionLetter, index) => {
+                    {['A', 'B', 'C', 'D'].map((optionLetter, index) => {
                       const isSelected = answers[currentQuestion.id] === optionLetter;
                       const options = currentQuestion.options ? JSON.parse(currentQuestion.options as string) : [];
                       const optionText = options[index];

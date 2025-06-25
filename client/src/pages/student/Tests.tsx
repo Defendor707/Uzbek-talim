@@ -216,7 +216,7 @@ const StudentTestsPage: React.FC = () => {
                       <Button 
                         size="sm" 
                         onClick={() => {
-                          console.log('Search result test boshlash:', test.id, test);
+                          console.log('Test boshlash:', test.id, test);
                           if (!test.id) {
                             toast({
                               title: "Xatolik",
@@ -225,6 +225,7 @@ const StudentTestsPage: React.FC = () => {
                             });
                             return;
                           }
+                          // Use the correct route format
                           console.log('Navigating to:', `/student/test/${test.id}`);
                           setLocation(`/student/test/${test.id}`);
                         }}
