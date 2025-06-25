@@ -95,11 +95,21 @@ const TakeTestPage: React.FC = () => {
   const startAttemptMutation = useMutation({
     mutationFn: async () => {
       console.log('Creating test attempt for testId:', testId);
-      const response = await apiRequest(`/api/tests/${testId}/start`, {
+      const response = await fetch(`/api/tests/${testId}/start`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
       });
-      console.log('Test attempt response:', response);
-      return response;
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Test attempt response:', data);
+      return data;
     },
     onSuccess: (data) => {
       console.log('Test attempt created successfully:', data);
@@ -113,7 +123,7 @@ const TakeTestPage: React.FC = () => {
       console.error('Test attempt creation failed:', error);
       toast({
         title: "Xato",
-        description: "Testni boshlashda xatolik",
+        description: "Testni boshlashda xatolik yuz berdi",
         variant: "destructive",
       });
     },
@@ -188,10 +198,11 @@ const TakeTestPage: React.FC = () => {
 
   // Start test attempt on component mount
   useEffect(() => {
-    if (test && !attemptId) {
+    if (test && !attemptId && !startAttemptMutation.isPending && !startAttemptMutation.isError) {
+      console.log('Attempting to start test for:', test.id);
       startAttemptMutation.mutate();
     }
-  }, [test]);
+  }, [test, attemptId, startAttemptMutation.isPending, startAttemptMutation.isError]);
 
   // Handle answer selection
   const handleAnswerSelect = (questionId: number, answer: string) => {
@@ -229,9 +240,13 @@ const TakeTestPage: React.FC = () => {
     }
     
     if (!attemptId) {
+      // Try to start attempt first
+      if (!startAttemptMutation.isPending) {
+        startAttemptMutation.mutate();
+      }
       toast({
         title: "Xatolik",
-        description: "Test urinishi topilmadi",
+        description: "Test urinishi yaratilmagan. Qayta urinib ko'ring.",
         variant: "destructive",
       });
       return;
