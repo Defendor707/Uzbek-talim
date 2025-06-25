@@ -96,9 +96,26 @@ const TakeTestPage: React.FC = () => {
   // Submit answer
   const submitAnswerMutation = useMutation({
     mutationFn: async ({ questionId, answer }: { questionId: number; answer: string }) => {
+      console.log('Submitting answer:', { questionId, answer, attemptId });
       return apiRequest(`/api/test-attempts/${attemptId}/answers`, {
         method: 'POST',
         body: JSON.stringify({ questionId, answer }),
+      });
+    },
+    onSuccess: (data, variables) => {
+      console.log('Answer submitted successfully:', data);
+      toast({
+        title: "Javob saqlandi",
+        description: `${variables.answer} varianti tanlandi`,
+        duration: 2000,
+      });
+    },
+    onError: (error, variables) => {
+      console.error('Answer submission failed:', error);
+      toast({
+        title: "Xatolik",
+        description: "Javobni saqlashda xatolik yuz berdi",
+        variant: "destructive",
       });
     },
   });
@@ -170,10 +187,13 @@ const TakeTestPage: React.FC = () => {
 
   // Handle answer selection
   const handleAnswerSelect = (questionId: number, answer: string) => {
+    console.log('Answer selected:', { questionId, answer });
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
     
     if (attemptId) {
       submitAnswerMutation.mutate({ questionId, answer });
+    } else {
+      console.warn('No attempt ID available for answer submission');
     }
   };
 
@@ -389,44 +409,82 @@ const TakeTestPage: React.FC = () => {
                   
                   {/* Question Image */}
                   {currentQuestion.questionImage && (
-                    <div className="mb-4">
+                    <div className="mb-6 bg-gray-50 p-4 rounded-lg border">
                       <img
                         src={currentQuestion.questionImage}
                         alt="Savol rasmi"
-                        className="max-w-full h-auto max-h-60 md:max-h-80 object-contain rounded-lg border cursor-pointer hover:shadow-lg transition-shadow"
+                        className="max-w-full h-auto max-h-80 md:max-h-[500px] object-contain rounded-lg border bg-white mx-auto cursor-pointer hover:shadow-lg transition-shadow"
                         onClick={() => {
                           // Handle image click for full view
                           window.open(currentQuestion.questionImage, '_blank');
                         }}
                       />
+                      <p className="text-xs text-gray-500 text-center mt-2">Rasmni kattalashtrish uchun bosing</p>
+                    </div>
+                  )}
+
+                  {/* Test Images Display */}
+                  {test.testImages && test.testImages.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">Test materiallari:</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {test.testImages.map((image, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={image}
+                              alt={`Test materiali ${index + 1}`}
+                              className="w-full h-24 md:h-32 object-cover rounded-lg border cursor-pointer hover:shadow-md transition-shadow"
+                              onClick={() => window.open(image, '_blank')}
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                              <Eye className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
 
-                {/* Answer Options */}
+                {/* Answer Options - Test Sheet Style with A, B, C, D, E */}
                 <div className="space-y-3">
-                  {currentQuestion.options && JSON.parse(currentQuestion.options as string).map((option: string, index: number) => {
-                    const optionLetter = String.fromCharCode(65 + index); // A, B, C, D
-                    const isSelected = answers[currentQuestion.id] === optionLetter;
-                    
-                    return (
-                      <Button
-                        key={index}
-                        variant={isSelected ? "default" : "outline"}
-                        className={`w-full p-4 h-auto text-left justify-start text-sm md:text-base ${
-                          isSelected ? 'bg-blue-500 text-white border-blue-500' : 'hover:bg-gray-50'
-                        }`}
-                        onClick={() => handleAnswerSelect(currentQuestion.id, optionLetter)}
-                      >
-                        <span className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mr-3 text-xs font-semibold ${
-                          isSelected ? 'bg-white text-blue-500 border-white' : 'border-gray-300'
-                        }`}>
-                          {optionLetter}
-                        </span>
-                        <span className="flex-1">{option}</span>
-                      </Button>
-                    );
-                  })}
+                  <p className="text-sm font-medium text-gray-700 mb-4">Javobni tanlang:</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    {['A', 'B', 'C', 'D', 'E'].map((optionLetter, index) => {
+                      const isSelected = answers[currentQuestion.id] === optionLetter;
+                      const options = currentQuestion.options ? JSON.parse(currentQuestion.options as string) : [];
+                      const optionText = options[index];
+                      
+                      // Only show options that have text
+                      if (!optionText) return null;
+                      
+                      return (
+                        <Button
+                          key={optionLetter}
+                          variant={isSelected ? "default" : "outline"}
+                          className={`w-full p-4 h-auto text-left justify-start text-sm md:text-base transition-all duration-200 ${
+                            isSelected 
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-md transform scale-[1.02]' 
+                              : 'hover:bg-blue-50 hover:border-blue-300 border-gray-200 hover:shadow-sm'
+                          } ${submitAnswerMutation.isPending ? 'opacity-70' : ''}`}
+                          onClick={() => handleAnswerSelect(currentQuestion.id, optionLetter)}
+                          disabled={submitAnswerMutation.isPending}
+                        >
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 text-sm font-bold transition-all ${
+                            isSelected 
+                              ? 'bg-white text-blue-600 border-white' 
+                              : 'border-blue-400 text-blue-600 group-hover:border-blue-500'
+                          }`}>
+                            {optionLetter}
+                          </div>
+                          <span className="flex-1 text-left">{optionText}</span>
+                          {isSelected && (
+                            <Check className="w-5 h-5 text-white ml-2" />
+                          )}
+                        </Button>
+                      );
+                    }).filter(Boolean)}
+                  </div>
                 </div>
 
                 {/* Navigation */}
@@ -453,25 +511,35 @@ const TakeTestPage: React.FC = () => {
                   </div>
                   
                   {/* Complete Test Button */}
-                  {answeredCount === questions.length && (
-                    <Button
-                      onClick={handleCompleteTest}
-                      disabled={completeTestMutation.isPending}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      {completeTestMutation.isPending ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Yakunlanmoqda...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="w-4 h-4 mr-2" />
-                          Testni yakunlash
-                        </>
-                      )}
-                    </Button>
-                  )}
+                  <div className="flex flex-col gap-2">
+                    {answeredCount < questions.length && (
+                      <div className="text-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-sm text-yellow-700">
+                          Barcha savollarga javob bering: {answeredCount}/{questions.length}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {answeredCount === questions.length && (
+                      <Button
+                        onClick={handleCompleteTest}
+                        disabled={completeTestMutation.isPending}
+                        className="bg-green-600 hover:bg-green-700 text-white text-lg py-3"
+                      >
+                        {completeTestMutation.isPending ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Yakunlanmoqda...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="w-5 h-5 mr-2" />
+                            Testni yakunlash ({answeredCount}/{questions.length})
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
