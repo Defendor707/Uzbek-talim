@@ -291,18 +291,25 @@ const TakeTestNew: React.FC = () => {
                   return (
                     <button
                       key={letter}
-                      onClick={() => handleAnswerSelect(currentQuestion.id, letter)}
+                      onClick={() => isAvailable && handleAnswerSelect(currentQuestion.id, letter)}
+                      disabled={!isAvailable}
                       className={`w-full p-4 text-left rounded-lg border-2 transition-all ${
-                        isSelected
-                          ? 'border-blue-600 bg-blue-50 text-blue-700'
-                          : 'border-gray-300 hover:border-blue-300 hover:bg-gray-50'
+                        !isAvailable 
+                          ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
+                          : isSelected
+                            ? 'border-blue-600 bg-blue-50 text-blue-700'
+                            : 'border-gray-300 hover:border-blue-300 hover:bg-gray-50'
                       }`}
                     >
                       <div className="flex items-center">
-                        <span className="w-8 h-8 rounded-full border-2 border-current flex items-center justify-center font-bold mr-4">
+                        <span className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold mr-4 ${
+                          !isAvailable
+                            ? 'border-gray-200 text-gray-300'
+                            : 'border-current'
+                        }`}>
                           {letter}
                         </span>
-                        <span>{options[optionLetters.indexOf(letter)] || `${letter} variant`}</span>
+                        <span>{optionText}</span>
                       </div>
                     </button>
                   );

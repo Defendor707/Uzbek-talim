@@ -1338,6 +1338,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const updatedAttempt = await storage.updateTestAttempt(attemptId, {
           endTime: new Date(),
           score: scorePercentage.toString(),
+          correctAnswers: Math.floor(score / (questions[0]?.points || 1)),
+          completed: true,
           status: "completed",
         });
 

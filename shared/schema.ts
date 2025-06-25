@@ -150,9 +150,10 @@ export const testAttempts = pgTable("test_attempts", {
   startTime: timestamp("start_time").defaultNow().notNull(),
   endTime: timestamp("end_time"),
   score: numeric("score"),
-  totalCorrect: integer("total_correct"),
+  correctAnswers: integer("correct_answers").default(0),
   totalQuestions: integer("total_questions").notNull(),
   status: text("status").notNull().default('in_progress'), // in_progress, completed
+  completed: boolean("completed").default(false),
 });
 
 // Student answers for each question
