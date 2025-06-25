@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, jsonb, timestamp, foreignKey, pgEnum, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb, timestamp, foreignKey, pgEnum, numeric, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -34,6 +34,13 @@ export const users = pgTable("users", {
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    usernameIdx: index("idx_users_username").on(table.username),
+    roleIdx: index("idx_users_role").on(table.role),
+    telegramIdIdx: index("idx_users_telegram_id").on(table.telegramId),
+    resetTokenIdx: index("idx_users_reset_token").on(table.resetToken),
+  };
 });
 
 // Student profile info
@@ -140,6 +147,14 @@ export const tests = pgTable("tests", {
   status: testStatusEnum("status").notNull().default('draft'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    teacherIdIdx: index("idx_tests_teacher_id").on(table.teacherId),
+    gradeIdx: index("idx_tests_grade").on(table.grade),
+    testCodeIdx: index("idx_tests_test_code").on(table.testCode),
+    statusIdx: index("idx_tests_status").on(table.status),
+    typeIdx: index("idx_tests_type").on(table.type),
+  };
 });
 
 // Questions table
@@ -153,6 +168,11 @@ export const questions = pgTable("questions", {
   correctAnswer: text("correct_answer").notNull(), // Single letter answer: A, B, C, or D
   points: integer("points").notNull().default(1),
   order: integer("order").notNull(),
+}, (table) => {
+  return {
+    testIdIdx: index("idx_questions_test_id").on(table.testId),
+    orderIdx: index("idx_questions_order").on(table.order),
+  };
 });
 
 // Test attempts by students
@@ -167,6 +187,13 @@ export const testAttempts = pgTable("test_attempts", {
   totalQuestions: integer("total_questions").notNull(),
   status: text("status").notNull().default('in_progress'), // in_progress, completed
   completed: boolean("completed").default(false),
+}, (table) => {
+  return {
+    studentIdIdx: index("idx_test_attempts_student_id").on(table.studentId),
+    testIdIdx: index("idx_test_attempts_test_id").on(table.testId),
+    startTimeIdx: index("idx_test_attempts_start_time").on(table.startTime),
+    statusIdx: index("idx_test_attempts_status").on(table.status),
+  };
 });
 
 // Student answers for each question
@@ -177,6 +204,11 @@ export const studentAnswers = pgTable("student_answers", {
   answer: jsonb("answer"),
   isCorrect: boolean("is_correct"),
   pointsEarned: numeric("points_earned"),
+}, (table) => {
+  return {
+    attemptIdIdx: index("idx_student_answers_attempt_id").on(table.attemptId),
+    questionIdIdx: index("idx_student_answers_question_id").on(table.questionId),
+  };
 });
 
 // Schedule for teachers and students

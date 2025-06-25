@@ -9,6 +9,10 @@ import { generateTestReportExcel, generateStudentProgressExcel } from "./utils/e
 import express from "express";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { generalLimiter, authLimiter, uploadLimiter, testLimiter } from "./middleware/rateLimiter";
+import { testsCache, lessonsCache, profileCache, statisticsCache, invalidateTestsCache, invalidateLessonsCache, invalidateUserCache } from "./middleware/cache";
+import { globalErrorHandler, notFoundHandler, requestLogger, asyncHandler } from "./middleware/errorHandler";
+import autoSaveMiddleware from "./middleware/autoSave";
 
 // Helper function to determine if notification should be sent based on settings
 function shouldSendNotification(settings: any, scorePercentage: number): boolean {
@@ -35,10 +39,13 @@ import * as schema from "@shared/schema";
 import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth Routes
-  app.post("/api/auth/register", register);
-  app.post("/api/auth/login", login);
-  app.get("/api/auth/me", authenticate, async (req, res) => {
+  // Apply general rate limiting to all API routes
+  app.use('/api', generalLimiter.middleware);
+
+  // Auth Routes with specific rate limiting
+  app.post("/api/auth/register", authLimiter.middleware, register);
+  app.post("/api/auth/login", authLimiter.middleware, login);
+  app.get("/api/auth/me", authenticate, profileCache, async (req, res) => {
     try {
       const user = await storage.getUser(req.user!.userId);
       if (!user) {
@@ -106,10 +113,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Profile image upload
+  // Profile image upload with rate limiting
   app.post(
     "/api/users/profile/image",
     authenticate,
+    uploadLimiter.middleware,
     upload.single("profileImage"),
     uploadProfileImage
   );
@@ -549,7 +557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  app.get("/api/tests", authenticate, async (req, res) => {
+  app.get("/api/tests", authenticate, testsCache, async (req, res) => {
     try {
       let tests: any[] = [];
 

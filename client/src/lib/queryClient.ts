@@ -82,7 +82,8 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 10 * 60 * 1000, // 10 minutes - malumotlar uzoqroq fresh turibi
+      gcTime: 30 * 60 * 1000, // 30 minutes - cache memory da uzoqroq saqlanadi
       retry: (failureCount, error: any) => {
         // Don't retry on auth errors
         if (error?.message?.includes('401') || error?.message?.includes('Avtorizatsiya')) {
@@ -90,9 +91,15 @@ export const queryClient = new QueryClient({
         }
         return failureCount < 2;
       },
+      // Network bo'lmagan holatlarda cached data ko'rsatish
+      networkMode: 'offlineFirst',
     },
     mutations: {
       retry: false,
+      // Mutation error larni global handle qilish
+      onError: (error: any) => {
+        console.error('Mutation error:', error);
+      },
     },
   },
 });

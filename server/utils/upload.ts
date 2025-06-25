@@ -3,11 +3,21 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { storage } from '../storage';
+import ImageOptimizer from './imageOptimizer';
 
 // Create uploads directory if it doesn't exist
 const uploadDir = path.join(process.cwd(), 'uploads');
+const optimizedDir = path.join(process.cwd(), 'uploads', 'optimized');
+const thumbnailDir = path.join(process.cwd(), 'uploads', 'thumbnails');
+
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
+}
+if (!fs.existsSync(optimizedDir)) {
+  fs.mkdirSync(optimizedDir, { recursive: true });
+}
+if (!fs.existsSync(thumbnailDir)) {
+  fs.mkdirSync(thumbnailDir, { recursive: true });
 }
 
 // Set up storage for multer
@@ -142,7 +152,7 @@ export const uploadProfileImage = async (req: Request, res: Response) => {
   }
 };
 
-// Upload test image
+// Upload test image with optimization
 export const uploadTestImage = async (req: Request, res: Response) => {
   try {
     if (!req.file) {
@@ -152,13 +162,37 @@ export const uploadTestImage = async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: 'Autentifikatsiya talab etiladi' });
     }
-    
-    // Get relative path to store in database
-    const relativePath = path.relative(process.cwd(), req.file.path);
+
+    // Optimize image for web display
+    const filename = path.basename(req.file.filename, path.extname(req.file.filename));
+    const optimizedPath = path.join(optimizedDir, `${filename}.webp`);
+    const thumbnailPath = path.join(thumbnailDir, `${filename}_thumb.webp`);
+
+    // Optimize main image
+    const optimizationResult = await ImageOptimizer.optimizeImage(
+      req.file.path,
+      optimizedPath,
+      { maxWidth: 1200, maxHeight: 800, quality: 85, format: 'webp' }
+    );
+
+    // Create thumbnail
+    await ImageOptimizer.createThumbnail(req.file.path, thumbnailPath, 200);
+
+    // Get relative paths
+    const originalPath = path.relative(process.cwd(), req.file.path);
+    const optimizedRelativePath = path.relative(process.cwd(), optimizedPath);
+    const thumbnailRelativePath = path.relative(process.cwd(), thumbnailPath);
     
     return res.status(200).json({
-      message: 'Test rasmi muvaffaqiyatli yuklandi',
-      imagePath: relativePath
+      message: 'Test rasmi muvaffaqiyatli yuklandi va optimize qilindi',
+      imagePath: originalPath,
+      optimizedPath: optimizedRelativePath,
+      thumbnailPath: thumbnailRelativePath,
+      optimization: {
+        originalSize: optimizationResult.originalSize,
+        optimizedSize: optimizationResult.optimizedSize,
+        compressionRatio: Math.round((1 - optimizationResult.optimizedSize / optimizationResult.originalSize) * 100)
+      }
     });
   } catch (error) {
     console.error('Test image upload error:', error);
@@ -166,7 +200,7 @@ export const uploadTestImage = async (req: Request, res: Response) => {
   }
 };
 
-// Upload question image
+// Upload question image with optimization
 export const uploadQuestionImage = async (req: Request, res: Response) => {
   try {
     if (!req.file) {
@@ -176,13 +210,37 @@ export const uploadQuestionImage = async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: 'Autentifikatsiya talab etiladi' });
     }
-    
-    // Get relative path to store in database
-    const relativePath = path.relative(process.cwd(), req.file.path);
+
+    // Optimize image for web display
+    const filename = path.basename(req.file.filename, path.extname(req.file.filename));
+    const optimizedPath = path.join(optimizedDir, `${filename}.webp`);
+    const thumbnailPath = path.join(thumbnailDir, `${filename}_thumb.webp`);
+
+    // Optimize main image (smaller for questions)
+    const optimizationResult = await ImageOptimizer.optimizeImage(
+      req.file.path,
+      optimizedPath,
+      { maxWidth: 800, maxHeight: 600, quality: 80, format: 'webp' }
+    );
+
+    // Create thumbnail
+    await ImageOptimizer.createThumbnail(req.file.path, thumbnailPath, 150);
+
+    // Get relative paths
+    const originalPath = path.relative(process.cwd(), req.file.path);
+    const optimizedRelativePath = path.relative(process.cwd(), optimizedPath);
+    const thumbnailRelativePath = path.relative(process.cwd(), thumbnailPath);
     
     return res.status(200).json({
-      message: 'Savol rasmi muvaffaqiyatli yuklandi',
-      imagePath: relativePath
+      message: 'Savol rasmi muvaffaqiyatli yuklandi va optimize qilindi',
+      imagePath: originalPath,
+      optimizedPath: optimizedRelativePath,
+      thumbnailPath: thumbnailRelativePath,
+      optimization: {
+        originalSize: optimizationResult.originalSize,
+        optimizedSize: optimizationResult.optimizedSize,
+        compressionRatio: Math.round((1 - optimizationResult.optimizedSize / optimizationResult.originalSize) * 100)
+      }
     });
   } catch (error) {
     console.error('Question image upload error:', error);
