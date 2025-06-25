@@ -3,7 +3,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useParams, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, X, Image as ImageIcon } from 'lucide-react';
+import TestImageModal from '@/components/TestImageModal';
 
 interface Question {
   id: number;
@@ -43,6 +44,8 @@ const TakeTestPage: React.FC = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<{ [questionId: number]: string }>({});
   const [attemptId, setAttemptId] = useState<number | null>(null);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Fetch test details
   const { data: test, isLoading: testLoading } = useQuery<Test>({
@@ -264,19 +267,33 @@ const TakeTestPage: React.FC = () => {
       {/* Main Content */}
       <div className="max-w-6xl mx-auto p-4">
         <div className="flex gap-6">
-          {/* Left: Test Images */}
+          {/* Left: Test Images with Helper Modal */}
           {test.testImages && test.testImages.length > 0 && (
             <div className="w-1/2">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Test rasmlari</h3>
-                <div className="space-y-3">
+              <div className="bg-gray-50 rounded-lg p-4 sticky top-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-gray-700">Test rasmlari</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setImageModalOpen(true)}
+                    className="text-xs"
+                  >
+                    <ImageIcon className="w-3 h-3 mr-1" />
+                    Katta ko'rish
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
                   {test.testImages.map((image, index) => (
-                    <div key={index} className="bg-white rounded border">
+                    <div key={index} className="bg-white rounded border group relative">
                       <img
                         src={`/uploads/${image}`}
                         alt={`Test rasmi ${index + 1}`}
-                        className="w-full h-auto max-h-[500px] object-contain rounded cursor-pointer"
-                        onClick={() => window.open(`/uploads/${image}`, '_blank')}
+                        className="w-full h-auto max-h-[300px] object-contain rounded cursor-pointer transition-all hover:shadow-lg"
+                        onClick={() => {
+                          setCurrentImageIndex(index);
+                          setImageModalOpen(true);
+                        }}
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
                           if (img.src.includes('/uploads/')) {
@@ -284,6 +301,9 @@ const TakeTestPage: React.FC = () => {
                           }
                         }}
                       />
+                      <div className="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+                        {index + 1} / {test.testImages.length}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -313,20 +333,22 @@ const TakeTestPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Answer Options - Horizontal Layout */}
+              {/* Answer Options - Simplified A,B,C,D Layout */}
               <div className="grid grid-cols-4 gap-3 mb-8">
                 {['A', 'B', 'C', 'D'].map((optionLetter) => {
-                  const isSelected = currentQuestion ? answers[currentQuestion.id] === optionLetter : false;
+                  if (!currentQuestion) return null;
+                  
+                  const isSelected = answers[currentQuestion.id] === optionLetter;
                   
                   return (
                     <button
                       key={optionLetter}
-                      className={`p-4 rounded-lg border-2 transition-all duration-200 text-center min-h-[80px] flex items-center justify-center font-medium text-lg ${
+                      className={`p-6 rounded-lg border-2 transition-all duration-200 text-center min-h-[100px] flex items-center justify-center font-bold text-2xl ${
                         isSelected 
-                          ? 'border-blue-600 bg-blue-50 text-blue-700' 
-                          : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-25'
+                          ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-lg scale-105' 
+                          : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-25 hover:shadow-md'
                       }`}
-                      onClick={() => currentQuestion && handleAnswerSelect(currentQuestion.id, optionLetter)}
+                      onClick={() => handleAnswerSelect(currentQuestion.id, optionLetter)}
                     >
                       {optionLetter}
                     </button>
@@ -379,6 +401,18 @@ const TakeTestPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Test Image Modal */}
+      {test.testImages && test.testImages.length > 0 && (
+        <TestImageModal
+          images={test.testImages}
+          currentIndex={currentImageIndex}
+          isOpen={imageModalOpen}
+          onClose={() => setImageModalOpen(false)}
+          onNext={() => setCurrentImageIndex(prev => Math.min(prev + 1, test.testImages!.length - 1))}
+          onPrev={() => setCurrentImageIndex(prev => Math.max(prev - 1, 0))}
+        />
+      )}
     </div>
   );
 };

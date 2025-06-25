@@ -139,12 +139,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
   - Clean white background with minimal header showing only test title and description
   - Simple progress bar showing question number and completion percentage
   - Two-panel layout: test images on left (when available), questions/answers on right
-  - Large, clear test images with click-to-enlarge functionality (max-h-[500px])
-  - Horizontal A,B,C,D button grid layout for easy answer selection
+  - Large, clear test images with click-to-enlarge functionality and modal viewer
+  - Simple A,B,C,D button grid layout (like test creation interface)
+  - Test images displayed in sticky sidebar with helper modal for full-screen viewing
+  - Dynamic answer options based on test question options count
+  - Enhanced image viewing experience with navigation and zoom
   - Simple navigation: Previous/Next buttons and complete test button
   - Removed old TestTaking.tsx component to eliminate confusion
-  - Super clean, focused interface optimized for test-taking experience
-  - User feedback: "test ishlash sahifasini ishlab chiqishimiz kerak oldin yaratilgan edi uni tozalab tashla"
+  - User feedback: "Testda savollar soniga mos ravishda javob berish tugmalarini berish kerak"
 
 - June 25, 2025: Completely redesigned test interface with minimal, clean design (1/100 → 100/100)
   - Removed all unnecessary elements, decorations, and complex layouts
