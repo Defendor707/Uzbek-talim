@@ -1218,6 +1218,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: "completed",
         });
 
+        // Send notification to parent if student has a parent
+        try {
+          const studentProfile = await storage.getStudentProfile(req.user!.userId);
+          if (studentProfile && studentProfile.parentId) {
+            const test = await storage.getTestById(testId);
+            const student = await storage.getUser(req.user!.userId);
+            
+            if (test && student) {
+              const percentage = Math.round(scorePercentage);
+              console.log(`Sending test completion notification to parent ${studentProfile.parentId} about ${student.fullName}'s test: ${test.title} (${percentage}%)`);
+              
+              // Here you could integrate with Telegram bot notifications or other notification systems
+              // For now, we'll log it and it can be picked up by the parent dashboard
+            }
+          }
+        } catch (notificationError) {
+          console.error("Error sending parent notification:", notificationError);
+          // Don't fail the test completion if notification fails
+        }
+
         return res.status(200).json({ ...updatedAttempt, score: scorePercentage });
       } catch (error) {
         console.error("Error completing test:", error);

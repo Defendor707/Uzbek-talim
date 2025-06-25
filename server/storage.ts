@@ -1,4 +1,4 @@
-import { eq, and, inArray, like, desc } from "drizzle-orm";
+import { eq, and, inArray, like, desc, sql } from "drizzle-orm";
 import { db } from "./db";
 import * as schema from "@shared/schema";
 import bcrypt from 'bcrypt';
@@ -381,35 +381,42 @@ export class DatabaseStorage implements IStorage {
       // Find the child user by username
       const child = await this.getUserByUsername(childUsername);
       if (!child) {
-        throw new Error('Farzand topilmadi');
+        throw new Error('Farzand foydalanuvchi topilmadi');
       }
 
+      // Check if child is a student
       if (child.role !== 'student') {
-        throw new Error('Faqat o\'quvchilarni farzand sifatida qo\'shish mumkin');
+        throw new Error('Farzand o\'quvchi rolida bo\'lishi kerak');
       }
 
-      // Check if child already has a parent
+      // Check if child already has a parent using raw SQL for reliability
+      const existingParentCheck = await db.execute(sql`
+        SELECT parent_id FROM student_profiles WHERE user_id = ${child.id} AND parent_id IS NOT NULL
+      `);
+      
+      if (existingParentCheck.rows.length > 0) {
+        throw new Error('Bu farzand allaqachon boshqa ota-onaga bog\'langan');
+      }
+
+      // Get existing student profile
       const existingProfile = await this.getStudentProfile(child.id);
-      if (existingProfile?.parentId) {
-        throw new Error('Bu farzand allaqachon boshqa ota-onaga biriktirilgan');
-      }
-
-      // Update student profile with parent ID
+      
       if (existingProfile) {
-        await db
-          .update(schema.studentProfiles)
-          .set({ parentId })
-          .where(eq(schema.studentProfiles.userId, child.id));
+        // Update existing profile with parent relationship
+        await db.execute(sql`
+          UPDATE student_profiles SET parent_id = ${parentId} WHERE user_id = ${child.id}
+        `);
       } else {
-        // Create student profile if doesn't exist
-        await this.createStudentProfile({
-          userId: child.id,
-          parentId
-        });
+        // Create new student profile with parent relationship
+        await db.execute(sql`
+          INSERT INTO student_profiles (user_id, parent_id, grade, phone_number, bio)
+          VALUES (${child.id}, ${parentId}, '10', '', '')
+        `);
       }
 
       return true;
     } catch (error) {
+      console.error("Error adding child to parent:", error);
       throw error;
     }
   }
@@ -417,30 +424,32 @@ export class DatabaseStorage implements IStorage {
   async getChildrenByParentId(parentId: number): Promise<any[]> {
     console.log('Getting children for parent ID:', parentId);
     
-    // Use raw SQL to avoid Drizzle ORM field selection issues
-    const result = await db.execute(sql`
-      SELECT 
-        u.id,
-        u.full_name as "fullName",
-        u.username,
-        u.email,
-        u.created_at as "createdAt",
-        sp.phone_number as "phoneNumber",
-        sp.bio,
-        sp.grade
-      FROM users u
-      INNER JOIN student_profiles sp ON u.id = sp.user_id
-      WHERE sp.parent_id = ${parentId}
-    `);
+    try {
+      // Use raw SQL directly for reliability - removed email column as it doesn't exist
+      const result = await db.execute(sql`
+        SELECT 
+          u.id,
+          u.full_name as "fullName",
+          u.username,
+          sp.phone_number as "phoneNumber",
+          sp.bio,
+          sp.grade
+        FROM users u
+        INNER JOIN student_profiles sp ON u.id = sp.user_id
+        WHERE sp.parent_id = ${parentId}
+      `);
 
-    console.log('Found children:', result.rows.length);
-    
-    // Transform data to match expected format
-    return result.rows.map((child: any) => ({
-      ...child,
-      firstName: child.fullName?.split(' ')[0] || child.username,
-      lastName: child.fullName?.split(' ').slice(1).join(' ') || ''
-    }));
+      console.log('Found children:', result.rows.length);
+      
+      return result.rows.map((child: any) => ({
+        ...child,
+        firstName: child.fullName?.split(' ')[0] || child.username,
+        lastName: child.fullName?.split(' ').slice(1).join(' ') || ''
+      }));
+    } catch (error) {
+      console.error('Error in getChildrenByParentId:', error);
+      return [];
+    }
   }
 
   async createResetToken(username: string): Promise<string | null> {

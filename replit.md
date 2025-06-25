@@ -134,12 +134,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
-- June 25, 2025: Fixed parent-child relationship display and test creation save issues
-  - Resolved parent-child relationship query error causing children not to display
-  - Fixed Drizzle ORM field selection issue in getChildrenByParentId method
-  - Enhanced test creation API with proper error handling and validation
-  - Added debugging logs for parent-child API endpoints
-  - User feedback: "Ota ona farzand qushgandada Farzandlar kurinmayapti"
+- June 25, 2025: Completely fixed parent-child relationship system with proper restrictions and notifications
+  - Fixed database query error by removing non-existent email column reference
+  - Implemented one-to-one parent-child restriction (one child can only have one parent)
+  - Added role validation ensuring only students can be added as children
+  - Fixed children display issue - parents can now see their children properly
+  - Added parent notifications for test completion with score details
+  - Enhanced error messages in Uzbek language for better user experience
+  - User feedback: "Ota ona dashboard da farzand bulimida kamchilik bor 1ta talabani 2ta gacha ota ona qushishi mumkin bur ota biri ona buladida. Farzand uquvchi rolida bulishi kerak. Qushilgan Farzandlar kurinmay qolgan hozir qushilgan Farzandlar kurinishini taminlab ber. Farzand natijalari bildirishnoma bulib kelishi ham kerak."
 
 - June 25, 2025: Fixed logout and test results system completely
   - Fixed logout functionality to force page reload and clear all authentication state
