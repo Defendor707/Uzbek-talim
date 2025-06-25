@@ -49,6 +49,10 @@ const TakeTestPage: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showTestDescription, setShowTestDescription] = useState(false);
   const [showImageGallery, setShowImageGallery] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  
+  // Pagination settings
+  const questionsPerPage = 5; // Show 5 questions per page
 
   // Fetch test details
   const { data: test, isLoading: testLoading } = useQuery<Test>({
@@ -173,17 +177,47 @@ const TakeTestPage: React.FC = () => {
     }
   };
 
+  // Calculate pagination
+  const totalPages = questions ? Math.ceil(questions.length / questionsPerPage) : 0;
+  const currentPageQuestions = questions ? questions.slice(
+    currentPage * questionsPerPage, 
+    (currentPage + 1) * questionsPerPage
+  ) : [];
+
   // Navigation
   const goToNextQuestion = () => {
     if (questions && currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+      const nextIndex = currentQuestionIndex + 1;
+      const nextPage = Math.floor(nextIndex / questionsPerPage);
+      
+      if (nextPage !== currentPage) {
+        setCurrentPage(nextPage);
+      }
+      setCurrentQuestionIndex(nextIndex);
     }
   };
 
   const goToPreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
+      const prevIndex = currentQuestionIndex - 1;
+      const prevPage = Math.floor(prevIndex / questionsPerPage);
+      
+      if (prevPage !== currentPage) {
+        setCurrentPage(prevPage);
+      }
+      setCurrentQuestionIndex(prevIndex);
     }
+  };
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    setCurrentQuestionIndex(page * questionsPerPage);
+  };
+
+  const goToQuestion = (questionIndex: number) => {
+    const page = Math.floor(questionIndex / questionsPerPage);
+    setCurrentPage(page);
+    setCurrentQuestionIndex(questionIndex);
   };
 
   const handleCompleteTest = () => {
@@ -274,6 +308,26 @@ const TakeTestPage: React.FC = () => {
               style={{ width: `${progress}%` }}
             ></div>
           </div>
+          
+          {/* Page Navigation for large tests */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center mt-3 space-x-1">
+              <span className="text-xs text-gray-500 mr-2">Sahifa:</span>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => goToPage(i)}
+                  className={`px-2 py-1 text-xs rounded transition-colors ${
+                    i === currentPage
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-600 hover:bg-blue-50 border'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -327,7 +381,39 @@ const TakeTestPage: React.FC = () => {
           {/* Right: Question and Answers */}
           <div className={test.testImages && test.testImages.length > 0 ? "w-1/2" : "w-full"}>
             <div className="bg-white">
-              {/* Question Text */}
+              {/* Question Overview for current page */}
+              {totalPages > 1 && (
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">
+                    Sahifa {currentPage + 1} savollari ({currentPage * questionsPerPage + 1}-{Math.min((currentPage + 1) * questionsPerPage, questions.length)})
+                  </h3>
+                  <div className="grid grid-cols-5 gap-2">
+                    {currentPageQuestions.map((question, index) => {
+                      const questionIndex = currentPage * questionsPerPage + index;
+                      const isAnswered = answers[question.id];
+                      const isCurrent = questionIndex === currentQuestionIndex;
+                      
+                      return (
+                        <button
+                          key={question.id}
+                          onClick={() => goToQuestion(questionIndex)}
+                          className={`p-2 text-xs rounded border transition-all ${
+                            isCurrent
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : isAnswered
+                              ? 'bg-green-100 text-green-700 border-green-300'
+                              : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {questionIndex + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Current Question */}
               <div className="mb-6">
                 <h2 className="text-xl font-medium text-gray-900 mb-4">
                   {currentQuestionIndex + 1}. {currentQuestion?.questionText || `${currentQuestionIndex + 1}-savol`}
@@ -380,6 +466,31 @@ const TakeTestPage: React.FC = () => {
                   <ChevronLeft className="w-4 h-4 mr-2" />
                   Oldingi
                 </Button>
+
+                <div className="flex items-center space-x-2">
+                  {/* Page navigation buttons */}
+                  {totalPages > 1 && currentPage > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => goToPage(currentPage - 1)}
+                      className="text-xs"
+                    >
+                      Oldingi sahifa
+                    </Button>
+                  )}
+                  
+                  {totalPages > 1 && currentPage < totalPages - 1 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => goToPage(currentPage + 1)}
+                      className="text-xs"
+                    >
+                      Keyingi sahifa
+                    </Button>
+                  )}
+                </div>
 
                 {currentQuestionIndex === questions.length - 1 ? (
                   <Button
