@@ -126,12 +126,13 @@ const TakeTestNew: React.FC = () => {
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       toast({
         title: "Test yakunlandi",
         description: "Sizning javoblaringiz saqlandi",
       });
-      setLocation('/student/dashboard');
+      // Redirect to results page
+      setLocation(`/student/test-result/${attemptId}`);
     },
   });
 
