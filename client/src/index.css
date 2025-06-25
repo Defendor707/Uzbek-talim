@@ -356,3 +356,4 @@
 .progress-ring {
   transition: stroke-dashoffset 0.3s ease-in-out;
 }
+/* Force cache refresh */

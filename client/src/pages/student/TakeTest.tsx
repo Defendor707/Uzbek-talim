@@ -294,11 +294,16 @@ const TakeTestPage: React.FC = () => {
 
   if (testLoading || questionsLoading || startAttemptMutation.isPending) {
     return (
-      <ResponsiveDashboard userRole="student" sections={[]} currentPage="Test">
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p>{startAttemptMutation.isPending ? 'Test boshlanmoqda...' : 'Test yuklanmoqda...'}</p>
+      <ResponsiveDashboard userRole="student" sections={[]} currentPage="Test Yuklanmoqda">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center bg-white p-8 rounded-lg shadow-lg">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mx-auto mb-6"></div>
+            <h2 className="text-xl font-semibold mb-2">
+              {startAttemptMutation.isPending ? 'Test boshlanmoqda...' : 'Test yuklanmoqda...'}
+            </h2>
+            <p className="text-gray-600">
+              {testId ? `Test ID: ${testId}` : 'Iltimos kuting...'}
+            </p>
           </div>
         </div>
       </ResponsiveDashboard>
@@ -307,13 +312,21 @@ const TakeTestPage: React.FC = () => {
 
   if (!test || !questions || questions.length === 0) {
     return (
-      <ResponsiveDashboard userRole="student" sections={[]} currentPage="Test">
-        <div className="text-center py-8">
-          <h2 className="text-xl font-semibold mb-4">Test topilmadi</h2>
-          <Button onClick={() => setLocation('/student/tests')}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Testlarga qaytish
-          </Button>
+      <ResponsiveDashboard userRole="student" sections={[]} currentPage="Test Topilmadi">
+        <div className="text-center py-12">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md mx-auto">
+            <h2 className="text-xl font-semibold mb-4 text-red-800">Test topilmadi</h2>
+            <p className="text-red-600 mb-6">
+              Test ID: {testId} - Bu test mavjud emas yoki o'chirilgan
+            </p>
+            <Button 
+              onClick={() => setLocation('/student/tests')}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Testlarga qaytish
+            </Button>
+          </div>
         </div>
       </ResponsiveDashboard>
     );
@@ -324,25 +337,28 @@ const TakeTestPage: React.FC = () => {
   const answeredCount = Object.keys(answers).length;
 
   return (
-    <ResponsiveDashboard userRole="student" sections={[]} currentPage={test.title}>
-      <div className="max-w-4xl mx-auto p-2 md:p-4">
+    <ResponsiveDashboard userRole="student" sections={[]} currentPage={`${test.title} - Test`}>
+      <div className="max-w-6xl mx-auto p-2 md:p-6 bg-gray-50 min-h-screen">
         {/* Test Header */}
-        <Card className="mb-4 md:mb-6">
-          <CardHeader className="p-3 md:p-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+        <Card className="mb-4 md:mb-6 shadow-lg border-0">
+          <CardHeader className="p-4 md:p-8 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
               <div className="flex-1">
-                <CardTitle className="text-lg md:text-xl">{test.title}</CardTitle>
-                <p className="text-gray-600 mt-1 md:mt-2 text-sm md:text-base">{test.description}</p>
-                <Badge className="mt-2">{test.type}</Badge>
+                <CardTitle className="text-xl md:text-2xl font-bold">{test.title}</CardTitle>
+                <p className="text-blue-100 mt-2 text-sm md:text-base">{test.description}</p>
+                <div className="flex items-center gap-3 mt-3">
+                  <Badge className="bg-white text-blue-700 font-semibold">{test.type}</Badge>
+                  <span className="text-blue-100 text-sm">Test ID: {testId}</span>
+                </div>
               </div>
               <Button 
                 variant="outline" 
-                size="sm"
+                size="lg"
                 onClick={() => setLocation('/student/tests')}
-                className="self-start"
+                className="self-start bg-white text-blue-700 border-white hover:bg-blue-50"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Chiqish</span>
+                <span className="hidden sm:inline">Testdan chiqish</span>
                 <span className="sm:hidden">Orqaga</span>
               </Button>
             </div>
@@ -350,32 +366,40 @@ const TakeTestPage: React.FC = () => {
         </Card>
 
         {/* Progress Bar */}
-        <Card className="mb-4">
-          <CardContent className="p-3 md:p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">
-                Savol {currentQuestionIndex + 1} / {questions.length}
-              </span>
-              <span className="text-sm text-gray-600">
-                Javob berilgan: {answeredCount} / {questions.length}
-              </span>
+        <Card className="mb-6 shadow-md">
+          <CardContent className="p-4 md:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <span className="text-lg font-semibold text-gray-800">
+                  Savol {currentQuestionIndex + 1} / {questions.length}
+                </span>
+                <Badge variant="outline" className="text-blue-600 border-blue-300">
+                  {Math.round(progress)}% tugallandi
+                </Badge>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-gray-600">Javob berilgan</div>
+                <div className="text-lg font-semibold text-green-600">
+                  {answeredCount} / {questions.length}
+                </div>
+              </div>
             </div>
-            <Progress value={progress} className="h-2" />
+            <Progress value={progress} className="h-3 bg-gray-200" />
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Question Overview Panel */}
-          <div className={`lg:col-span-1 ${showQuestionOverview ? 'block' : 'hidden lg:block'}`}>
-            <Card>
-              <CardHeader className="p-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Grid3X3 className="w-4 h-4" />
-                  Savollar
+          <div className={`xl:col-span-1 ${showQuestionOverview ? 'block' : 'hidden xl:block'}`}>
+            <Card className="shadow-md sticky top-4">
+              <CardHeader className="p-4 bg-gray-50 rounded-t-lg">
+                <CardTitle className="text-lg flex items-center gap-2 text-gray-800">
+                  <Grid3X3 className="w-5 h-5" />
+                  Savollar ro'yxati
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-3">
-                <div className="grid grid-cols-5 lg:grid-cols-4 gap-2">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-5 xl:grid-cols-3 gap-3">
                   {questions.map((question, index) => {
                     const isAnswered = answers[question.id];
                     const isCurrent = index === currentQuestionIndex;
@@ -385,32 +409,34 @@ const TakeTestPage: React.FC = () => {
                         key={question.id}
                         variant={isCurrent ? "default" : isAnswered ? "secondary" : "outline"}
                         size="sm"
-                        className={`h-8 w-8 p-0 text-xs ${
-                          isAnswered ? 'bg-green-100 border-green-300 text-green-700' : ''
+                        className={`h-12 w-12 p-0 text-sm font-semibold relative transition-all duration-200 ${
+                          isAnswered ? 'bg-green-100 border-green-400 text-green-700 hover:bg-green-200' : ''
                         } ${
-                          isCurrent ? 'ring-2 ring-blue-500' : ''
+                          isCurrent ? 'ring-2 ring-blue-500 bg-blue-600 text-white' : ''
                         }`}
                         onClick={() => setCurrentQuestionIndex(index)}
                       >
                         {index + 1}
-                        {isAnswered && <CheckCircle className="w-3 h-3 absolute -top-1 -right-1 text-green-600" />}
+                        {isAnswered && !isCurrent && (
+                          <CheckCircle className="w-4 h-4 absolute -top-1 -right-1 text-green-600 bg-white rounded-full" />
+                        )}
                       </Button>
                     );
                   })}
                 </div>
                 
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
-                    <span>Javob berilgan</span>
+                <div className="mt-6 space-y-3 text-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-4 h-4 bg-green-100 border-2 border-green-400 rounded"></div>
+                    <span className="text-gray-700">Javob berilgan</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-3 h-3 border border-gray-300 rounded"></div>
-                    <span>Javob berilmagan</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-4 h-4 border-2 border-gray-300 rounded"></div>
+                    <span className="text-gray-700">Javob berilmagan</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                    <span>Joriy savol</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-4 h-4 bg-blue-600 rounded"></div>
+                    <span className="text-gray-700">Joriy savol</span>
                   </div>
                 </div>
               </CardContent>
@@ -418,29 +444,37 @@ const TakeTestPage: React.FC = () => {
           </div>
 
           {/* Main Question Area */}
-          <div className="lg:col-span-3">
-            <Card>
-              <CardHeader className="p-3 md:p-6">
+          <div className="xl:col-span-4">
+            <Card className="shadow-lg border-0">
+              <CardHeader className="p-6 md:p-8 bg-white border-b">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base md:text-lg">
-                    Savol {currentQuestionIndex + 1}
-                  </CardTitle>
+                  <div className="flex items-center gap-4">
+                    <CardTitle className="text-xl md:text-2xl font-bold text-gray-800">
+                      Savol {currentQuestionIndex + 1}
+                    </CardTitle>
+                    <Badge className="bg-blue-100 text-blue-800 text-sm px-3 py-1">
+                      {currentQuestion.points} ball
+                    </Badge>
+                  </div>
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="lg"
                     onClick={() => setShowQuestionOverview(!showQuestionOverview)}
-                    className="lg:hidden"
+                    className="xl:hidden"
                   >
-                    <Grid3X3 className="w-4 h-4" />
+                    <Grid3X3 className="w-5 h-5 mr-2" />
+                    Savollar
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="p-3 md:p-6">
+              <CardContent className="p-6 md:p-8 bg-white">
                 {/* Question Text */}
-                <div className="mb-6">
-                  <p className="text-base md:text-lg font-medium mb-4">
-                    {currentQuestion.questionText}
-                  </p>
+                <div className="mb-8">
+                  <div className="bg-gray-50 p-6 rounded-lg border-l-4 border-blue-500">
+                    <p className="text-lg md:text-xl font-medium text-gray-800 leading-relaxed">
+                      {currentQuestion.questionText}
+                    </p>
+                  </div>
                   
                   {/* Question Image */}
                   {currentQuestion.questionImage && (
@@ -482,9 +516,9 @@ const TakeTestPage: React.FC = () => {
                 </div>
 
                 {/* Answer Options - Test Sheet Style with A, B, C, D */}
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-gray-700 mb-4">Javobni tanlang:</p>
-                  <div className="grid grid-cols-1 gap-3">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-6">Javobni tanlang:</h3>
+                  <div className="grid grid-cols-1 gap-4">
                     {['A', 'B', 'C', 'D'].map((optionLetter, index) => {
                       const isSelected = answers[currentQuestion.id] === optionLetter;
                       const options = currentQuestion.options ? JSON.parse(currentQuestion.options as string) : [];
@@ -497,24 +531,24 @@ const TakeTestPage: React.FC = () => {
                         <Button
                           key={optionLetter}
                           variant={isSelected ? "default" : "outline"}
-                          className={`w-full p-4 h-auto text-left justify-start text-sm md:text-base transition-all duration-200 ${
+                          className={`w-full p-6 h-auto text-left justify-start text-base md:text-lg transition-all duration-300 ${
                             isSelected 
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-md transform scale-[1.02]' 
-                              : 'hover:bg-blue-50 hover:border-blue-300 border-gray-200 hover:shadow-sm'
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-lg transform scale-[1.01] ring-2 ring-blue-300' 
+                              : 'hover:bg-blue-50 hover:border-blue-400 border-gray-300 hover:shadow-md bg-white'
                           } ${submitAnswerMutation.isPending ? 'opacity-70' : ''}`}
                           onClick={() => handleAnswerSelect(currentQuestion.id, optionLetter)}
                           disabled={submitAnswerMutation.isPending}
                         >
-                          <div className={`flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 text-sm font-bold transition-all ${
+                          <div className={`flex-shrink-0 w-12 h-12 rounded-full border-3 flex items-center justify-center mr-6 text-lg font-bold transition-all ${
                             isSelected 
-                              ? 'bg-white text-blue-600 border-white' 
-                              : 'border-blue-400 text-blue-600 group-hover:border-blue-500'
+                              ? 'bg-white text-blue-600 border-white shadow-md' 
+                              : 'border-blue-400 text-blue-600 group-hover:border-blue-500 bg-blue-50'
                           }`}>
                             {optionLetter}
                           </div>
-                          <span className="flex-1 text-left">{optionText}</span>
+                          <span className="flex-1 text-left font-medium">{optionText}</span>
                           {isSelected && (
-                            <Check className="w-5 h-5 text-white ml-2" />
+                            <Check className="w-6 h-6 text-white ml-4" />
                           )}
                         </Button>
                       );
