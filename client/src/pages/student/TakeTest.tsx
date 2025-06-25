@@ -515,10 +515,9 @@ const TakeTestPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* Answer Options - Test Sheet Style with A, B, C, D */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-6">Javobni tanlang:</h3>
-                  <div className="grid grid-cols-1 gap-4">
+                {/* Answer Options - Horizontal Grid Layout */}
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {['A', 'B', 'C', 'D'].map((optionLetter, index) => {
                       const isSelected = answers[currentQuestion.id] === optionLetter;
                       const options = currentQuestion.options ? JSON.parse(currentQuestion.options as string) : [];
@@ -528,63 +527,73 @@ const TakeTestPage: React.FC = () => {
                       if (!optionText) return null;
                       
                       return (
-                        <Button
+                        <div
                           key={optionLetter}
-                          variant={isSelected ? "default" : "outline"}
-                          className={`w-full p-6 h-auto text-left justify-start text-base md:text-lg transition-all duration-300 ${
+                          className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 min-h-[80px] flex items-center justify-center ${
                             isSelected 
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-lg transform scale-[1.01] ring-2 ring-blue-300' 
-                              : 'hover:bg-blue-50 hover:border-blue-400 border-gray-300 hover:shadow-md bg-white'
+                              ? 'border-blue-500 bg-blue-100 shadow-md' 
+                              : 'border-gray-300 bg-white hover:border-blue-300 hover:bg-blue-50'
                           } ${submitAnswerMutation.isPending ? 'opacity-70' : ''}`}
                           onClick={() => handleAnswerSelect(currentQuestion.id, optionLetter)}
-                          disabled={submitAnswerMutation.isPending}
                         >
-                          <div className={`flex-shrink-0 w-12 h-12 rounded-full border-3 flex items-center justify-center mr-6 text-lg font-bold transition-all ${
-                            isSelected 
-                              ? 'bg-white text-blue-600 border-white shadow-md' 
-                              : 'border-blue-400 text-blue-600 group-hover:border-blue-500 bg-blue-50'
-                          }`}>
-                            {optionLetter}
+                          <div className="text-center">
+                            <div className={`w-8 h-8 rounded border-2 mx-auto mb-2 flex items-center justify-center font-bold text-sm ${
+                              isSelected 
+                                ? 'bg-blue-500 text-white border-blue-500' 
+                                : 'border-gray-400 text-gray-600'
+                            }`}>
+                              {optionLetter}
+                            </div>
+                            <div className="text-sm text-gray-700 font-medium">
+                              {optionText}
+                            </div>
                           </div>
-                          <span className="flex-1 text-left font-medium">{optionText}</span>
-                          {isSelected && (
-                            <Check className="w-6 h-6 text-white ml-4" />
-                          )}
-                        </Button>
+                        </div>
                       );
                     }).filter(Boolean)}
                   </div>
+                  
+                  {/* Selected Answer Display */}
+                  {answers[currentQuestion.id] && (
+                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-800">
+                        <strong>To'g'ri javob:</strong> {answers[currentQuestion.id]}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Navigation */}
-                <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-6 border-t">
-                  <div className="flex gap-2 sm:flex-1">
+                <div className="flex flex-col lg:flex-row gap-4 mt-8 pt-6 border-t border-gray-200">
+                  <div className="flex gap-3 flex-1">
                     <Button
                       variant="outline"
+                      size="lg"
                       onClick={goToPreviousQuestion}
                       disabled={currentQuestionIndex === 0}
-                      className="flex-1 sm:flex-none"
+                      className="flex-1 lg:flex-none lg:px-8"
                     >
-                      <ChevronLeft className="w-4 h-4 mr-2" />
-                      Oldingi
+                      <ChevronLeft className="w-5 h-5 mr-2" />
+                      Oldingi savol
                     </Button>
                     <Button
                       variant="outline"
+                      size="lg"
                       onClick={goToNextQuestion}
                       disabled={currentQuestionIndex === questions.length - 1}
-                      className="flex-1 sm:flex-none"
+                      className="flex-1 lg:flex-none lg:px-8"
                     >
-                      Keyingi
-                      <ChevronRight className="w-4 h-4 ml-2" />
+                      Keyingi savol
+                      <ChevronRight className="w-5 h-5 ml-2" />
                     </Button>
                   </div>
                   
                   {/* Complete Test Button */}
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-3">
                     {answeredCount < questions.length && (
-                      <div className="text-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p className="text-sm text-yellow-700">
-                          Barcha savollarga javob bering: {answeredCount}/{questions.length}
+                      <div className="text-center p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                        <p className="text-sm text-amber-700 font-medium">
+                          Barcha savollarga javob bering: <span className="font-bold">{answeredCount}/{questions.length}</span>
                         </p>
                       </div>
                     )}
@@ -593,16 +602,17 @@ const TakeTestPage: React.FC = () => {
                       <Button
                         onClick={handleCompleteTest}
                         disabled={completeTestMutation.isPending}
-                        className="bg-green-600 hover:bg-green-700 text-white text-lg py-3"
+                        size="lg"
+                        className="bg-green-600 hover:bg-green-700 text-white py-4 text-lg font-semibold shadow-lg"
                       >
                         {completeTestMutation.isPending ? (
                           <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                             Yakunlanmoqda...
                           </>
                         ) : (
                           <>
-                            <Check className="w-5 h-5 mr-2" />
+                            <Check className="w-6 h-6 mr-3" />
                             Testni yakunlash ({answeredCount}/{questions.length})
                           </>
                         )}
