@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useParams, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, ChevronRight, Check, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
 
 interface Question {
   id: number;
@@ -21,6 +19,7 @@ interface Test {
   id: number;
   title: string;
   description?: string;
+  testImages?: string[];
   totalQuestions: number;
   status: string;
   type: string;
@@ -200,7 +199,7 @@ const TakeTestPage: React.FC = () => {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Test yuklanmoqda...</p>
+          <p className="text-gray-600">Test yuklanmoqda...</p>
         </div>
       </div>
     );
@@ -212,8 +211,7 @@ const TakeTestPage: React.FC = () => {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-4">Test topilmadi</h2>
-          <Button onClick={() => setLocation('/student/tests')}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
+          <Button onClick={() => setLocation('/student/tests')} variant="outline">
             Orqaga
           </Button>
         </div>
@@ -226,131 +224,160 @@ const TakeTestPage: React.FC = () => {
   const answeredCount = Object.keys(answers).length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b p-4">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-bold">{test.title}</h1>
-            <p className="text-sm text-gray-600">Savol {currentQuestionIndex + 1} / {questions.length}</p>
+    <div className="min-h-screen bg-white">
+      {/* Minimal Header */}
+      <div className="border-b bg-white px-4 py-3">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-lg font-medium text-gray-900">{test.title}</h1>
+            {test.description && (
+              <span className="text-sm text-gray-500 hidden md:block">• {test.description}</span>
+            )}
           </div>
-          <Button variant="outline" onClick={() => setLocation('/student/tests')}>
-            Chiqish
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setLocation('/student/tests')}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      {/* Progress */}
-      <div className="bg-white border-b p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <span>{Math.round(progress)}% bajarildi</span>
-            <span>Javob berilgan: {answeredCount}/{questions.length}</span>
+      {/* Progress Bar */}
+      <div className="bg-gray-50 px-4 py-2">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+            <span>{currentQuestionIndex + 1} / {questions.length}</span>
+            <span>{Math.round(progress)}% yakunlandi</span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <div className="w-full bg-gray-200 rounded-full h-1.5">
+            <div 
+              className="bg-blue-600 h-1.5 rounded-full transition-all duration-300" 
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
         </div>
       </div>
 
-      {/* Question */}
-      <div className="max-w-4xl mx-auto p-6">
-        <Card>
-          <CardContent className="p-8">
-            {/* Question Text */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-medium mb-4">
-                {currentQuestion?.questionText}
-              </h2>
-              
-              {/* Question Image */}
-              {currentQuestion?.questionImage && (
-                <div className="mb-6">
-                  <img
-                    src={currentQuestion.questionImage}
-                    alt="Savol rasmi"
-                    className="max-w-full h-auto max-h-96 object-contain rounded border mx-auto"
-                    onClick={() => window.open(currentQuestion.questionImage, '_blank')}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Answer Options */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              {['A', 'B', 'C', 'D'].map((optionLetter, index) => {
-                const isSelected = currentQuestion ? answers[currentQuestion.id] === optionLetter : false;
-                const options = currentQuestion?.options ? JSON.parse(currentQuestion.options as string) : [];
-                const optionText = options[index];
-                
-                if (!optionText) return null;
-                
-                return (
-                  <div
-                    key={optionLetter}
-                    className={`p-4 rounded border-2 cursor-pointer transition-all min-h-[100px] flex items-center justify-center ${
-                      isSelected 
-                        ? 'border-blue-500 bg-blue-50' 
-                        : 'border-gray-300 bg-white hover:border-blue-300'
-                    }`}
-                    onClick={() => currentQuestion && handleAnswerSelect(currentQuestion.id, optionLetter)}
-                  >
-                    <div className="text-center">
-                      <div className={`w-8 h-8 rounded border-2 mx-auto mb-3 flex items-center justify-center font-bold ${
-                        isSelected 
-                          ? 'bg-blue-500 text-white border-blue-500' 
-                          : 'border-gray-400 text-gray-600'
-                      }`}>
-                        {optionLetter}
-                      </div>
-                      <div className="text-sm font-medium">
-                        {optionText}
-                      </div>
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto p-4">
+        <div className="flex gap-6">
+          {/* Left: Test Images */}
+          {test.testImages && test.testImages.length > 0 && (
+            <div className="w-1/2">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Test rasmlari</h3>
+                <div className="space-y-3">
+                  {test.testImages.map((image, index) => (
+                    <div key={index} className="bg-white rounded border">
+                      <img
+                        src={`/uploads/${image}`}
+                        alt={`Test rasmi ${index + 1}`}
+                        className="w-full h-auto max-h-[500px] object-contain rounded cursor-pointer"
+                        onClick={() => window.open(`/uploads/${image}`, '_blank')}
+                        onError={(e) => {
+                          const img = e.target as HTMLImageElement;
+                          if (img.src.includes('/uploads/')) {
+                            img.src = `/${image}`;
+                          }
+                        }}
+                      />
                     </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Right: Question and Answers */}
+          <div className={test.testImages && test.testImages.length > 0 ? "w-1/2" : "w-full"}>
+            <div className="bg-white">
+              {/* Question Text */}
+              <div className="mb-6">
+                <h2 className="text-xl font-medium text-gray-900 mb-4">
+                  {currentQuestionIndex + 1}. {currentQuestion?.questionText || `${currentQuestionIndex + 1}-savol`}
+                </h2>
+                
+                {/* Question Image (if no test images) */}
+                {currentQuestion?.questionImage && (!test.testImages || test.testImages.length === 0) && (
+                  <div className="mb-4">
+                    <img
+                      src={currentQuestion.questionImage}
+                      alt="Savol rasmi"
+                      className="max-w-full h-auto max-h-[400px] object-contain rounded border cursor-pointer"
+                      onClick={() => window.open(currentQuestion.questionImage, '_blank')}
+                    />
                   </div>
-                );
-              })}
-            </div>
+                )}
+              </div>
 
-            {/* Navigation */}
-            <div className="flex justify-between items-center">
-              <Button
-                variant="outline"
-                onClick={goToPreviousQuestion}
-                disabled={currentQuestionIndex === 0}
-              >
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Oldingi
-              </Button>
+              {/* Answer Options - Horizontal Layout */}
+              <div className="grid grid-cols-4 gap-3 mb-8">
+                {['A', 'B', 'C', 'D'].map((optionLetter) => {
+                  const isSelected = currentQuestion ? answers[currentQuestion.id] === optionLetter : false;
+                  
+                  return (
+                    <button
+                      key={optionLetter}
+                      className={`p-4 rounded-lg border-2 transition-all duration-200 text-center min-h-[80px] flex items-center justify-center font-medium text-lg ${
+                        isSelected 
+                          ? 'border-blue-600 bg-blue-50 text-blue-700' 
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-25'
+                      }`}
+                      onClick={() => currentQuestion && handleAnswerSelect(currentQuestion.id, optionLetter)}
+                    >
+                      {optionLetter}
+                    </button>
+                  );
+                })}
+              </div>
 
-              {currentQuestionIndex === questions.length - 1 ? (
+              {/* Navigation */}
+              <div className="flex justify-between items-center">
                 <Button
-                  onClick={handleCompleteTest}
-                  disabled={answeredCount !== questions.length || completeTestMutation.isPending}
-                  className="bg-green-600 hover:bg-green-700"
+                  variant="outline"
+                  onClick={goToPreviousQuestion}
+                  disabled={currentQuestionIndex === 0}
+                  className="px-6"
                 >
-                  {completeTestMutation.isPending ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Yakunlanmoqda...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4 mr-2" />
-                      Testni yakunlash
-                    </>
-                  )}
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Oldingi
                 </Button>
-              ) : (
-                <Button
-                  onClick={goToNextQuestion}
-                  disabled={currentQuestionIndex === questions.length - 1}
-                >
-                  Keyingi
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              )}
+
+                {currentQuestionIndex === questions.length - 1 ? (
+                  <Button
+                    onClick={handleCompleteTest}
+                    disabled={answeredCount !== questions.length || completeTestMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700 px-6"
+                  >
+                    {completeTestMutation.isPending ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Yakunlanmoqda...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        Testni yakunlash
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={goToNextQuestion}
+                    disabled={currentQuestionIndex === questions.length - 1}
+                    className="px-6"
+                  >
+                    Keyingi
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                )}
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
