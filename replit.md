@@ -134,6 +134,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 25, 2025: Fixed logout and test results system completely
+  - Fixed logout functionality to force page reload and clear all authentication state
+  - Resolved login button freezing issue after logout - buttons now work immediately
+  - Enhanced test results API with proper data structure and debugging
+  - Fixed test results page to display accurate scores and statistics
+  - Added comprehensive error handling and logging for test result loading
+  - User feedback: "Hisobdan chiqish qilinsa sayt avtomatik 1marta yangilanib olsin bulmasa kirish sahifasi ishlamayapti"
+
 - June 25, 2025: Added comprehensive test results page with score calculation
   - Created TestResult component showing detailed test performance
   - Automatic score calculation with correct/incorrect answer tracking

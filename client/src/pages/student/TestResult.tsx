@@ -59,8 +59,8 @@ const TestResult: React.FC = () => {
     );
   }
 
-  const percentage = Math.round((result.correctAnswers / result.totalQuestions) * 100);
-  const duration = new Date(result.endTime).getTime() - new Date(result.startTime).getTime();
+  const percentage = result.totalQuestions > 0 ? Math.round((result.correctAnswers / result.totalQuestions) * 100) : 0;
+  const duration = result.endTime && result.startTime ? new Date(result.endTime).getTime() - new Date(result.startTime).getTime() : 0;
   const durationMinutes = Math.floor(duration / 60000);
   const durationSeconds = Math.floor((duration % 60000) / 1000);
 
