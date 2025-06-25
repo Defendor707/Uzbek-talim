@@ -17,6 +17,7 @@ import StudentProfile from "@/pages/student/StudentProfile";
 import ParentProfile from "@/pages/parent/ParentProfile";
 import ChildrenPage from "@/pages/parent/ChildrenPage";
 import NotificationsPage from "@/pages/NotificationsPage";
+import NotificationSettings from "@/pages/parent/NotificationSettings";
 import LessonsPage from "@/pages/teacher/Lessons";
 import TestsPage from "@/pages/teacher/Tests";
 import CreateTestPage from "@/pages/teacher/CreateTestSimple";
@@ -155,6 +156,11 @@ function Router() {
       <Route path="/parent/children">
         <ProtectedRoute allowedRoles={["parent"]}>
           <ChildrenPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/parent/notification-settings">
+        <ProtectedRoute allowedRoles={["parent"]}>
+          <NotificationSettings />
         </ProtectedRoute>
       </Route>
       

@@ -2585,6 +2585,15 @@ async function notifyParentOfTestCompletion(studentId: number, testTitle: string
       return;
     }
 
+    // Check parent notification settings
+    const notificationSettings = await storage.getParentNotificationSettings(studentProfile.parentId);
+    
+    // If telegram notifications are disabled, skip
+    if (notificationSettings && !notificationSettings.enableTelegram) {
+      console.log('Telegram notifications disabled for parent', studentProfile.parentId);
+      return;
+    }
+
     // Get parent user to find telegram ID
     const parent = await storage.getUser(studentProfile.parentId);
     if (!parent || !parent.telegramId) {
@@ -2592,16 +2601,25 @@ async function notifyParentOfTestCompletion(studentId: number, testTitle: string
       return;
     }
 
+    // Determine grade emoji based on score
+    const getGradeEmoji = (score: number) => {
+      if (score >= 90) return '🏆';
+      if (score >= 80) return '🥇';
+      if (score >= 70) return '🥈';
+      if (score >= 60) return '🥉';
+      return '📝';
+    };
+
     // Send notification to parent
-    const message = `🎓 *Farzandingiz test yakunladi!*\n\n` +
+    const message = `${getGradeEmoji(scorePercentage)} *Farzandingiz test yakunladi!*\n\n` +
       `👤 *O'quvchi:* ${studentName}\n` +
       `📝 *Test:* ${testTitle}\n` +
       `📊 *Natija:* ${Math.round(scorePercentage)}%\n` +
       `⭐ *Baho:* ${scorePercentage >= 80 ? 'A\'lo' : scorePercentage >= 60 ? 'Yaxshi' : 'Qoniqarli'}\n\n` +
-      `Batafsil ma'lumot uchun veb-saytga kiriting.`;
+      `📱 Sozlamalarni o'zgartirish uchun veb-saytga kiriting.`;
 
     await bot.telegram.sendMessage(parent.telegramId, message, { parse_mode: 'Markdown' });
-    console.log(`Test completion notification sent to parent ${parent.telegramId}`);
+    console.log(`Test completion notification sent to parent ${parent.telegramId} with settings applied`);
   } catch (error) {
     console.error('Error sending parent notification:', error);
   }

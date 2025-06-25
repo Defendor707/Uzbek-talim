@@ -9,6 +9,28 @@ import { generateTestReportExcel, generateStudentProgressExcel } from "./utils/e
 import express from "express";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+
+// Helper function to determine if notification should be sent based on settings
+function shouldSendNotification(settings: any, scorePercentage: number): boolean {
+  if (!settings) return true; // Default: send all notifications
+  
+  // Check score range
+  if (scorePercentage < settings.minScoreNotification || scorePercentage > settings.maxScoreNotification) {
+    return false;
+  }
+  
+  // Check pass/fail only settings
+  const passingScore = 60; // Default passing score
+  const isPassed = scorePercentage >= passingScore;
+  
+  if (settings.notifyOnlyFailed && isPassed) return false;
+  if (settings.notifyOnlyPassed && !isPassed) return false;
+  
+  // Check if instant notifications are enabled
+  if (!settings.instantNotification) return false;
+  
+  return true;
+}
 import * as schema from "@shared/schema";
 import path from "path";
 
@@ -1227,11 +1249,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             if (test && student) {
               const percentage = Math.round(scorePercentage);
-              console.log(`Sending test completion notification to parent ${studentProfile.parentId} about ${student.fullName}'s test: ${test.title} (${percentage}%)`);
+              console.log(`Checking notification settings for parent ${studentProfile.parentId} about ${student.fullName}'s test: ${test.title} (${percentage}%)`);
               
-              // Send Telegram notification to parent
-              const { notifyParentOfTestCompletion } = require('./telegram/bot');
-              await notifyParentOfTestCompletion(req.user!.userId, test.title, student.fullName || student.username, scorePercentage);
+              // Check parent notification settings
+              const notificationSettings = await storage.getParentNotificationSettings(studentProfile.parentId);
+              const shouldNotify = shouldSendNotification(notificationSettings, percentage);
+              
+              if (shouldNotify) {
+                // Send Telegram notification to parent
+                const { notifyParentOfTestCompletion } = require('./telegram/bot');
+                await notifyParentOfTestCompletion(req.user!.userId, test.title, student.fullName || student.username, scorePercentage);
+                
+                // Create website notification if enabled
+                if (!notificationSettings || notificationSettings.enableWebsite) {
+                  // This would be implemented when we have a notifications table properly set up
+                  console.log(`Website notification would be created for parent ${studentProfile.parentId}`);
+                }
+              } else {
+                console.log(`Notification skipped for parent ${studentProfile.parentId} based on settings`);
+              }
             }
           }
         } catch (notificationError) {
@@ -1816,6 +1852,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Parent notification settings routes
+  app.get("/api/parent/notification-settings", authenticate, authorize(["parent"]), async (req, res) => {
+    try {
+      let settings = await storage.getParentNotificationSettings(req.user!.userId);
+      
+      // Create default settings if none exist
+      if (!settings) {
+        const defaultSettings = schema.insertParentNotificationSettingsSchema.parse({
+          parentId: req.user!.userId,
+          enableTelegram: true,
+          enableWebsite: true,
+          minScoreNotification: 0,
+          maxScoreNotification: 100,
+          notifyOnlyFailed: false,
+          notifyOnlyPassed: false,
+          instantNotification: true,
+          dailyDigest: false,
+          weeklyDigest: false,
+        });
+        
+        settings = await storage.createParentNotificationSettings(defaultSettings);
+      }
+      
+      return res.status(200).json(settings);
+    } catch (error) {
+      console.error("Error fetching parent notification settings:", error);
+      return res.status(500).json({ message: "Failed to fetch notification settings" });
+    }
+  });
+
+  app.put("/api/parent/notification-settings", authenticate, authorize(["parent"]), async (req, res) => {
+    try {
+      const settingsData = schema.insertParentNotificationSettingsSchema.omit({
+        id: true,
+        parentId: true,
+        createdAt: true,
+        updatedAt: true,
+      }).parse(req.body);
+
+      let settings = await storage.getParentNotificationSettings(req.user!.userId);
+      
+      if (settings) {
+        // Update existing settings
+        settings = await storage.updateParentNotificationSettings(req.user!.userId, settingsData);
+      } else {
+        // Create new settings
+        const newSettings = schema.insertParentNotificationSettingsSchema.parse({
+          ...settingsData,
+          parentId: req.user!.userId,
+        });
+        settings = await storage.createParentNotificationSettings(newSettings);
+      }
+      
+      return res.status(200).json(settings);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: fromZodError(error).details,
+        });
+      }
+      console.error("Error updating parent notification settings:", error);
+      return res.status(500).json({ message: "Failed to update notification settings" });
+    }
+  });
+
   // Parent Profile Routes
   app.get("/api/profile/parent", authenticate, authorize(["parent"]), async (req, res) => {
     try {
@@ -2138,6 +2240,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Verify reset token error:', error);
       res.status(500).json({ error: 'Token tekshirishda xatolik' });
+    }
+  });
+
+  // Parent notification settings routes
+  app.get("/api/parent/notification-settings", authenticate, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'parent') {
+        return res.status(403).json({ message: "Faqat ota-onalar uchun" });
+      }
+
+      let settings = await storage.getParentNotificationSettings(userId);
+      
+      // Create default settings if they don't exist
+      if (!settings) {
+        settings = await storage.createParentNotificationSettings({
+          parentId: userId,
+          enableTelegram: true,
+          enableWebsite: true,
+          minScoreNotification: 0,
+          maxScoreNotification: 100,
+          notifyOnlyFailed: false,
+          notifyOnlyPassed: false,
+          instantNotification: true,
+          dailyDigest: false,
+          weeklyDigest: false,
+        });
+      }
+      
+      res.json(settings);
+    } catch (error) {
+      console.error('Get parent notification settings error:', error);
+      res.status(500).json({ message: "Sozlamalarni olishda xatolik" });
+    }
+  });
+
+  app.put("/api/parent/notification-settings", authenticate, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'parent') {
+        return res.status(403).json({ message: "Faqat ota-onalar uchun" });
+      }
+
+      const settingsData = schema.insertParentNotificationSettingsSchema.parse(req.body);
+      
+      let settings = await storage.getParentNotificationSettings(userId);
+      
+      if (!settings) {
+        // Create new settings
+        settings = await storage.createParentNotificationSettings({
+          ...settingsData,
+          parentId: userId,
+        });
+      } else {
+        // Update existing settings
+        settings = await storage.updateParentNotificationSettings(userId, settingsData);
+      }
+      
+      res.json(settings);
+    } catch (error) {
+      console.error('Update parent notification settings error:', error);
+      res.status(500).json({ message: "Sozlamalarni yangilashda xatolik" });
     }
   });
 

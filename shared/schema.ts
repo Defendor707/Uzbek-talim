@@ -187,6 +187,23 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Parent notification settings table
+export const parentNotificationSettings = pgTable("parent_notification_settings", {
+  id: serial("id").primaryKey(),
+  parentId: integer("parent_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  enableTelegram: boolean("enable_telegram").default(true),
+  enableWebsite: boolean("enable_website").default(true),
+  minScoreNotification: integer("min_score_notification").default(0),
+  maxScoreNotification: integer("max_score_notification").default(100),
+  notifyOnlyFailed: boolean("notify_only_failed").default(false),
+  notifyOnlyPassed: boolean("notify_only_passed").default(false),
+  instantNotification: boolean("instant_notification").default(true),
+  dailyDigest: boolean("daily_digest").default(false),
+  weeklyDigest: boolean("weekly_digest").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Schema for inserting users
 export const insertUserSchema = createInsertSchema(users)
   .omit({ id: true, createdAt: true, updatedAt: true });
@@ -247,8 +264,9 @@ export const insertStudentAnswerSchema = createInsertSchema(studentAnswers)
   .omit({ id: true });
 
 // Schema for inserting schedules
-export const insertScheduleSchema = createInsertSchema(schedules)
-  .omit({ id: true });
+export const insertScheduleSchema = createInsertSchema(schedules);
+export const insertParentNotificationSettingsSchema = createInsertSchema(parentNotificationSettings)
+  .omit({ id: true, createdAt: true, updatedAt: true });
 
 // Simplified registration schema with only required fields
 export const registerUserSchema = z.object({
@@ -327,3 +345,6 @@ export type InsertStudentAnswer = z.infer<typeof insertStudentAnswerSchema>;
 
 export type Schedule = typeof schedules.$inferSelect;
 export type InsertSchedule = z.infer<typeof insertScheduleSchema>;
+
+export type ParentNotificationSettings = typeof parentNotificationSettings.$inferSelect;
+export type InsertParentNotificationSettings = z.infer<typeof insertParentNotificationSettingsSchema>;

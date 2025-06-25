@@ -70,6 +70,11 @@ export interface IStorage {
   // Parent-child relationship methods
   addChildToParent(parentId: number, childUsername: string): Promise<boolean>;
   getChildrenByParentId(parentId: number): Promise<any[]>;
+  
+  // Parent notification settings methods
+  createParentNotificationSettings(settings: schema.InsertParentNotificationSettings): Promise<schema.ParentNotificationSettings>;
+  getParentNotificationSettings(parentId: number): Promise<schema.ParentNotificationSettings | undefined>;
+  updateParentNotificationSettings(parentId: number, settings: Partial<schema.InsertParentNotificationSettings>): Promise<schema.ParentNotificationSettings | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -536,6 +541,27 @@ export class DatabaseStorage implements IStorage {
       ))
       .orderBy(desc(schema.tests.createdAt));
     return tests;
+  }
+
+  // Parent notification settings methods
+  async createParentNotificationSettings(settings: schema.InsertParentNotificationSettings): Promise<schema.ParentNotificationSettings> {
+    const result = await db.insert(schema.parentNotificationSettings).values(settings).returning();
+    return result[0];
+  }
+
+  async getParentNotificationSettings(parentId: number): Promise<schema.ParentNotificationSettings | undefined> {
+    const result = await db.select().from(schema.parentNotificationSettings)
+      .where(eq(schema.parentNotificationSettings.parentId, parentId))
+      .limit(1);
+    return result[0];
+  }
+
+  async updateParentNotificationSettings(parentId: number, settings: Partial<schema.InsertParentNotificationSettings>): Promise<schema.ParentNotificationSettings | undefined> {
+    const result = await db.update(schema.parentNotificationSettings)
+      .set({ ...settings, updatedAt: new Date() })
+      .where(eq(schema.parentNotificationSettings.parentId, parentId))
+      .returning();
+    return result[0];
   }
 }
 
