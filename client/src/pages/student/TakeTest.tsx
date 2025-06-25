@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronLeft, ChevronRight, Check, X, Image as ImageIcon } from 'lucide-react';
 import TestImageModal from '@/components/TestImageModal';
+import TestImageGallery from '@/components/TestImageGallery';
 
 interface Question {
   id: number;
@@ -46,6 +47,8 @@ const TakeTestPage: React.FC = () => {
   const [attemptId, setAttemptId] = useState<number | null>(null);
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showTestDescription, setShowTestDescription] = useState(false);
+  const [showImageGallery, setShowImageGallery] = useState(false);
 
   // Fetch test details
   const { data: test, isLoading: testLoading } = useQuery<Test>({
@@ -234,7 +237,17 @@ const TakeTestPage: React.FC = () => {
           <div className="flex items-center space-x-4">
             <h1 className="text-lg font-medium text-gray-900">{test.title}</h1>
             {test.description && (
-              <span className="text-sm text-gray-500 hidden md:block">• {test.description}</span>
+              <>
+                <span className="text-sm text-gray-500 hidden md:block">• {test.description}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowTestDescription(true)}
+                  className="md:hidden text-xs text-blue-600"
+                >
+                  Tavsif
+                </Button>
+              </>
             )}
           </div>
           <Button 
@@ -276,11 +289,11 @@ const TakeTestPage: React.FC = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setImageModalOpen(true)}
+                    onClick={() => setShowImageGallery(true)}
                     className="text-xs"
                   >
                     <ImageIcon className="w-3 h-3 mr-1" />
-                    Katta ko'rish
+                    Barcha rasmlar
                   </Button>
                 </div>
                 <div className="grid grid-cols-1 gap-3">
@@ -412,6 +425,40 @@ const TakeTestPage: React.FC = () => {
           onNext={() => setCurrentImageIndex(prev => Math.min(prev + 1, test.testImages!.length - 1))}
           onPrev={() => setCurrentImageIndex(prev => Math.max(prev - 1, 0))}
         />
+      )}
+
+      {/* Test Image Gallery */}
+      {test.testImages && test.testImages.length > 0 && (
+        <TestImageGallery
+          images={test.testImages}
+          isOpen={showImageGallery}
+          onClose={() => setShowImageGallery(false)}
+        />
+      )}
+
+      {/* Test Description Modal */}
+      {showTestDescription && test.description && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Test haqida</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowTestDescription(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="text-gray-700">{test.description}</p>
+            <Button
+              onClick={() => setShowTestDescription(false)}
+              className="w-full mt-4"
+            >
+              Yopish
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
