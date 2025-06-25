@@ -292,6 +292,10 @@ const TakeTestPage: React.FC = () => {
     );
   }
 
+  console.log('TakeTestPage - Test data:', test);
+  console.log('TakeTestPage - Questions data:', questions);
+  console.log('TakeTestPage - Current question:', questions?.[currentQuestionIndex]);
+
   if (testLoading || questionsLoading || startAttemptMutation.isPending) {
     return (
       <ResponsiveDashboard userRole="student" sections={[]} currentPage="Test Yuklanmoqda">
@@ -332,23 +336,28 @@ const TakeTestPage: React.FC = () => {
     );
   }
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  const currentQuestion = questions?.[currentQuestionIndex];
+  const progress = questions?.length ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
   const answeredCount = Object.keys(answers).length;
 
+  console.log('Current question data:', currentQuestion);
+  console.log('Questions array length:', questions?.length);
+  console.log('Current question index:', currentQuestionIndex);
+
   return (
-    <ResponsiveDashboard userRole="student" sections={[]} currentPage={`${test.title} - Test`}>
+    <ResponsiveDashboard userRole="student" sections={[]} currentPage={test?.title || 'Test'}>
       <div className="max-w-6xl mx-auto p-2 md:p-6 bg-gray-50 min-h-screen">
         {/* Test Header */}
         <Card className="mb-4 md:mb-6 shadow-lg border-0">
           <CardHeader className="p-4 md:p-8 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
             <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
               <div className="flex-1">
-                <CardTitle className="text-xl md:text-2xl font-bold">{test.title}</CardTitle>
-                <p className="text-blue-100 mt-2 text-sm md:text-base">{test.description}</p>
+                <CardTitle className="text-xl md:text-2xl font-bold">{test?.title || 'Test'}</CardTitle>
+                <p className="text-blue-100 mt-2 text-sm md:text-base">{test?.description || 'Test tavsifi'}</p>
                 <div className="flex items-center gap-3 mt-3">
-                  <Badge className="bg-white text-blue-700 font-semibold">{test.type}</Badge>
+                  <Badge className="bg-white text-blue-700 font-semibold">{test?.type || 'test'}</Badge>
                   <span className="text-blue-100 text-sm">Test ID: {testId}</span>
+                  <span className="text-blue-100 text-sm">Savollar: {questions?.length || 0}</span>
                 </div>
               </div>
               <Button 
@@ -472,20 +481,20 @@ const TakeTestPage: React.FC = () => {
                 <div className="mb-8">
                   <div className="bg-gray-50 p-6 rounded-lg border-l-4 border-blue-500">
                     <p className="text-lg md:text-xl font-medium text-gray-800 leading-relaxed">
-                      {currentQuestion.questionText}
+                      {currentQuestion?.questionText || 'Savol yuklanmoqda...'}
                     </p>
                   </div>
                   
                   {/* Question Image */}
-                  {currentQuestion.questionImage && (
+                  {currentQuestion?.questionImage && (
                     <div className="mb-6 bg-gray-50 p-4 rounded-lg border">
                       <img
-                        src={currentQuestion.questionImage}
+                        src={currentQuestion?.questionImage}
                         alt="Savol rasmi"
                         className="max-w-full h-auto max-h-80 md:max-h-[500px] object-contain rounded-lg border bg-white mx-auto cursor-pointer hover:shadow-lg transition-shadow"
                         onClick={() => {
                           // Handle image click for full view
-                          window.open(currentQuestion.questionImage, '_blank');
+                          window.open(currentQuestion?.questionImage, '_blank');
                         }}
                       />
                       <p className="text-xs text-gray-500 text-center mt-2">Rasmni kattalashtrish uchun bosing</p>
@@ -493,11 +502,11 @@ const TakeTestPage: React.FC = () => {
                   )}
 
                   {/* Test Images Display */}
-                  {test.testImages && test.testImages.length > 0 && (
+                  {test?.testImages && test.testImages.length > 0 && (
                     <div className="mb-6">
                       <h4 className="text-sm font-medium text-gray-700 mb-3">Test materiallari:</h4>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {test.testImages.map((image, index) => (
+                        {test?.testImages?.map((image, index) => (
                           <div key={index} className="relative group">
                             <img
                               src={image}
@@ -517,14 +526,28 @@ const TakeTestPage: React.FC = () => {
 
                 {/* Answer Options - Horizontal Grid Layout */}
                 <div className="space-y-6">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     {['A', 'B', 'C', 'D'].map((optionLetter, index) => {
-                      const isSelected = answers[currentQuestion.id] === optionLetter;
-                      const options = currentQuestion.options ? JSON.parse(currentQuestion.options as string) : [];
+                      const isSelected = currentQuestion ? answers[currentQuestion.id] === optionLetter : false;
+                      const options = currentQuestion?.options ? JSON.parse(currentQuestion.options as string) : [];
                       const optionText = options[index];
                       
-                      // Only show options that have text
-                      if (!optionText) return null;
+                      // Show placeholder if no question loaded yet
+                      if (!currentQuestion) {
+                        return (
+                          <div key={optionLetter} className="relative p-4 rounded-lg border-2 border-gray-200 bg-gray-100 min-h-[80px] flex items-center justify-center">
+                            <div className="text-center">
+                              <div className="w-8 h-8 rounded border-2 border-gray-300 mx-auto mb-2 flex items-center justify-center font-bold text-sm text-gray-500">
+                                {optionLetter}
+                              </div>
+                              <div className="text-sm text-gray-500">Yuklanmoqda...</div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      
+                      // Show all 4 options, even if empty
+                      const displayText = optionText || `Variant ${optionLetter}`;
                       
                       return (
                         <div
@@ -534,7 +557,7 @@ const TakeTestPage: React.FC = () => {
                               ? 'border-blue-500 bg-blue-100 shadow-md' 
                               : 'border-gray-300 bg-white hover:border-blue-300 hover:bg-blue-50'
                           } ${submitAnswerMutation.isPending ? 'opacity-70' : ''}`}
-                          onClick={() => handleAnswerSelect(currentQuestion.id, optionLetter)}
+                          onClick={() => currentQuestion && handleAnswerSelect(currentQuestion.id, optionLetter)}
                         >
                           <div className="text-center">
                             <div className={`w-8 h-8 rounded border-2 mx-auto mb-2 flex items-center justify-center font-bold text-sm ${
@@ -545,19 +568,19 @@ const TakeTestPage: React.FC = () => {
                               {optionLetter}
                             </div>
                             <div className="text-sm text-gray-700 font-medium">
-                              {optionText}
+                              {displayText}
                             </div>
                           </div>
                         </div>
                       );
-                    }).filter(Boolean)}
+                    })}
                   </div>
                   
                   {/* Selected Answer Display */}
-                  {answers[currentQuestion.id] && (
+                  {currentQuestion && answers[currentQuestion.id] && (
                     <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                       <p className="text-sm text-green-800">
-                        <strong>To'g'ri javob:</strong> {answers[currentQuestion.id]}
+                        <strong>Tanlangan javob:</strong> {currentQuestion ? answers[currentQuestion.id] : ''}
                       </p>
                     </div>
                   )}
