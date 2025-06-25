@@ -126,7 +126,7 @@ const EditTestPage: React.FC = () => {
         };
       });
       setQuestions(formattedQuestions);
-      console.log('Loaded questions with correct answers:', formattedQuestions); // Debug
+
     } else if (testQuestions && Array.isArray(testQuestions) && testQuestions.length === 0 && test) {
       // If no questions exist but test exists, create empty questions based on totalQuestions
       const questionCount = test.totalQuestions || 10;
@@ -135,7 +135,7 @@ const EditTestPage: React.FC = () => {
         correctAnswer: 'A' as const
       }));
       setQuestions(newQuestions);
-      console.log('Created new empty questions:', newQuestions); // Debug
+
     }
   }, [testQuestions, test]);
 
@@ -229,7 +229,7 @@ const EditTestPage: React.FC = () => {
     const formData = form.getValues();
     
     // Validate all questions have correct answers selected
-    const incompleteQuestions = questions.filter(q => !q.correctAnswer || q.correctAnswer === '');
+    const incompleteQuestions = questions.filter(q => !q.correctAnswer || q.questionText.trim() === '');
     if (incompleteQuestions.length > 0) {
       toast({
         title: 'Xatolik',

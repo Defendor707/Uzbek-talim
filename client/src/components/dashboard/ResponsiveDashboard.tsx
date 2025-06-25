@@ -144,7 +144,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  console.log('Mobile menu tugmasi bosildi, sidebarOpen:', sidebarOpen);
+
                   setSidebarOpen(true);
                 }}
                 className="p-2 h-8 w-8 rounded-lg hover:bg-gray-100 mr-2"
@@ -430,7 +430,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    console.log('Desktop menu tugmasi bosildi, sidebarOpen:', sidebarOpen);
+
                     setSidebarOpen(true);
                   }}
                   className="p-2 hover:bg-gray-100 rounded-lg"

@@ -801,8 +801,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // Remove duplicate public tests endpoint - already defined above
-
   // Universal search endpoint - supports both name and code search
   app.get("/api/tests/search/:query", authenticate, async (req, res) => {
     try {
@@ -1351,13 +1349,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const studentProfile = await storage.getStudentProfile(req.user!.userId);
           if (studentProfile && studentProfile.parentId) {
-            const test = await storage.getTestById(testId);
+            const test = await storage.getTestById(attempt.testId);
             const student = await storage.getUser(req.user!.userId);
             
             if (test && student) {
               const percentage = Math.round(scorePercentage);
-              console.log(`Checking notification settings for parent ${studentProfile.parentId} about ${student.fullName}'s test: ${test.title} (${percentage}%)`);
-              
               // Check parent notification settings
               const notificationSettings = await storage.getParentNotificationSettings(studentProfile.parentId);
               const shouldNotify = shouldSendNotification(notificationSettings, percentage);
@@ -1370,10 +1366,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Create website notification if enabled
                 if (!notificationSettings || notificationSettings.enableWebsite) {
                   // This would be implemented when we have a notifications table properly set up
-                  console.log(`Website notification would be created for parent ${studentProfile.parentId}`);
+                  // Website notification would be created for parent
                 }
               } else {
-                console.log(`Notification skipped for parent ${studentProfile.parentId} based on settings`);
+                // Notification skipped based on parent settings
               }
             }
           }
@@ -1991,12 +1987,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/parent/notification-settings", authenticate, authorize(["parent"]), async (req, res) => {
     try {
-      const settingsData = schema.insertParentNotificationSettingsSchema.omit({
-        id: true,
-        parentId: true,
-        createdAt: true,
-        updatedAt: true,
-      }).parse(req.body);
+      const settingsData = schema.insertParentNotificationSettingsSchema.parse(req.body);
 
       let settings = await storage.getParentNotificationSettings(req.user!.userId);
       
@@ -2005,10 +1996,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         settings = await storage.updateParentNotificationSettings(req.user!.userId, settingsData);
       } else {
         // Create new settings
-        const newSettings = schema.insertParentNotificationSettingsSchema.parse({
+        const newSettings = {
           ...settingsData,
           parentId: req.user!.userId,
-        });
+        };
         settings = await storage.createParentNotificationSettings(newSettings);
       }
       
@@ -2106,9 +2097,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Parent Children Management Routes
   app.get("/api/parent/children", authenticate, authorize(["parent"]), async (req, res) => {
     try {
-      console.log('Parent requesting children, user ID:', req.user!.userId);
       const children = await storage.getChildrenByParentId(req.user!.userId);
-      console.log('Returning children data:', children);
       return res.status(200).json(children);
     } catch (error) {
       console.error("Error fetching children:", error);
@@ -2353,7 +2342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Parent notification settings routes
   app.get("/api/parent/notification-settings", authenticate, async (req, res) => {
     try {
-      const userId = req.session.userId!;
+      const userId = req.user!.userId;
       const user = await storage.getUser(userId);
       
       if (!user || user.role !== 'parent') {
@@ -2387,7 +2376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/parent/notification-settings", authenticate, async (req, res) => {
     try {
-      const userId = req.session.userId!;
+      const userId = req.user!.userId;
       const user = await storage.getUser(userId);
       
       if (!user || user.role !== 'parent') {
