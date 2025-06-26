@@ -1141,25 +1141,18 @@ bot.command('profile_edit', async (ctx) => {
       return;
     }
 
-    // Get existing profile
-    const existingProfile = await storage.getTeacherProfile(user.id);
-    
-    let message = '📝 *Profil tahrirlash*\n\n';
-    message += 'Quyidagi buyruqlardan birini tanlang:\n\n';
-    message += '/specialty - Mutaxassislikni o\'zgartirish\n';
-    message += '/bio - Haqida bo\'limini o\'zgartirish\n';
-    message += '/experience - Tajribani o\'zgartirish\n';
-    
-    if (existingProfile) {
-      message += '\n*Joriy ma\'lumotlar:*\n';
-      message += `🔬 Mutaxassislik: ${existingProfile.specialty || 'Kiritilmagan'}\n`;
-      message += `⏱️ Tajriba: ${existingProfile.experience || 0} yil\n`;
-      message += `📝 Haqida: ${existingProfile.bio || 'Kiritilmagan'}`;
-    } else {
-      message += '\n❌ Profil ma\'lumotlari hali kiritilmagan.';
-    }
-
-    await ctx.reply(message, { parse_mode: 'Markdown' });
+    await ctx.reply(
+      '📝 *O\'qituvchi profili tahrirlash*\n\n' +
+      'Quyidagi ma\'lumotlardan birini o\'zgartiring:',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.keyboard([
+          ['🔬 Mutaxassislik', '⏱️ Tajriba'],
+          ['📝 Haqida', '📞 Telefon raqam'],
+          ['📷 Profil surati', '🔙 Orqaga']
+        ]).resize()
+      }
+    );
   } catch (error) {
     console.error('Error in profile_edit:', error);
     await ctx.reply('❌ Profil tahrirlashda xatolik yuz berdi.');
