@@ -134,6 +134,28 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 25, 2025: Enhanced Center Profile with Image Upload and Streamlined Fields
+  - **Removed License Number Field**: Eliminated unnecessary license number requirement from center profiles
+    - Updated database schema to remove license_number column from center_profiles table
+    - Modified frontend form to exclude license number input field
+    - Simplified profile creation process for educational centers
+  - **Added Profile Image Upload**: Implemented comprehensive image upload system for centers
+    - Created dedicated API endpoint /api/center/upload-image for secure file uploads
+    - Added image preview functionality with 5MB size validation
+    - Integrated Sharp-based image optimization for profile pictures
+    - Enhanced UI with drag-and-drop style image upload interface
+    - Profile images stored in /uploads directory with proper file handling
+  - **Database Schema Updates**: Applied real-time database modifications
+    - Added profile_image column to center_profiles table
+    - Removed deprecated license_number column
+    - Updated TypeScript schemas to reflect database changes
+  - **Improved User Experience**: Enhanced center profile management
+    - Visual image preview before upload with loading states
+    - Clear error messaging for invalid file types or sizes
+    - Seamless integration with existing center profile editing workflow
+    - Professional image upload interface with proper accessibility
+  - User feedback: "Markaz profil ma'lumotlarida kamchilik bor litsenziya raqami ham suralmasin markaz rasmini yuklash imkoniyati ham bulsin"
+
 - June 25, 2025: Complete Code Cleanup and Final Performance Optimization
   - **Debug Code Cleanup**: Removed all debug console.log statements from frontend and backend
     - Cleaned up 20+ console.log statements from React components and server routes

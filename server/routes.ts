@@ -2094,6 +2094,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Center Profile Image Upload Route
+  app.post("/api/center/upload-image", authenticate, authorize(["center"]), upload.single('profileImage'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Rasm fayli kiritilmagan" });
+      }
+
+      // Get existing center profile or create new one
+      let profile = await storage.getCenterProfile(req.user!.userId);
+      
+      // Create profile data with image
+      const profileData = {
+        userId: req.user!.userId,
+        centerName: profile?.centerName || '',
+        address: profile?.address || '',
+        phoneNumber: profile?.phoneNumber || '',
+        email: profile?.email || '',
+        website: profile?.website || '',
+        description: profile?.description || '',
+        director: profile?.director || '',
+        establishedYear: profile?.establishedYear ?? undefined,
+        capacity: profile?.capacity ?? undefined,
+        specializations: profile?.specializations || [],
+        facilities: profile?.facilities || [],
+        workingHours: profile?.workingHours || '',
+        profileImage: `/uploads/${req.file.filename}`
+      };
+
+      if (profile) {
+        // Update existing profile
+        const updatedProfile = await storage.updateCenterProfile(req.user!.userId, profileData);
+        return res.status(200).json({ 
+          message: "Rasm muvaffaqiyatli yuklandi",
+          profileImage: profileData.profileImage
+        });
+      } else {
+        // Create new profile
+        const newProfile = await storage.createCenterProfile(profileData);
+        return res.status(201).json({ 
+          message: "Rasm muvaffaqiyatli yuklandi",
+          profileImage: profileData.profileImage
+        });
+      }
+    } catch (error) {
+      console.error("Error uploading center profile image:", error);
+      return res.status(500).json({ message: "Rasm yuklashda xatolik yuz berdi" });
+    }
+  });
+
   // Parent Children Management Routes
   app.get("/api/parent/children", authenticate, authorize(["parent"]), async (req, res) => {
     try {

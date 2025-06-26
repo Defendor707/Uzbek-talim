@@ -14,11 +14,11 @@ import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import useAuth from '@/hooks/useAuth';
 import ResponsiveDashboard from '@/components/dashboard/ResponsiveDashboard';
-import { Building2, MapPin, Phone, Mail, Globe, User, Calendar, FileText, Users, Clock, Plus, X } from 'lucide-react';
+import { Building2, MapPin, Phone, Mail, Globe, User, Calendar, FileText, Users, Clock, Plus, X, Upload, Image } from 'lucide-react';
 import * as schema from '@shared/schema';
 
 // Center profile form schema
-const centerProfileSchema = schema.insertCenterProfileSchema.extend({
+const centerProfileSchema = schema.insertCenterProfileSchema.omit({ licenseNumber: true }).extend({
   userId: z.number(),
 });
 
@@ -30,6 +30,43 @@ const CenterProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [newSpecialization, setNewSpecialization] = useState('');
   const [newFacility, setNewFacility] = useState('');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // Handle image selection
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "Xatolik",
+          description: "Rasm hajmi 5MB dan oshmasligi kerak",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle image upload
+  const handleImageUpload = async () => {
+    if (!selectedImage) return;
+    
+    try {
+      await uploadImageMutation.mutateAsync(selectedImage);
+      setSelectedImage(null);
+      setImagePreview(null);
+    } catch (error) {
+      // Error handled in mutation
+    }
+  };
 
   // Fetch center profile
   const { data: profile, isLoading } = useQuery<schema.CenterProfile>({
@@ -50,7 +87,6 @@ const CenterProfile: React.FC = () => {
       description: '',
       director: '',
       establishedYear: undefined,
-      licenseNumber: '',
       capacity: undefined,
       specializations: [],
       facilities: [],
@@ -71,7 +107,6 @@ const CenterProfile: React.FC = () => {
         description: profile.description || '',
         director: profile.director || '',
         establishedYear: profile.establishedYear || undefined,
-        licenseNumber: profile.licenseNumber || '',
         capacity: profile.capacity || undefined,
         specializations: profile.specializations || [],
         facilities: profile.facilities || [],
@@ -80,13 +115,34 @@ const CenterProfile: React.FC = () => {
     }
   }, [profile, form]);
 
+  // Image upload mutation
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('profileImage', file);
+      const response = await apiRequest('POST', '/api/center/upload-image', formData);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Muvaffaqiyat",
+        description: "Rasm muvaffaqiyatli yuklandi",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/center/profile'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Xatolik",
+        description: error.message || "Rasm yuklashda xatolik yuz berdi",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Update mutation
   const updateProfileMutation = useMutation({
     mutationFn: (data: CenterProfileFormData) => 
-      apiRequest(`/api/center/profile`, {
-        method: profile ? 'PUT' : 'POST',
-        body: JSON.stringify(data),
-      }),
+      apiRequest(profile ? 'PUT' : 'POST', '/api/center/profile', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/center/profile'] });
       toast({
@@ -221,7 +277,7 @@ const CenterProfile: React.FC = () => {
                         description: profile.description || '',
                         director: profile.director || '',
                         establishedYear: profile.establishedYear || undefined,
-                        licenseNumber: profile.licenseNumber || '',
+
                         capacity: profile.capacity || undefined,
                         specializations: profile.specializations || [],
                         facilities: profile.facilities || [],
@@ -257,6 +313,53 @@ const CenterProfile: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Profile Image Upload Section */}
+                <div className="flex flex-col items-center gap-4 p-4 border-2 border-dashed border-gray-300 rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                      {imagePreview ? (
+                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      ) : profile?.profileImage ? (
+                        <img src={profile.profileImage} alt="Markaz rasmi" className="w-full h-full object-cover" />
+                      ) : (
+                        <Image className="w-8 h-8 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                        id="profile-image-upload"
+                        disabled={!isEditing}
+                      />
+                      <label
+                        htmlFor="profile-image-upload"
+                        className={`inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md text-sm cursor-pointer hover:bg-gray-50 ${
+                          !isEditing ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <Upload className="w-4 h-4" />
+                        Rasm tanlash
+                      </label>
+                      {selectedImage && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleImageUpload}
+                          disabled={uploadImageMutation.isPending}
+                        >
+                          {uploadImageMutation.isPending ? 'Yuklanmoqda...' : 'Rasm yuklash'}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500 text-center">
+                    Markaz rasmini yuklang (maksimal 5MB)
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -371,23 +474,7 @@ const CenterProfile: React.FC = () => {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="licenseNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Litsenziya raqami</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            placeholder="Litsenziya raqami"
-                            disabled={!isEditing}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+
 
                   <FormField
                     control={form.control}

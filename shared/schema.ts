@@ -84,11 +84,11 @@ export const centerProfiles = pgTable("center_profiles", {
   description: text("description"),
   director: text("director"), // Markaz direktori
   establishedYear: integer("established_year"),
-  licenseNumber: text("license_number"),
   capacity: integer("capacity"), // O'quvchilar sig'imi
   specializations: text("specializations").array(), // Mutaxassisliklar
   facilities: text("facilities").array(), // Imkoniyatlar
   workingHours: text("working_hours"),
+  profileImage: text("profile_image"), // Markaz profil rasmi
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
