@@ -1940,7 +1940,8 @@ bot.hears('👤 Profil', async (ctx) => {
       keyboard = [
         ['✏️ Ismni o\'zgartirish', '📞 Telefon raqam'],
         ['🔬 Mutaxassislik', '⏱️ Tajriba'],
-        ['📝 Haqida', '🔙 Orqaga']
+        ['📝 Haqida', '📷 Profil surati'],
+        ['🔙 Orqaga']
       ];
     } else if (user.role === 'student') {
       keyboard = [
