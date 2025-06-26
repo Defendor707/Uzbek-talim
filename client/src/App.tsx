@@ -30,6 +30,9 @@ import StudentsPage from "@/pages/teacher/Students";
 import StudentTestsPage from "@/pages/student/Tests";
 import TakeTestNew from "@/pages/student/TakeTestNew";
 import TestResult from "@/pages/student/TestResult";
+import TeacherSearchCenters from "@/pages/teacher/SearchCenters";
+import StudentSearchCenters from "@/pages/student/SearchCenters";
+import ParentSearchCenters from "@/pages/parent/SearchCenters";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import useAuth from "@/hooks/useAuth";
 import { useEffect } from "react";
@@ -117,6 +120,11 @@ function Router() {
           <StudentsPage />
         </ProtectedRoute>
       </Route>
+      <Route path="/teacher/search-centers">
+        <ProtectedRoute allowedRoles={["teacher"]}>
+          <TeacherSearchCenters />
+        </ProtectedRoute>
+      </Route>
       
       {/* Student routes */}
       <Route path="/student/profile">
@@ -144,6 +152,11 @@ function Router() {
           <TestResult />
         </ProtectedRoute>
       </Route>
+      <Route path="/student/search-centers">
+        <ProtectedRoute allowedRoles={["student"]}>
+          <StudentSearchCenters />
+        </ProtectedRoute>
+      </Route>
       
       {/* Parent routes */}
       <Route path="/parent/profile">
@@ -164,6 +177,11 @@ function Router() {
       <Route path="/parent/notification-settings">
         <ProtectedRoute allowedRoles={["parent"]}>
           <NotificationSettings />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/parent/search-centers">
+        <ProtectedRoute allowedRoles={["parent"]}>
+          <ParentSearchCenters />
         </ProtectedRoute>
       </Route>
       

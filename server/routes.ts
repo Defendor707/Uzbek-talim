@@ -2094,6 +2094,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Search centers for teachers, students, and parents
+  app.get('/api/centers/search', authenticate, async (req, res) => {
+    try {
+      const { query, city, specialization } = req.query;
+      const centers = await storage.searchCenters({
+        query: query as string,
+        city: city as string,
+        specialization: specialization as string
+      });
+      res.json(centers);
+    } catch (error) {
+      res.status(500).json({ message: 'Markaz qidirish xatosi' });
+    }
+  });
+
   // Center Profile Image Upload Route
   app.post("/api/center/upload-image", authenticate, authorize(["center"]), upload.single('profileImage'), async (req, res) => {
     try {

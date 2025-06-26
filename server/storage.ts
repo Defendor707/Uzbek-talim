@@ -82,6 +82,9 @@ export interface IStorage {
   createParentNotificationSettings(settings: schema.InsertParentNotificationSettings): Promise<schema.ParentNotificationSettings>;
   getParentNotificationSettings(parentId: number): Promise<schema.ParentNotificationSettings | undefined>;
   updateParentNotificationSettings(parentId: number, settings: Partial<schema.InsertParentNotificationSettings>): Promise<schema.ParentNotificationSettings | undefined>;
+  
+  // Center search methods
+  searchCenters(filters: { query?: string; city?: string; specialization?: string }): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -656,6 +659,59 @@ export class DatabaseStorage implements IStorage {
       .where(eq(schema.parentNotificationSettings.parentId, parentId))
       .returning();
     return result[0];
+  }
+
+  async searchCenters(filters: { query?: string; city?: string; specialization?: string }): Promise<any[]> {
+    try {
+      let query = db.select({
+        id: schema.users.id,
+        username: schema.users.username,
+        fullName: schema.users.fullName,
+        centerName: schema.centerProfiles.centerName,
+        address: schema.centerProfiles.address,
+        phoneNumber: schema.centerProfiles.phoneNumber,
+        email: schema.centerProfiles.email,
+        website: schema.centerProfiles.website,
+        description: schema.centerProfiles.description,
+        director: schema.centerProfiles.director,
+        establishedYear: schema.centerProfiles.establishedYear,
+        capacity: schema.centerProfiles.capacity,
+        specializations: schema.centerProfiles.specializations,
+        facilities: schema.centerProfiles.facilities,
+        workingHours: schema.centerProfiles.workingHours,
+        profileImage: schema.centerProfiles.profileImage,
+      })
+      .from(schema.users)
+      .innerJoin(schema.centerProfiles, eq(schema.users.id, schema.centerProfiles.userId))
+      .where(eq(schema.users.role, 'center'));
+
+      // Apply filters
+      if (filters.query) {
+        query = query.where(
+          or(
+            ilike(schema.centerProfiles.centerName, `%${filters.query}%`),
+            ilike(schema.centerProfiles.description, `%${filters.query}%`),
+            ilike(schema.centerProfiles.director, `%${filters.query}%`)
+          )
+        );
+      }
+
+      if (filters.city) {
+        query = query.where(ilike(schema.centerProfiles.address, `%${filters.city}%`));
+      }
+
+      if (filters.specialization) {
+        query = query.where(
+          sql`${schema.centerProfiles.specializations} @> ${JSON.stringify([filters.specialization])}`
+        );
+      }
+
+      const result = await query;
+      return result;
+    } catch (error) {
+      console.error('Error searching centers:', error);
+      return [];
+    }
   }
 }
 
