@@ -134,6 +134,31 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 26, 2025: Added Profile Photo Upload for All User Roles
+  - **Universal Profile Image Upload**: Implemented profile photo upload functionality for all roles
+    - Added dedicated upload endpoints for teacher, student, and parent profiles
+    - Teacher endpoint: `/api/teacher/upload-image` with profile data management
+    - Student endpoint: `/api/student/upload-image` with profile data management
+    - Parent endpoint: `/api/parent/upload-image` (uploads directly to users table)
+    - All endpoints support 5MB file size limit with JPG/PNG formats
+  - **Frontend Image Upload UI**: Enhanced all profile pages with modern upload interface
+    - Added profile image cards with circular preview displays
+    - Drag-and-drop style file selection with visual feedback
+    - Real-time image preview before upload
+    - Upload progress indicators and error handling
+    - Consistent UI design across all user role profiles
+  - **Database Schema Updates**: Modified profile tables for image storage
+    - Added `profile_image` column to student_profiles table
+    - Teacher profiles already had profile_image field
+    - Parent profiles use the users table profile_image field
+    - Center profiles already had profile_image functionality
+  - **User Experience Improvements**: Streamlined image management
+    - Automatic profile refresh after successful upload
+    - Clear file size and format requirements displayed
+    - Cancel option during upload process
+    - Responsive design for mobile and desktop
+  - User feedback: "Barcha rollarda profil uchun surat yuklash imkoniyati bulsin"
+
 - June 25, 2025: Enhanced Center Profile with Image Upload and Streamlined Fields
   - **Removed License Number Field**: Eliminated unnecessary license number requirement from center profiles
     - Updated database schema to remove license_number column from center_profiles table

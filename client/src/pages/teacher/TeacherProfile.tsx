@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import useAuth from '@/hooks/useAuth';
 import ResponsiveDashboard from '@/components/dashboard/ResponsiveDashboard';
+import { Upload, Image, User } from 'lucide-react';
 
 // Teacher Profile Schema
 const teacherProfileSchema = z.object({
@@ -39,6 +40,8 @@ type TeacherProfileFormData = z.infer<typeof teacherProfileSchema>;
 const TeacherProfile: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Fetch teacher profile
   const { data: profile, isLoading } = useQuery<any>({
@@ -98,6 +101,79 @@ const TeacherProfile: React.FC = () => {
       });
     },
   });
+
+  // Image upload mutation
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('profileImage', file);
+      
+      const response = await fetch('/api/teacher/upload-image', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Rasm yuklashda xatolik');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profile/teacher'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      toast({
+        title: 'Muvaffaqiyat',
+        description: 'Profil rasmi muvaffaqiyatli yuklandi',
+      });
+      setSelectedImage(null);
+      setImagePreview(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Xatolik',
+        description: error.message || 'Rasm yuklashda xatolik',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Handle image selection
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "Xatolik",
+          description: "Rasm hajmi 5MB dan oshmasligi kerak",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle image upload
+  const handleImageUpload = async () => {
+    if (!selectedImage) return;
+    
+    try {
+      await uploadImageMutation.mutateAsync(selectedImage);
+    } catch (error) {
+      // Error handled in mutation
+    }
+  };
 
   const onSubmit = (data: TeacherProfileFormData) => {
     if (profile) {
@@ -175,6 +251,82 @@ const TeacherProfile: React.FC = () => {
       <div>
         <div className="max-w-4xl mx-auto">
         
+        {/* Profile Image Card */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Profil Rasmi</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center space-y-4">
+              {/* Profile Image Display */}
+              <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                {imagePreview ? (
+                  <img 
+                    src={imagePreview} 
+                    alt="Profil rasmi" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : profile?.profileImage ? (
+                  <img 
+                    src={profile.profileImage} 
+                    alt="Profil rasmi" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-16 h-16 text-gray-400" />
+                )}
+              </div>
+              
+              {/* Upload Controls */}
+              <div className="flex flex-col items-center space-y-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                  id="profileImageInput"
+                />
+                <Label 
+                  htmlFor="profileImageInput"
+                  className="cursor-pointer inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Rasm tanlash
+                </Label>
+                
+                {selectedImage && (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">{selectedImage.name}</span>
+                    <Button
+                      type="button"
+                      onClick={handleImageUpload}
+                      disabled={uploadImageMutation.isPending}
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {uploadImageMutation.isPending ? 'Yuklanmoqda...' : 'Yuklash'}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setSelectedImage(null);
+                        setImagePreview(null);
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Bekor qilish
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-gray-500 text-center">
+                Rasm hajmi 5MB dan oshmasligi kerak. JPG, PNG formatlar qabul qilinadi.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Profile Card */}
         <Card className="mb-8">
           <CardHeader>

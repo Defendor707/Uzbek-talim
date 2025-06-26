@@ -47,6 +47,7 @@ export const users = pgTable("users", {
 export const studentProfiles = pgTable("student_profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  profileImage: text("profile_image"), // Profil rasmi
   phoneNumber: text("phone_number"), // Telefon raqam
   grade: text("grade"), // O'quv darajasi
   classroom: text("classroom"), // O'quv bosqichi

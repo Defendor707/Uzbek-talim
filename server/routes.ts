@@ -2109,6 +2109,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Teacher Profile Image Upload Route
+  app.post("/api/teacher/upload-image", authenticate, authorize(["teacher"]), upload.single('profileImage'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Rasm fayli kiritilmagan" });
+      }
+
+      // Get existing teacher profile or create new one
+      let profile = await storage.getTeacherProfile(req.user!.userId);
+      
+      // Create/update profile data with image
+      const profileData = {
+        userId: req.user!.userId,
+        profileImage: `/uploads/${req.file.filename}`,
+        phoneNumber: profile?.phoneNumber || '',
+        specialty: profile?.specialty || '',
+        subjects: profile?.subjects || [],
+        bio: profile?.bio || '',
+        experience: profile?.experience ?? undefined,
+        certificates: profile?.certificates || [],
+        centerId: profile?.centerId ?? undefined,
+      };
+
+      if (profile) {
+        // Update existing profile
+        const updatedProfile = await storage.updateTeacherProfile(req.user!.userId, profileData);
+        return res.status(200).json({ 
+          message: "Rasm muvaffaqiyatli yuklandi",
+          profileImage: profileData.profileImage
+        });
+      } else {
+        // Create new profile
+        const newProfile = await storage.createTeacherProfile(profileData);
+        return res.status(201).json({ 
+          message: "Rasm muvaffaqiyatli yuklandi",
+          profileImage: profileData.profileImage
+        });
+      }
+    } catch (error) {
+      console.error("Error uploading teacher profile image:", error);
+      return res.status(500).json({ message: "Rasm yuklashda xatolik yuz berdi" });
+    }
+  });
+
+  // Student Profile Image Upload Route
+  app.post("/api/student/upload-image", authenticate, authorize(["student"]), upload.single('profileImage'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Rasm fayli kiritilmagan" });
+      }
+
+      // Get existing student profile or create new one
+      let profile = await storage.getStudentProfile(req.user!.userId);
+      
+      // Create/update profile data with image
+      const profileData = {
+        userId: req.user!.userId,
+        profileImage: `/uploads/${req.file.filename}`,
+        phoneNumber: profile?.phoneNumber || '',
+        grade: profile?.grade || '',
+        classroom: profile?.classroom || '',
+        certificates: profile?.certificates || [],
+        bio: profile?.bio || '',
+        parentId: profile?.parentId ?? undefined,
+        centerId: profile?.centerId ?? undefined,
+      };
+
+      if (profile) {
+        // Update existing profile
+        const updatedProfile = await storage.updateStudentProfile(req.user!.userId, profileData);
+        return res.status(200).json({ 
+          message: "Rasm muvaffaqiyatli yuklandi",
+          profileImage: profileData.profileImage
+        });
+      } else {
+        // Create new profile
+        const newProfile = await storage.createStudentProfile(profileData);
+        return res.status(201).json({ 
+          message: "Rasm muvaffaqiyatli yuklandi",
+          profileImage: profileData.profileImage
+        });
+      }
+    } catch (error) {
+      console.error("Error uploading student profile image:", error);
+      return res.status(500).json({ message: "Rasm yuklashda xatolik yuz berdi" });
+    }
+  });
+
+  // Parent Profile Image Upload Route (uploads to users table)
+  app.post("/api/parent/upload-image", authenticate, authorize(["parent"]), upload.single('profileImage'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Rasm fayli kiritilmagan" });
+      }
+
+      // Update user profile image directly in users table
+      const updatedUser = await storage.updateUser(req.user!.userId, {
+        profileImage: `/uploads/${req.file.filename}`
+      });
+
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Foydalanuvchi topilmadi" });
+      }
+
+      return res.status(200).json({ 
+        message: "Rasm muvaffaqiyatli yuklandi",
+        profileImage: updatedUser.profileImage
+      });
+    } catch (error) {
+      console.error("Error uploading parent profile image:", error);
+      return res.status(500).json({ message: "Rasm yuklashda xatolik yuz berdi" });
+    }
+  });
+
   // Center Profile Image Upload Route
   app.post("/api/center/upload-image", authenticate, authorize(["center"]), upload.single('profileImage'), async (req, res) => {
     try {
