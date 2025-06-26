@@ -134,6 +134,33 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 26, 2025: Implemented Telegram Bot Profile Picture Upload for All User Roles
+  - **Universal Telegram Profile Image Upload**: Added complete profile photo upload functionality in Telegram bot
+    - Added `/upload_photo` command for all user roles (teacher, student, parent, center)
+    - Added "📷 Profil surati" button to all profile editing keyboards
+    - Comprehensive photo handler processes image downloads from Telegram servers
+    - Automatic file naming with user ID and timestamp for uniqueness
+    - Role-specific profile updates for teachers, students, parents, and centers
+    - Image storage in `/uploads` directory with proper path management
+  - **Enhanced Profile Editing Interface**: Improved Telegram bot profile management
+    - Added profile image upload option to student, parent, and teacher editing menus
+    - Clear instructions and file size recommendations (5MB limit)
+    - Professional error handling for upload failures
+    - Success confirmation messages with role-appropriate keyboards
+    - Seamless integration with existing profile editing workflow
+  - **Robust Image Processing**: Telegram-to-server image transfer system
+    - Downloads highest quality photo from Telegram servers using HTTPS
+    - Creates uploads directory automatically if missing
+    - Generates unique filenames to prevent conflicts
+    - Proper error handling for network and file system issues
+    - Updates appropriate profile tables based on user role
+  - **User Experience Enhancement**: Streamlined mobile profile management
+    - Command-based and button-based access methods
+    - Clear guidance on image requirements and best practices
+    - Instant feedback on upload success or failure
+    - Returns users to appropriate role-based keyboards after completion
+  - User feedback: "Telegram botda ham profil suratlarini yuklash imkonini yarat"
+
 - June 26, 2025: Added Profile Photo Upload for All User Roles
   - **Universal Profile Image Upload**: Implemented profile photo upload functionality for all roles
     - Added dedicated upload endpoints for teacher, student, and parent profiles

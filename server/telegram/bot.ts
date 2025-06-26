@@ -36,7 +36,7 @@ interface BotSessionData extends Scenes.SceneSession {
     questions?: any[];
     selectedQuestionId?: number;
   };
-  editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience' | 'addChild' | 'testCode';
+  editingField?: 'fullName' | 'phoneNumber' | 'specialty' | 'bio' | 'experience' | 'addChild' | 'testCode' | 'profileImage';
   testCreation?: {
     step?: 'title' | 'type' | 'category' | 'questionCount' | 'answers' | 'inputMethod' | 'imageUpload';
     category?: string;
@@ -1196,7 +1196,8 @@ bot.command('student_edit', async (ctx) => {
         parse_mode: 'Markdown',
         ...Markup.keyboard([
           ['✏️ Ismni o\'zgartirish', '📞 Telefon raqam'],
-          ['📄 Haqida', '🔙 Orqaga']
+          ['📄 Haqida', '📷 Profil surati'],
+          ['🔙 Orqaga']
         ]).resize()
       }
     );
@@ -1232,7 +1233,7 @@ bot.command('parent_edit', async (ctx) => {
         parse_mode: 'Markdown',
         ...Markup.keyboard([
           ['✏️ Ismni o\'zgartirish', '📞 Telefon raqam'],
-          ['🔙 Orqaga']
+          ['📷 Profil surati', '🔙 Orqaga']
         ]).resize()
       }
     );
@@ -1304,6 +1305,31 @@ bot.command('experience', async (ctx) => {
     '⏱️ *Tajriba o\'zgartirish*\n\n' +
     'Ish tajribangizni yillarda kiriting (faqat raqam):\n' +
     'Masalan: 5, 10, 15...',
+    { parse_mode: 'Markdown' }
+  );
+});
+
+// Upload profile photo command
+bot.command('upload_photo', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz.');
+    return;
+  }
+
+  const user = await storage.getUser(ctx.session.userId);
+  if (!user) {
+    await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
+    return;
+  }
+
+  ctx.session.editingField = 'profileImage';
+  await ctx.reply(
+    '📷 *Profil surati yuklash*\n\n' +
+    'Profil suratini yuboring (faqat rasm fayllari qabul qilinadi):\n\n' +
+    '💡 Tavsiyalar:\n' +
+    '• Rasm aniq va sifatli bo\'lsin\n' +
+    '• Yuz yaqqol ko\'rinsin\n' +
+    '• Fayl hajmi 5MB dan oshmasin',
     { parse_mode: 'Markdown' }
   );
 });
@@ -1397,6 +1423,34 @@ bot.hears('📄 Haqida', async (ctx) => {
   );
 });
 
+// Profile picture upload button handler
+bot.hears('📷 Profil surati', async (ctx) => {
+  if (!ctx.session.userId) {
+    await ctx.reply('❌ Siz tizimga kirmagansiz.');
+    return;
+  }
+
+  const user = await storage.getUser(ctx.session.userId);
+  if (!user) {
+    await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
+    return;
+  }
+
+  ctx.session.editingField = 'profileImage';
+  await ctx.reply(
+    '📷 *Profil surati yuklash*\n\n' +
+    'Profil suratini yuboring (faqat rasm fayllari qabul qilinadi):\n\n' +
+    '💡 Tavsiyalar:\n' +
+    '• Rasm aniq va sifatli bo\'lsin\n' +
+    '• Yuz yaqqol ko\'rinsin\n' +
+    '• Fayl hajmi 5MB dan oshmasin',
+    { 
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([['🔙 Orqaga']]).resize()
+    }
+  );
+});
+
 bot.hears('🔬 Mutaxassislik', async (ctx) => {
   if (!ctx.session.userId) {
     await ctx.reply('❌ Siz tizimga kirmagansiz.');
@@ -1479,8 +1533,146 @@ bot.hears('⏭️ O\'tkazib yuborish', async (ctx) => {
   }
 });
 
-// Handle photo upload for test
+// Handle photo upload for profile images and test creation
 bot.on('photo', async (ctx, next) => {
+  // Handle profile image upload
+  if (ctx.session.editingField === 'profileImage') {
+    if (!ctx.session.userId) {
+      await ctx.reply('❌ Siz tizimga kirmagansiz.');
+      return;
+    }
+
+    try {
+      const user = await storage.getUser(ctx.session.userId);
+      if (!user) {
+        await ctx.reply('❌ Foydalanuvchi ma\'lumotlari topilmadi.');
+        return;
+      }
+
+      // Get the largest photo size
+      const photos = ctx.message.photo;
+      const photo = photos[photos.length - 1];
+
+      // Download photo from Telegram
+      const fileLink = await ctx.telegram.getFileLink(photo.file_id);
+      
+      // Import necessary modules
+      const fs = require('fs');
+      const path = require('path');
+      const https = require('https');
+      
+      // Create uploads directory if it doesn't exist
+      const uploadsDir = path.join(process.cwd(), 'uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      // Generate unique filename
+      const timestamp = Date.now();
+      const filename = `profile_${user.id}_${timestamp}.jpg`;
+      const filepath = path.join(uploadsDir, filename);
+
+      // Download and save the image
+      await new Promise((resolve, reject) => {
+        const file = fs.createWriteStream(filepath);
+        https.get(fileLink.href, (response: any) => {
+          response.pipe(file);
+          file.on('finish', () => {
+            file.close();
+            resolve(null);
+          });
+          file.on('error', reject);
+        }).on('error', reject);
+      });
+
+      // Update profile based on user role
+      const profileImagePath = `/uploads/${filename}`;
+      
+      if (user.role === 'teacher') {
+        let profile = await storage.getTeacherProfile(user.id);
+        const profileData = {
+          userId: user.id,
+          profileImage: profileImagePath,
+          phoneNumber: profile?.phoneNumber || '',
+          specialty: profile?.specialty || '',
+          subjects: profile?.subjects || [],
+          bio: profile?.bio || '',
+          experience: profile?.experience ?? undefined,
+          certificates: profile?.certificates || [],
+          centerId: profile?.centerId ?? undefined,
+        };
+
+        if (profile) {
+          await storage.updateTeacherProfile(user.id, profileData);
+        } else {
+          await storage.createTeacherProfile(profileData);
+        }
+      } else if (user.role === 'student') {
+        let profile = await storage.getStudentProfile(user.id);
+        const profileData = {
+          userId: user.id,
+          profileImage: profileImagePath,
+          phoneNumber: profile?.phoneNumber || '',
+          grade: profile?.grade || '',
+          classroom: profile?.classroom || '',
+          certificates: profile?.certificates || [],
+          bio: profile?.bio || '',
+          parentId: profile?.parentId ?? undefined,
+          centerId: profile?.centerId ?? undefined,
+        };
+
+        if (profile) {
+          await storage.updateStudentProfile(user.id, profileData);
+        } else {
+          await storage.createStudentProfile(profileData);
+        }
+      } else if (user.role === 'parent') {
+        await storage.updateUser(user.id, {
+          profileImage: profileImagePath
+        });
+      } else if (user.role === 'center') {
+        let profile = await storage.getCenterProfile(user.id);
+        const profileData = {
+          userId: user.id,
+          profileImage: profileImagePath,
+          centerName: profile?.centerName || '',
+          address: profile?.address || '',
+          director: profile?.director || '',
+          phoneNumber: profile?.phoneNumber || '',
+          description: profile?.description || '',
+          capacity: profile?.capacity ?? undefined,
+          establishedYear: profile?.establishedYear ?? undefined,
+          specializations: profile?.specializations || [],
+        };
+
+        if (profile) {
+          await storage.updateCenterProfile(user.id, profileData);
+        } else {
+          await storage.createCenterProfile(profileData);
+        }
+      }
+
+      // Clear editing state
+      ctx.session.editingField = undefined;
+
+      await ctx.reply(
+        '✅ Profil surati muvaffaqiyatli yuklandi!\n\n' +
+        '📷 Rasm saqlandi va profilingizda ko\'rsatiladi.',
+        Markup.keyboard(getKeyboardByRole(user.role)).resize()
+      );
+
+    } catch (error) {
+      console.error('Error uploading profile image:', error);
+      await ctx.reply(
+        '❌ Profil suratini yuklashda xatolik yuz berdi.\n\n' +
+        'Iltimos, qaytadan urinib ko\'ring yoki boshqa rasm tanlang.'
+      );
+      ctx.session.editingField = undefined;
+    }
+    return;
+  }
+
+  // Handle photo upload for test
   if (ctx.session.testCreation && ctx.session.testCreation.step === 'imageUpload') {
     // Check if this is a reply to our message
     const isReply = ctx.message.reply_to_message && 
