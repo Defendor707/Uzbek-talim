@@ -24,12 +24,16 @@ import ChildrenPage from "@/pages/parent/ChildrenPage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import NotificationSettings from "@/pages/parent/NotificationSettings";
 import LessonsPage from "@/pages/teacher/Lessons";
+import CreateLesson from "@/pages/teacher/CreateLesson";
+import ViewLesson from "@/pages/teacher/ViewLesson";
 import TestsPage from "@/pages/teacher/Tests";
 import CreateTestPage from "@/pages/teacher/CreateTestSimple";
 import EditTestPage from "@/pages/teacher/EditTest";
 import TestTypeSelection from "@/pages/teacher/TestTypeSelection";
 import StudentsPage from "@/pages/teacher/Students";
 import StudentTestsPage from "@/pages/student/Tests";
+import StudentLessonsPage from "@/pages/student/Lessons";
+import StudentViewLesson from "@/pages/student/ViewLesson";
 import TakeTestNew from "@/pages/student/TakeTestNew";
 import TestResult from "@/pages/student/TestResult";
 import TeacherSearchCenters from "@/pages/teacher/SearchCenters";
@@ -97,6 +101,16 @@ function Router() {
           <LessonsPage />
         </ProtectedRoute>
       </Route>
+      <Route path="/teacher/lessons/create">
+        <ProtectedRoute allowedRoles={["teacher"]}>
+          <CreateLesson />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/teacher/lessons/:id">
+        <ProtectedRoute allowedRoles={["teacher"]}>
+          <ViewLesson />
+        </ProtectedRoute>
+      </Route>
       <Route path="/teacher/tests">
         <ProtectedRoute allowedRoles={["teacher"]}>
           <TestsPage />
@@ -142,6 +156,16 @@ function Router() {
       <Route path="/student/tests">
         <ProtectedRoute allowedRoles={["student"]}>
           <StudentTestsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/student/lessons">
+        <ProtectedRoute allowedRoles={["student"]}>
+          <StudentLessonsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/student/lessons/:id">
+        <ProtectedRoute allowedRoles={["student"]}>
+          <StudentViewLesson />
         </ProtectedRoute>
       </Route>
       <Route path="/student/test/:testId">

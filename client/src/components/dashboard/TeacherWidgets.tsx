@@ -28,7 +28,7 @@ const TeacherWidgets: React.FC = () => {
     },
     {
       label: 'Darslik qo\'shish',
-      href: '/teacher/lessons',
+      href: '/teacher/lessons/create',
       icon: <BookOpen className="w-4 h-4" />,
       variant: 'outline' as const
     }

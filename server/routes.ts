@@ -423,6 +423,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     uploadLessonFile
   );
 
+  // Lesson cover image upload
+  app.post(
+    "/api/lessons/upload-cover", 
+    authenticate,
+    authorize(["teacher"]),
+    upload.single("image"),
+    async (req, res) => {
+      try {
+        if (!req.file) {
+          return res.status(400).json({ message: "Rasm yuklanmadi" });
+        }
+
+        const imageUrl = `/uploads/${req.file.filename}`;
+        return res.status(200).json({ imageUrl });
+      } catch (error) {
+        console.error("Error uploading lesson cover:", error);
+        return res.status(500).json({ message: "Rasm yuklashda xatolik" });
+      }
+    }
+  );
+
   // Test Routes
   app.post("/api/tests", authenticate, authorize(["teacher"]), async (req, res) => {
     try {
