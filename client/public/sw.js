@@ -1,7 +1,8 @@
 // Service Worker for O'zbek Talim PWA
-const CACHE_NAME = 'uzbek-talim-v1';
-const STATIC_CACHE_NAME = 'static-cache-v1';
-const DYNAMIC_CACHE_NAME = 'dynamic-cache-v1';
+const CACHE_NAME = 'uzbek-talim-v2';
+const STATIC_CACHE_NAME = 'static-cache-v2';
+const DYNAMIC_CACHE_NAME = 'dynamic-cache-v2';
+const IMAGE_CACHE_NAME = 'image-cache-v1';
 
 // Files to cache for offline functionality
 const STATIC_FILES = [
@@ -9,8 +10,15 @@ const STATIC_FILES = [
   '/login',
   '/register',
   '/manifest.json',
+  '/icon-72x72.png',
+  '/icon-96x96.png',
+  '/icon-128x128.png',
+  '/icon-144x144.png',
+  '/icon-152x152.png',
   '/icon-192x192.png',
-  '/icon-512x512.png'
+  '/icon-384x384.png',
+  '/icon-512x512.png',
+  '/favicon.ico'
 ];
 
 // API endpoints to cache
@@ -40,7 +48,9 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== STATIC_CACHE_NAME && cacheName !== DYNAMIC_CACHE_NAME) {
+          if (cacheName !== STATIC_CACHE_NAME && 
+              cacheName !== DYNAMIC_CACHE_NAME && 
+              cacheName !== IMAGE_CACHE_NAME) {
             console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -82,11 +92,44 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Handle image files with cache-first strategy
+  if (request.destination === 'image' || url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg|ico)$/i)) {
+    event.respondWith(
+      caches.open(IMAGE_CACHE_NAME).then(cache => {
+        return cache.match(request).then(cachedResponse => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          
+          return fetch(request).then(response => {
+            if (response.ok) {
+              cache.put(request, response.clone());
+            }
+            return response;
+          }).catch(() => {
+            // Return a fallback image if available
+            return caches.match('/icon-192x192.png');
+          });
+        });
+      })
+    );
+    return;
+  }
+
   // Handle static files with cache-first strategy
   event.respondWith(
     caches.match(request)
       .then((cachedResponse) => {
         if (cachedResponse) {
+          // Return cached version while checking for updates
+          fetch(request).then((response) => {
+            if (response.ok) {
+              caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
+                cache.put(request, response);
+              });
+            }
+          }).catch(() => {});
+          
           return cachedResponse;
         }
 
