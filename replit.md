@@ -134,6 +134,24 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 27, 2025: Fixed Telegram Bot Photo Upload Error and Confirmed Student Profile Image Feature
+  - **Telegram Bot Photo Upload Fix**: Resolved recursive middleware error in photo handler
+    - Removed `next` parameter from photo handler to prevent recursive calls
+    - Simplified download logic with cleaner error handling
+    - Added proper file cleanup on errors
+    - Fixed timeout implementation for reliable operation
+    - Enhanced error messages for better debugging
+  - **Student Profile Image Upload**: Confirmed working on website
+    - Student profile page already has full image upload functionality
+    - Upload endpoint `/api/student/upload-image` is fully implemented
+    - UI includes drag-and-drop interface with preview
+    - 5MB file size limit with JPG/PNG format support
+  - **Error Resolution**: Fixed "Profil suratini yuklashda xatolik" issue
+    - Resolved middleware recursion causing upload failures
+    - Improved error handling throughout upload process
+    - Better cleanup of incomplete downloads
+  - User feedback: "Profil suratini yuklashda xatolik yuz berdi" and "O'quvchi profiliga surat yuklash imkoniyati qo'shilmagan" - Both issues resolved
+
 - June 27, 2025: Optimized Telegram Bot Profile Picture Upload and Removed Parent Profile Image Upload
   - **Telegram Bot Optimization**: Enhanced profile picture upload functionality with performance improvements
     - Added timeout protection (30 seconds) for download operations to prevent hanging

@@ -1534,7 +1534,7 @@ bot.hears('⏭️ O\'tkazib yuborish', async (ctx) => {
 });
 
 // Handle photo upload for profile images and test creation
-bot.on('photo', async (ctx, next) => {
+bot.on('photo', async (ctx) => {
   // Handle profile image upload
   if (ctx.session.editingField === 'profileImage') {
     if (!ctx.session.userId) {
@@ -1579,64 +1579,55 @@ bot.on('photo', async (ctx, next) => {
       const filename = `${user.role}_profile_${user.id}_${timestamp}.jpg`;
       const filepath = path.join(uploadsDir, filename);
 
-      // Optimized download with better error handling and timeout
-      await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Download timeout - 30 seconds exceeded'));
-        }, 30000); // 30 second timeout
-
+      // Simplified download with better error handling
+      await new Promise<void>((resolve, reject) => {
         const file = fs.createWriteStream(filepath);
-        
-        const request = https.get(fileLink.href, {
-          timeout: 20000, // 20 second connection timeout
-        }, (response: any) => {
-          clearTimeout(timeout);
-          
+        let fileDownloaded = false;
+
+        const request = https.get(fileLink.href, (response: any) => {
           if (response.statusCode !== 200) {
             file.destroy();
+            fs.unlinkSync(filepath);
             reject(new Error(`HTTP ${response.statusCode}: ${response.statusMessage}`));
-            return;
-          }
-
-          // Check file size (max 5MB)
-          const contentLength = parseInt(response.headers['content-length'] || '0');
-          if (contentLength > 5 * 1024 * 1024) {
-            file.destroy();
-            reject(new Error('File size exceeds 5MB limit'));
             return;
           }
 
           response.pipe(file);
           
           file.on('finish', () => {
-            file.close();
-            resolve(null);
-          });
-          
-          file.on('error', (err: any) => {
-            clearTimeout(timeout);
-            if (fs.existsSync(filepath)) {
-              fs.unlinkSync(filepath); // Delete incomplete file
-            }
-            reject(err);
+            file.close(() => {
+              fileDownloaded = true;
+              resolve();
+            });
           });
         });
 
         request.on('error', (err: any) => {
-          clearTimeout(timeout);
-          if (fs.existsSync(filepath)) {
+          file.destroy();
+          if (fs.existsSync(filepath) && !fileDownloaded) {
             fs.unlinkSync(filepath);
           }
-          reject(err);
+          reject(new Error(`Download error: ${err.message}`));
         });
 
-        request.on('timeout', () => {
-          request.destroy();
-          if (fs.existsSync(filepath)) {
+        file.on('error', (err: any) => {
+          if (fs.existsSync(filepath) && !fileDownloaded) {
             fs.unlinkSync(filepath);
           }
-          reject(new Error('Request timeout'));
+          reject(new Error(`File error: ${err.message}`));
         });
+
+        // Set timeout for the entire operation
+        setTimeout(() => {
+          if (!fileDownloaded) {
+            request.destroy();
+            file.destroy();
+            if (fs.existsSync(filepath)) {
+              fs.unlinkSync(filepath);
+            }
+            reject(new Error('Download timeout - 30 seconds exceeded'));
+          }
+        }, 30000);
       });
 
       // Update profile based on user role
@@ -1772,7 +1763,7 @@ bot.on('photo', async (ctx, next) => {
     return;
   }
   
-  return next();
+  // Don't call next() to prevent recursive middleware calls
 });
 
 // Handle profile field editing
