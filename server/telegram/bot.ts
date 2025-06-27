@@ -1565,12 +1565,19 @@ bot.on('photo', async (ctx, next) => {
       await new Promise((resolve, reject) => {
         const file = fs.createWriteStream(filepath);
         https.get(fileLink.href, (response: any) => {
+          if (response.statusCode !== 200) {
+            reject(new Error(`HTTP ${response.statusCode}: ${response.statusMessage}`));
+            return;
+          }
           response.pipe(file);
           file.on('finish', () => {
             file.close();
             resolve(null);
           });
-          file.on('error', reject);
+          file.on('error', (err: any) => {
+            fs.unlinkSync(filepath); // Delete incomplete file
+            reject(err);
+          });
         }).on('error', reject);
       });
 
@@ -1872,6 +1879,11 @@ bot.hears('👤 Profil', async (ctx) => {
     if (user.role === 'teacher') {
       const teacherProfile = await storage.getTeacherProfile(user.id);
       if (teacherProfile) {
+        if (teacherProfile.profileImage) {
+          profileDetails += `📷 Profil surati: Yuklangan ✅\n`;
+        } else {
+          profileDetails += `📷 Profil surati: Yuklanmagan ❌\n`;
+        }
         if (teacherProfile.phoneNumber) {
           profileDetails += `📞 Telefon: ${teacherProfile.phoneNumber}\n`;
         }
@@ -1892,7 +1904,7 @@ bot.hears('👤 Profil', async (ctx) => {
           profileDetails = `❗ Profil ma'lumotlari to'ldirilmagan.\n`;
         }
       } else {
-        profileDetails = `❗ O'qituvchi profili yaratilmagan.\n`;
+        profileDetails = `❗ O'qituvchi profili yaratilmagan.\n📷 Profil surati: Yuklanmagan ❌\n`;
       }
     } else if (user.role === 'student') {
       const studentProfile = await storage.getStudentProfile(user.id);
