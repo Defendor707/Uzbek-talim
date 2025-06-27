@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,12 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import useAuth from '@/hooks/useAuth';
 import ResponsiveDashboard from '@/components/dashboard/ResponsiveDashboard';
-import { Upload, Image, User } from 'lucide-react';
+import { User } from 'lucide-react';
 
 // Parent Profile Schema
 const parentProfileSchema = z.object({
@@ -27,8 +26,6 @@ type ParentProfileFormData = z.infer<typeof parentProfileSchema>;
 const ParentProfile: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Fetch parent profile
   const { data: profile, isLoading } = useQuery<any>({
@@ -86,78 +83,7 @@ const ParentProfile: React.FC = () => {
     },
   });
 
-  // Image upload mutation
-  const uploadImageMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('profileImage', file);
-      
-      const response = await fetch('/api/parent/upload-image', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Rasm yuklashda xatolik');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profile/parent'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-      toast({
-        title: 'Muvaffaqiyat',
-        description: 'Profil rasmi muvaffaqiyatli yuklandi',
-      });
-      setSelectedImage(null);
-      setImagePreview(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Xatolik',
-        description: error.message || 'Rasm yuklashda xatolik',
-        variant: 'destructive',
-      });
-    },
-  });
 
-  // Handle image selection
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast({
-          title: "Xatolik",
-          description: "Rasm hajmi 5MB dan oshmasligi kerak",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Handle image upload
-  const handleImageUpload = async () => {
-    if (!selectedImage) return;
-    
-    try {
-      await uploadImageMutation.mutateAsync(selectedImage);
-    } catch (error) {
-      // Error handled in mutation
-    }
-  };
 
   const onSubmit = (data: ParentProfileFormData) => {
     if (profile) {
@@ -243,78 +169,29 @@ const ParentProfile: React.FC = () => {
         {/* Profile Content */}
         <div className="max-w-4xl mx-auto">
         
-        {/* Profile Image Card */}
+        {/* Profile Information Notice */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Profil Rasmi</CardTitle>
+            <CardTitle>Profil Ma'lumotlari</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col items-center space-y-4">
-              {/* Profile Image Display */}
-              <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                {imagePreview ? (
-                  <img 
-                    src={imagePreview} 
-                    alt="Profil rasmi" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : user?.profileImage ? (
-                  <img 
-                    src={user.profileImage} 
-                    alt="Profil rasmi" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="w-16 h-16 text-gray-400" />
-                )}
-              </div>
-              
-              {/* Upload Controls */}
-              <div className="flex flex-col items-center space-y-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageSelect}
-                  className="hidden"
-                  id="profileImageInput"
-                />
-                <Label 
-                  htmlFor="profileImageInput"
-                  className="cursor-pointer inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Rasm tanlash
-                </Label>
-                
-                {selectedImage && (
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">{selectedImage.name}</span>
-                    <Button
-                      type="button"
-                      onClick={handleImageUpload}
-                      disabled={uploadImageMutation.isPending}
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      {uploadImageMutation.isPending ? 'Yuklanmoqda...' : 'Yuklash'}
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        setSelectedImage(null);
-                        setImagePreview(null);
-                      }}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Bekor qilish
-                    </Button>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <User className="h-5 w-5 text-blue-400" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-blue-800">
+                    Ota-ona profili
+                  </h3>
+                  <div className="mt-2 text-sm text-blue-700">
+                    <p>
+                      Ota-ona uchun profil surati yuklash imkoniyati mavjud emas. 
+                      Faqat ism-familya va telefon raqamingizni yangilashingiz mumkin.
+                    </p>
                   </div>
-                )}
+                </div>
               </div>
-              <p className="text-sm text-gray-500 text-center">
-                Rasm hajmi 5MB dan oshmasligi kerak. JPG, PNG formatlar qabul qilinadi.
-              </p>
             </div>
           </CardContent>
         </Card>

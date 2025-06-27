@@ -2197,31 +2197,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Parent Profile Image Upload Route (uploads to users table)
-  app.post("/api/parent/upload-image", authenticate, authorize(["parent"]), upload.single('profileImage'), async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "Rasm fayli kiritilmagan" });
-      }
-
-      // Update user profile image directly in users table
-      const updatedUser = await storage.updateUser(req.user!.userId, {
-        profileImage: `/uploads/${req.file.filename}`
-      });
-
-      if (!updatedUser) {
-        return res.status(404).json({ message: "Foydalanuvchi topilmadi" });
-      }
-
-      return res.status(200).json({ 
-        message: "Rasm muvaffaqiyatli yuklandi",
-        profileImage: updatedUser.profileImage
-      });
-    } catch (error) {
-      console.error("Error uploading parent profile image:", error);
-      return res.status(500).json({ message: "Rasm yuklashda xatolik yuz berdi" });
-    }
-  });
+  // Parent Profile Image Upload Route - DISABLED
+  // Parent users cannot upload profile images as per optimization requirements
 
   // Center Profile Image Upload Route
   app.post("/api/center/upload-image", authenticate, authorize(["center"]), upload.single('profileImage'), async (req, res) => {

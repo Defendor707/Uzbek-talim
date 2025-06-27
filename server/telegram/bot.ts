@@ -1222,7 +1222,7 @@ bot.command('parent_edit', async (ctx) => {
         parse_mode: 'Markdown',
         ...Markup.keyboard([
           ['✏️ Ismni o\'zgartirish', '📞 Telefon raqam'],
-          ['📷 Profil surati', '🔙 Orqaga']
+          ['🔙 Orqaga']
         ]).resize()
       }
     );
@@ -1425,6 +1425,16 @@ bot.hears('📷 Profil surati', async (ctx) => {
     return;
   }
 
+  // Exclude parent role from profile image upload
+  if (user.role === 'parent') {
+    await ctx.reply(
+      '❌ Ota-ona uchun profil surati yuklash imkoniyati mavjud emas.\n\n' +
+      'Faqat ism-familya va telefon raqamni o\'zgartirishingiz mumkin.',
+      Markup.keyboard([['🔙 Orqaga']]).resize()
+    );
+    return;
+  }
+
   ctx.session.editingField = 'profileImage';
   await ctx.reply(
     '📷 *Profil surati yuklash*\n\n' +
@@ -1432,7 +1442,8 @@ bot.hears('📷 Profil surati', async (ctx) => {
     '💡 Tavsiyalar:\n' +
     '• Rasm aniq va sifatli bo\'lsin\n' +
     '• Yuz yaqqol ko\'rinsin\n' +
-    '• Fayl hajmi 5MB dan oshmasin',
+    '• Fayl hajmi 5MB dan oshmasin\n' +
+    '• Yuklanish vaqti optimallashtirilgan',
     { 
       parse_mode: 'Markdown',
       ...Markup.keyboard([['🔙 Orqaga']]).resize()
@@ -1542,7 +1553,14 @@ bot.on('photo', async (ctx, next) => {
       const photos = ctx.message.photo;
       const photo = photos[photos.length - 1];
 
-      // Download photo from Telegram
+      // Check if user has parent role - no profile image upload allowed
+      if (user.role === 'parent') {
+        await ctx.reply('❌ Ota-ona uchun profil surati yuklash imkoniyati mavjud emas.');
+        ctx.session.editingField = undefined;
+        return;
+      }
+
+      // Download photo from Telegram with optimized approach
       const fileLink = await ctx.telegram.getFileLink(photo.file_id);
       
       // Import necessary modules
@@ -1556,29 +1574,69 @@ bot.on('photo', async (ctx, next) => {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
 
-      // Generate unique filename
+      // Generate optimized filename with role prefix
       const timestamp = Date.now();
-      const filename = `profile_${user.id}_${timestamp}.jpg`;
+      const filename = `${user.role}_profile_${user.id}_${timestamp}.jpg`;
       const filepath = path.join(uploadsDir, filename);
 
-      // Download and save the image
+      // Optimized download with better error handling and timeout
       await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Download timeout - 30 seconds exceeded'));
+        }, 30000); // 30 second timeout
+
         const file = fs.createWriteStream(filepath);
-        https.get(fileLink.href, (response: any) => {
+        
+        const request = https.get(fileLink.href, {
+          timeout: 20000, // 20 second connection timeout
+        }, (response: any) => {
+          clearTimeout(timeout);
+          
           if (response.statusCode !== 200) {
+            file.destroy();
             reject(new Error(`HTTP ${response.statusCode}: ${response.statusMessage}`));
             return;
           }
+
+          // Check file size (max 5MB)
+          const contentLength = parseInt(response.headers['content-length'] || '0');
+          if (contentLength > 5 * 1024 * 1024) {
+            file.destroy();
+            reject(new Error('File size exceeds 5MB limit'));
+            return;
+          }
+
           response.pipe(file);
+          
           file.on('finish', () => {
             file.close();
             resolve(null);
           });
+          
           file.on('error', (err: any) => {
-            fs.unlinkSync(filepath); // Delete incomplete file
+            clearTimeout(timeout);
+            if (fs.existsSync(filepath)) {
+              fs.unlinkSync(filepath); // Delete incomplete file
+            }
             reject(err);
           });
-        }).on('error', reject);
+        });
+
+        request.on('error', (err: any) => {
+          clearTimeout(timeout);
+          if (fs.existsSync(filepath)) {
+            fs.unlinkSync(filepath);
+          }
+          reject(err);
+        });
+
+        request.on('timeout', () => {
+          request.destroy();
+          if (fs.existsSync(filepath)) {
+            fs.unlinkSync(filepath);
+          }
+          reject(new Error('Request timeout'));
+        });
       });
 
       // Update profile based on user role
@@ -1622,10 +1680,6 @@ bot.on('photo', async (ctx, next) => {
         } else {
           await storage.createStudentProfile(profileData);
         }
-      } else if (user.role === 'parent') {
-        await storage.updateUser(user.id, {
-          profileImage: profileImagePath
-        });
       } else if (user.role === 'center') {
         let profile = await storage.getCenterProfile(user.id);
         const profileData = {

@@ -134,6 +134,28 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 27, 2025: Optimized Telegram Bot Profile Picture Upload and Removed Parent Profile Image Upload
+  - **Telegram Bot Optimization**: Enhanced profile picture upload functionality with performance improvements
+    - Added timeout protection (30 seconds) for download operations to prevent hanging
+    - Implemented file size validation (5MB limit) during download process
+    - Enhanced error handling with proper cleanup of incomplete files
+    - Added role-based filename prefixes for better file organization
+    - Optimized HTTPS connection settings with proper timeout configuration
+    - Improved progress feedback and error messaging for users
+  - **Parent Profile Image Upload Removal**: Completely disabled profile picture upload for parent users
+    - Removed "📷 Profil surati" button from parent profile editing menu in Telegram bot
+    - Added role validation in photo upload handler to block parent uploads
+    - Updated button handler to show clear error message for parent users
+    - Removed profile image upload UI components from ParentProfile frontend page
+    - Disabled parent profile image upload API endpoint
+    - Added informational notice explaining parent limitations
+  - **Enhanced User Experience**: Improved clarity and performance
+    - Clear messaging about parent role restrictions
+    - Optimized upload process for allowed roles (teacher, student, center)
+    - Better error handling and user feedback throughout the system
+    - Streamlined parent profile interface focusing on essential information only
+  - User feedback: "Telegram bot orqali profil suratini yuklash imkoniyati optimization qil. Ota ona profilidan profil suratini yuklash imkoniyatini olib tashla faolsizlantirma olib tashla."
+
 - June 27, 2025: Implemented Complete PWA (Progressive Web App) Support
   - **PWA Manifest Configuration**: Added comprehensive web app manifest with proper icons, theme colors, and app metadata
     - Multi-language support (Uzbek) with proper app naming and descriptions
