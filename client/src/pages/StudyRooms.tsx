@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
-import { apiRequest } from "@/lib/queryClient";
+import useAuth from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +15,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { StudyRoom, InsertStudyRoom } from "@shared/schema";
-import ResponsiveDashboard from "@/components/ResponsiveDashboard";
 
 const createRoomSchema = z.object({
   title: z.string().min(3, "Xona nomi kamida 3 ta belgidan iborat bo'lishi kerak"),
@@ -50,24 +48,33 @@ export default function StudyRooms() {
   });
 
   // Fetch active study rooms
-  const { data: studyRooms = [], isLoading: isLoadingRooms } = useQuery({
+  const { data: studyRooms = [], isLoading: isLoadingRooms } = useQuery<any[]>({
     queryKey: ["/api/study-rooms"],
-    queryFn: () => apiRequest("/api/study-rooms"),
   });
 
   // Fetch user's study rooms
-  const { data: myRooms = [], isLoading: isLoadingMyRooms } = useQuery({
+  const { data: myRooms = [], isLoading: isLoadingMyRooms } = useQuery<any[]>({
     queryKey: ["/api/my-study-rooms"],
-    queryFn: () => apiRequest("/api/my-study-rooms"),
   });
 
   // Create study room mutation
   const createRoomMutation = useMutation({
     mutationFn: async (data: CreateRoomFormData) => {
-      return await apiRequest("/api/study-rooms", {
+      const response = await fetch("/api/study-rooms", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
         body: JSON.stringify(data),
       });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Xona yaratishda xatolik");
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/study-rooms"] });
@@ -80,15 +87,33 @@ export default function StudyRooms() {
   // Join room by code mutation
   const joinRoomMutation = useMutation({
     mutationFn: async (code: string) => {
-      const room = await apiRequest(`/api/study-rooms/code/${code}`);
-      await apiRequest(`/api/study-rooms/${room.id}/join`, {
-        method: "POST",
+      const roomResponse = await fetch(`/api/study-rooms/code/${code}`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
       });
+      
+      if (!roomResponse.ok) {
+        throw new Error("Xona topilmadi");
+      }
+      
+      const room = await roomResponse.json();
+      
+      const joinResponse = await fetch(`/api/study-rooms/${room.id}/join`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      
+      if (!joinResponse.ok) {
+        throw new Error("Xonaga qo'shilishda xatolik");
+      }
+      
       return room;
     },
     onSuccess: (room) => {
       queryClient.invalidateQueries({ queryKey: ["/api/my-study-rooms"] });
-      // Navigate to the room
       window.location.href = `/study-room/${room.id}`;
     },
   });
@@ -142,7 +167,7 @@ export default function StudyRooms() {
   ];
 
   return (
-    <ResponsiveDashboard navItems={navItems}>
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4 space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -526,6 +551,6 @@ export default function StudyRooms() {
           </TabsContent>
         </Tabs>
       </div>
-    </ResponsiveDashboard>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
+import useAuth from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,34 +63,28 @@ export default function StudyRoom() {
   const [showWhiteboard, setShowWhiteboard] = useState(false);
 
   // Fetch room data
-  const { data: room, isLoading } = useQuery({
+  const { data: room, isLoading } = useQuery<any>({
     queryKey: [`/api/study-rooms/${roomId}`],
-    queryFn: () => apiRequest(`/api/study-rooms/${roomId}`),
     enabled: !!roomId,
   });
 
   // Fetch chat messages
-  const { data: chatMessages = [] } = useQuery({
+  const { data: chatMessages = [] } = useQuery<any[]>({
     queryKey: [`/api/study-rooms/${roomId}/messages`],
-    queryFn: () => apiRequest(`/api/study-rooms/${roomId}/messages`),
     enabled: !!roomId,
   });
 
   // Join room mutation
   const joinRoomMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/study-rooms/${roomId}/join`, {
-        method: "POST",
-      });
+      return await apiRequest(`/api/study-rooms/${roomId}/join`, "POST");
     },
   });
 
   // Leave room mutation
   const leaveRoomMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/study-rooms/${roomId}/leave`, {
-        method: "POST",
-      });
+      return await apiRequest(`/api/study-rooms/${roomId}/leave`, "POST");
     },
     onSuccess: () => {
       window.location.href = "/study-rooms";

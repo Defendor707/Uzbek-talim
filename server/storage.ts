@@ -40,6 +40,8 @@ export interface IStorage {
   updateLesson(id: number, lesson: Partial<schema.InsertLesson>): Promise<schema.Lesson | undefined>;
   deleteLessonById(id: number): Promise<boolean>;
   getLessonsByTeacherId(teacherId: number): Promise<schema.Lesson[]>;
+  getLessonsByGrade(grade: string): Promise<schema.Lesson[]>;
+  searchLessons(query: string): Promise<schema.Lesson[]>;
 
 
   // Test related methods
@@ -129,8 +131,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<schema.User | undefined> {
-    const [user] = await db.select().from(schema.users).where(eq(schema.users.email, email));
-    return user;
+    // Email field was removed from users table
+    return undefined;
   }
 
   async getUserByUsername(username: string): Promise<schema.User | undefined> {
@@ -321,7 +323,11 @@ export class DatabaseStorage implements IStorage {
 
   // Lesson related methods
   async createLesson(lesson: schema.InsertLesson): Promise<schema.Lesson> {
-    const [newLesson] = await db.insert(schema.lessons).values(lesson).returning();
+    const lessonData = {
+      ...lesson,
+      price: lesson.price?.toString() // Convert number to string for numeric type
+    };
+    const [newLesson] = await db.insert(schema.lessons).values(lessonData).returning();
     return newLesson;
   }
 
@@ -331,9 +337,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateLesson(id: number, lessonData: Partial<schema.InsertLesson>): Promise<schema.Lesson | undefined> {
+    const updateData = {
+      ...lessonData,
+      price: lessonData.price?.toString(), // Convert number to string for numeric type
+      updatedAt: new Date()
+    };
+    
     const [updatedLesson] = await db
       .update(schema.lessons)
-      .set({ ...lessonData, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(schema.lessons.id, id))
       .returning();
 
@@ -349,7 +361,27 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(schema.lessons).where(eq(schema.lessons.teacherId, teacherId));
   }
 
+  async getLessonsByGrade(grade: string): Promise<schema.Lesson[]> {
+    return await db.select()
+      .from(schema.lessons)
+      .where(eq(schema.lessons.status, 'active'))
+      .orderBy(desc(schema.lessons.createdAt));
+  }
 
+  async searchLessons(query: string): Promise<schema.Lesson[]> {
+    const searchPattern = `%${query.toLowerCase()}%`;
+    return await db.select()
+      .from(schema.lessons)
+      .where(and(
+        eq(schema.lessons.status, 'active'),
+        or(
+          sql`LOWER(${schema.lessons.title}) LIKE ${searchPattern}`,
+          sql`LOWER(${schema.lessons.description}) LIKE ${searchPattern}`,
+          sql`LOWER(${schema.lessons.topic}) LIKE ${searchPattern}`
+        )
+      ))
+      .orderBy(desc(schema.lessons.createdAt));
+  }
 
   // Test related methods
   async createTest(test: schema.InsertTest): Promise<schema.Test> {

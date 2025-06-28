@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { BookOpen, Clock, Tag, Eye, Search, Filter, X } from 'lucide-react';
@@ -11,12 +11,33 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const StudentLessonsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('');
   const [topicFilter, setTopicFilter] = useState('');
 
-  // Fetch lessons
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch lessons with search
   const { data: lessons } = useQuery<any[]>({
-    queryKey: ['/api/lessons'],
+    queryKey: ['/api/lessons', debouncedSearchTerm],
+    queryFn: async () => {
+      const url = debouncedSearchTerm 
+        ? `/api/lessons?q=${encodeURIComponent(debouncedSearchTerm)}`
+        : '/api/lessons';
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch lessons');
+      return response.json();
+    },
   });
 
   // Filter and search lessons

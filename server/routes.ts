@@ -312,22 +312,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/lessons", authenticate, async (req, res) => {
     try {
       let lessons: any[] = [];
-
-      if (req.user?.role === "teacher") {
-        // Teachers see their own lessons
-        lessons = await storage.getLessonsByTeacherId(req.user.userId);
-      } else if (req.user?.role === "student") {
-        // Students see lessons for their grade
-        const profile = await storage.getStudentProfile(req.user.userId);
-        if (profile?.grade) {
-          lessons = await storage.getLessonsByGrade(profile.grade);
+      
+      // Check if there's a search query
+      const searchQuery = req.query.q as string;
+      
+      if (searchQuery) {
+        // If search query provided, search across all lessons
+        lessons = await storage.searchLessons(searchQuery);
+      } else {
+        // Otherwise, return lessons based on user role
+        if (req.user?.role === "teacher") {
+          // Teachers see their own lessons
+          lessons = await storage.getLessonsByTeacherId(req.user.userId);
         } else {
-          // Return empty array if no profile exists instead of error
-          lessons = [];
+          // Students, centers, and parents see all active lessons
+          lessons = await storage.getLessonsByGrade("");
         }
-      } else if (req.user?.role === "center" || req.user?.role === "parent") {
-        // Centers and parents see all lessons (or could be filtered by grade)
-        lessons = await storage.getLessonsByGrade("10"); // Get grade 10 lessons as default
       }
 
       return res.status(200).json(lessons);
