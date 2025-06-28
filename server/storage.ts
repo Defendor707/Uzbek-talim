@@ -1,4 +1,4 @@
-import { eq, and, inArray, like, desc, sql } from "drizzle-orm";
+import { eq, and, inArray, like, desc, sql, or, ilike, gt } from "drizzle-orm";
 import { db } from "./db";
 import * as schema from "@shared/schema";
 import bcrypt from 'bcrypt';
@@ -85,6 +85,40 @@ export interface IStorage {
   
   // Center search methods
   searchCenters(filters: { query?: string; city?: string; specialization?: string }): Promise<any[]>;
+  
+  // Study Room methods
+  createStudyRoom(room: schema.InsertStudyRoom): Promise<schema.StudyRoom>;
+  getStudyRoomById(id: number): Promise<schema.StudyRoom | undefined>;
+  getStudyRoomByCode(roomCode: string): Promise<schema.StudyRoom | undefined>;
+  updateStudyRoom(id: number, roomData: Partial<schema.InsertStudyRoom>): Promise<schema.StudyRoom | undefined>;
+  deleteStudyRoom(id: number): Promise<boolean>;
+  getActiveStudyRooms(): Promise<schema.StudyRoom[]>;
+  getStudyRoomsByHost(hostId: number): Promise<schema.StudyRoom[]>;
+  getStudyRoomsBySubject(subject: string): Promise<schema.StudyRoom[]>;
+  
+  // Study Room Participant methods
+  joinStudyRoom(roomId: number, userId: number, role?: string): Promise<schema.StudyRoomParticipant>;
+  leaveStudyRoom(roomId: number, userId: number): Promise<boolean>;
+  getStudyRoomParticipants(roomId: number): Promise<any[]>;
+  getUserStudyRooms(userId: number): Promise<any[]>;
+  updateParticipantPermissions(roomId: number, userId: number, permissions: any): Promise<boolean>;
+  
+  // Study Room Message methods
+  createStudyRoomMessage(message: schema.InsertStudyRoomMessage): Promise<schema.StudyRoomMessage>;
+  getStudyRoomMessages(roomId: number, limit?: number): Promise<any[]>;
+  editStudyRoomMessage(messageId: number, content: string): Promise<boolean>;
+  deleteStudyRoomMessage(messageId: number): Promise<boolean>;
+  
+  // Whiteboard methods
+  createWhiteboardSession(session: schema.InsertWhiteboardSession): Promise<schema.WhiteboardSession>;
+  getWhiteboardSessions(roomId: number): Promise<schema.WhiteboardSession[]>;
+  updateWhiteboardSession(sessionId: number, data: any): Promise<boolean>;
+  deleteWhiteboardSession(sessionId: number): Promise<boolean>;
+  
+  // Screen Sharing methods
+  createScreenSharingSession(session: schema.InsertScreenSharingSession): Promise<schema.ScreenSharingSession>;
+  endScreenSharingSession(sessionId: number): Promise<boolean>;
+  getActiveScreenSharingSession(roomId: number): Promise<schema.ScreenSharingSession | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -710,6 +744,322 @@ export class DatabaseStorage implements IStorage {
       console.error('Error searching centers:', error);
       return [];
     }
+  }
+
+  // Study Room methods
+  async createStudyRoom(room: schema.InsertStudyRoom): Promise<schema.StudyRoom> {
+    const result = await db.insert(schema.studyRooms).values(room).returning();
+    return result[0];
+  }
+
+  async getStudyRoomById(id: number): Promise<schema.StudyRoom | undefined> {
+    const [room] = await db.select().from(schema.studyRooms).where(eq(schema.studyRooms.id, id));
+    return room;
+  }
+
+  async getStudyRoomByCode(roomCode: string): Promise<schema.StudyRoom | undefined> {
+    const [room] = await db.select().from(schema.studyRooms).where(eq(schema.studyRooms.roomCode, roomCode));
+    return room;
+  }
+
+  async updateStudyRoom(id: number, roomData: Partial<schema.InsertStudyRoom>): Promise<schema.StudyRoom | undefined> {
+    const result = await db.update(schema.studyRooms)
+      .set({ ...roomData, updatedAt: new Date() })
+      .where(eq(schema.studyRooms.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteStudyRoom(id: number): Promise<boolean> {
+    try {
+      await db.delete(schema.studyRooms).where(eq(schema.studyRooms.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting study room:', error);
+      return false;
+    }
+  }
+
+  async getActiveStudyRooms(): Promise<schema.StudyRoom[]> {
+    const rooms = await db.select()
+      .from(schema.studyRooms)
+      .where(eq(schema.studyRooms.status, 'active'))
+      .orderBy(desc(schema.studyRooms.createdAt));
+    return rooms;
+  }
+
+  async getStudyRoomsByHost(hostId: number): Promise<schema.StudyRoom[]> {
+    const rooms = await db.select()
+      .from(schema.studyRooms)
+      .where(eq(schema.studyRooms.hostId, hostId))
+      .orderBy(desc(schema.studyRooms.createdAt));
+    return rooms;
+  }
+
+  async getStudyRoomsBySubject(subject: string): Promise<schema.StudyRoom[]> {
+    const rooms = await db.select()
+      .from(schema.studyRooms)
+      .where(and(
+        eq(schema.studyRooms.subject, subject),
+        eq(schema.studyRooms.status, 'active')
+      ))
+      .orderBy(desc(schema.studyRooms.createdAt));
+    return rooms;
+  }
+
+  // Study Room Participant methods
+  async joinStudyRoom(roomId: number, userId: number, role: string = 'participant'): Promise<schema.StudyRoomParticipant> {
+    // Check if user is already in the room
+    const existing = await db.select()
+      .from(schema.studyRoomParticipants)
+      .where(and(
+        eq(schema.studyRoomParticipants.roomId, roomId),
+        eq(schema.studyRoomParticipants.userId, userId),
+        eq(schema.studyRoomParticipants.isActive, true)
+      ));
+
+    if (existing.length > 0) {
+      return existing[0];
+    }
+
+    // Join the room
+    const result = await db.insert(schema.studyRoomParticipants).values({
+      roomId,
+      userId,
+      role: role as any,
+      isActive: true,
+    }).returning();
+
+    // Update participant count
+    await db.update(schema.studyRooms)
+      .set({ 
+        currentParticipants: sql`${schema.studyRooms.currentParticipants} + 1`,
+        updatedAt: new Date()
+      })
+      .where(eq(schema.studyRooms.id, roomId));
+
+    return result[0];
+  }
+
+  async leaveStudyRoom(roomId: number, userId: number): Promise<boolean> {
+    try {
+      // Mark participant as inactive
+      await db.update(schema.studyRoomParticipants)
+        .set({ 
+          isActive: false,
+          leftAt: new Date()
+        })
+        .where(and(
+          eq(schema.studyRoomParticipants.roomId, roomId),
+          eq(schema.studyRoomParticipants.userId, userId)
+        ));
+
+      // Update participant count
+      await db.update(schema.studyRooms)
+        .set({ 
+          currentParticipants: sql`${schema.studyRooms.currentParticipants} - 1`,
+          updatedAt: new Date()
+        })
+        .where(eq(schema.studyRooms.id, roomId));
+
+      return true;
+    } catch (error) {
+      console.error('Error leaving study room:', error);
+      return false;
+    }
+  }
+
+  async getStudyRoomParticipants(roomId: number): Promise<any[]> {
+    const participants = await db.select({
+      id: schema.studyRoomParticipants.id,
+      userId: schema.studyRoomParticipants.userId,
+      role: schema.studyRoomParticipants.role,
+      joinedAt: schema.studyRoomParticipants.joinedAt,
+      permissions: schema.studyRoomParticipants.permissions,
+      username: schema.users.username,
+      fullName: schema.users.fullName,
+      profileImage: schema.users.profileImage,
+    })
+    .from(schema.studyRoomParticipants)
+    .innerJoin(schema.users, eq(schema.studyRoomParticipants.userId, schema.users.id))
+    .where(and(
+      eq(schema.studyRoomParticipants.roomId, roomId),
+      eq(schema.studyRoomParticipants.isActive, true)
+    ))
+    .orderBy(schema.studyRoomParticipants.joinedAt);
+    
+    return participants;
+  }
+
+  async getUserStudyRooms(userId: number): Promise<any[]> {
+    const rooms = await db.select({
+      id: schema.studyRooms.id,
+      title: schema.studyRooms.title,
+      description: schema.studyRooms.description,
+      type: schema.studyRooms.type,
+      status: schema.studyRooms.status,
+      currentParticipants: schema.studyRooms.currentParticipants,
+      maxParticipants: schema.studyRooms.maxParticipants,
+      roomCode: schema.studyRooms.roomCode,
+      subject: schema.studyRooms.subject,
+      role: schema.studyRoomParticipants.role,
+      joinedAt: schema.studyRoomParticipants.joinedAt,
+    })
+    .from(schema.studyRoomParticipants)
+    .innerJoin(schema.studyRooms, eq(schema.studyRoomParticipants.roomId, schema.studyRooms.id))
+    .where(and(
+      eq(schema.studyRoomParticipants.userId, userId),
+      eq(schema.studyRoomParticipants.isActive, true)
+    ))
+    .orderBy(desc(schema.studyRoomParticipants.joinedAt));
+    
+    return rooms;
+  }
+
+  async updateParticipantPermissions(roomId: number, userId: number, permissions: any): Promise<boolean> {
+    try {
+      await db.update(schema.studyRoomParticipants)
+        .set({ permissions })
+        .where(and(
+          eq(schema.studyRoomParticipants.roomId, roomId),
+          eq(schema.studyRoomParticipants.userId, userId)
+        ));
+      return true;
+    } catch (error) {
+      console.error('Error updating participant permissions:', error);
+      return false;
+    }
+  }
+
+  // Study Room Message methods
+  async createStudyRoomMessage(message: schema.InsertStudyRoomMessage): Promise<schema.StudyRoomMessage> {
+    const result = await db.insert(schema.studyRoomMessages).values(message).returning();
+    return result[0];
+  }
+
+  async getStudyRoomMessages(roomId: number, limit: number = 50): Promise<any[]> {
+    const messages = await db.select({
+      id: schema.studyRoomMessages.id,
+      content: schema.studyRoomMessages.content,
+      type: schema.studyRoomMessages.type,
+      metadata: schema.studyRoomMessages.metadata,
+      isEdited: schema.studyRoomMessages.isEdited,
+      createdAt: schema.studyRoomMessages.createdAt,
+      userId: schema.studyRoomMessages.userId,
+      username: schema.users.username,
+      fullName: schema.users.fullName,
+      profileImage: schema.users.profileImage,
+    })
+    .from(schema.studyRoomMessages)
+    .innerJoin(schema.users, eq(schema.studyRoomMessages.userId, schema.users.id))
+    .where(eq(schema.studyRoomMessages.roomId, roomId))
+    .orderBy(desc(schema.studyRoomMessages.createdAt))
+    .limit(limit);
+    
+    return messages.reverse(); // Show oldest first
+  }
+
+  async editStudyRoomMessage(messageId: number, content: string): Promise<boolean> {
+    try {
+      await db.update(schema.studyRoomMessages)
+        .set({ 
+          content,
+          isEdited: true,
+          editedAt: new Date()
+        })
+        .where(eq(schema.studyRoomMessages.id, messageId));
+      return true;
+    } catch (error) {
+      console.error('Error editing message:', error);
+      return false;
+    }
+  }
+
+  async deleteStudyRoomMessage(messageId: number): Promise<boolean> {
+    try {
+      await db.delete(schema.studyRoomMessages).where(eq(schema.studyRoomMessages.id, messageId));
+      return true;
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      return false;
+    }
+  }
+
+  // Whiteboard methods
+  async createWhiteboardSession(session: schema.InsertWhiteboardSession): Promise<schema.WhiteboardSession> {
+    const result = await db.insert(schema.whiteboardSessions).values(session).returning();
+    return result[0];
+  }
+
+  async getWhiteboardSessions(roomId: number): Promise<schema.WhiteboardSession[]> {
+    const sessions = await db.select()
+      .from(schema.whiteboardSessions)
+      .where(and(
+        eq(schema.whiteboardSessions.roomId, roomId),
+        eq(schema.whiteboardSessions.isActive, true)
+      ))
+      .orderBy(desc(schema.whiteboardSessions.createdAt));
+    return sessions;
+  }
+
+  async updateWhiteboardSession(sessionId: number, data: any): Promise<boolean> {
+    try {
+      await db.update(schema.whiteboardSessions)
+        .set({ 
+          data,
+          updatedAt: new Date()
+        })
+        .where(eq(schema.whiteboardSessions.id, sessionId));
+      return true;
+    } catch (error) {
+      console.error('Error updating whiteboard session:', error);
+      return false;
+    }
+  }
+
+  async deleteWhiteboardSession(sessionId: number): Promise<boolean> {
+    try {
+      await db.update(schema.whiteboardSessions)
+        .set({ isActive: false })
+        .where(eq(schema.whiteboardSessions.id, sessionId));
+      return true;
+    } catch (error) {
+      console.error('Error deleting whiteboard session:', error);
+      return false;
+    }
+  }
+
+  // Screen Sharing methods
+  async createScreenSharingSession(session: schema.InsertScreenSharingSession): Promise<schema.ScreenSharingSession> {
+    const result = await db.insert(schema.screenSharingSessions).values(session).returning();
+    return result[0];
+  }
+
+  async endScreenSharingSession(sessionId: number): Promise<boolean> {
+    try {
+      await db.update(schema.screenSharingSessions)
+        .set({ 
+          isActive: false,
+          endedAt: new Date()
+        })
+        .where(eq(schema.screenSharingSessions.id, sessionId));
+      return true;
+    } catch (error) {
+      console.error('Error ending screen sharing session:', error);
+      return false;
+    }
+  }
+
+  async getActiveScreenSharingSession(roomId: number): Promise<schema.ScreenSharingSession | undefined> {
+    const [session] = await db.select()
+      .from(schema.screenSharingSessions)
+      .where(and(
+        eq(schema.screenSharingSessions.roomId, roomId),
+        eq(schema.screenSharingSessions.isActive, true)
+      ))
+      .orderBy(desc(schema.screenSharingSessions.startedAt))
+      .limit(1);
+    return session;
   }
 }
 

@@ -39,6 +39,8 @@ import TestResult from "@/pages/student/TestResult";
 import TeacherSearchCenters from "@/pages/teacher/SearchCenters";
 import StudentSearchCenters from "@/pages/student/SearchCenters";
 import ParentSearchCenters from "@/pages/parent/SearchCenters";
+import StudyRooms from "@/pages/StudyRooms";
+import StudyRoom from "@/pages/StudyRoom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import useAuth from "@/hooks/useAuth";
 import { useEffect } from "react";
@@ -181,6 +183,18 @@ function Router() {
       <Route path="/student/search-centers">
         <ProtectedRoute allowedRoles={["student"]}>
           <StudentSearchCenters />
+        </ProtectedRoute>
+      </Route>
+      
+      {/* Study Room routes */}
+      <Route path="/study-rooms">
+        <ProtectedRoute allowedRoles={["teacher", "student"]}>
+          <StudyRooms />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/study-room/:id">
+        <ProtectedRoute allowedRoles={["teacher", "student"]}>
+          <StudyRoom />
         </ProtectedRoute>
       </Route>
       

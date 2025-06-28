@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { authenticate, authorize, login, register } from "./utils/auth";
 import { upload, uploadLessonFile, uploadProfileImage, uploadTestImage, uploadQuestionImage } from "./utils/upload";
@@ -13,6 +14,7 @@ import { generalLimiter, authLimiter, uploadLimiter, testLimiter } from "./middl
 import { testsCache, lessonsCache, profileCache, statisticsCache, invalidateTestsCache, invalidateLessonsCache, invalidateUserCache } from "./middleware/cache";
 import { globalErrorHandler, notFoundHandler, requestLogger, asyncHandler } from "./middleware/errorHandler";
 import autoSaveMiddleware from "./middleware/autoSave";
+import * as jwt from "jsonwebtoken";
 
 // Helper function to determine if notification should be sent based on settings
 function shouldSendNotification(settings: any, scorePercentage: number): boolean {
@@ -2434,6 +2436,221 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize WebSocket sync service
   syncService.init(httpServer);
 
+  // Initialize Study Room WebSocket Server
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws/study-room' });
+  
+  interface StudyRoomClient {
+    ws: WebSocket;
+    userId: number;
+    roomId: number;
+    username: string;
+  }
+
+  const studyRoomClients = new Map<number, Set<StudyRoomClient>>();
+
+  wss.on('connection', async (ws, req) => {
+    try {
+      // Extract token from query params
+      const url = new URL(req.url!, `http://${req.headers.host}`);
+      const token = url.searchParams.get('token');
+      
+      if (!token) {
+        ws.close(1008, 'Authentication required');
+        return;
+      }
+
+      // Verify JWT token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+      const user = await storage.getUser(decoded.userId);
+      
+      if (!user) {
+        ws.close(1008, 'Invalid user');
+        return;
+      }
+
+      let client: StudyRoomClient | null = null;
+
+      ws.on('message', async (data) => {
+        try {
+          const message = JSON.parse(data.toString());
+          
+          switch (message.type) {
+            case 'join-room':
+              const roomId = parseInt(message.roomId);
+              if (isNaN(roomId)) {
+                ws.send(JSON.stringify({ type: 'error', message: 'Invalid room ID' }));
+                return;
+              }
+
+              // Verify user is participant in the room
+              const participants = await storage.getStudyRoomParticipants(roomId);
+              const isParticipant = participants.some(p => p.userId === user.id);
+              
+              if (!isParticipant) {
+                ws.send(JSON.stringify({ type: 'error', message: 'Not authorized for this room' }));
+                return;
+              }
+
+              client = {
+                ws,
+                userId: user.id,
+                roomId,
+                username: user.username
+              };
+
+              // Add client to room
+              if (!studyRoomClients.has(roomId)) {
+                studyRoomClients.set(roomId, new Set());
+              }
+              studyRoomClients.get(roomId)!.add(client);
+
+              // Notify others about new participant
+              broadcastToRoom(roomId, {
+                type: 'user-joined',
+                user: { id: user.id, username: user.username, fullName: user.fullName }
+              }, client);
+
+              // Send current participants list
+              const currentParticipants = Array.from(studyRoomClients.get(roomId) || [])
+                .map(c => ({ id: c.userId, username: c.username }));
+              
+              ws.send(JSON.stringify({
+                type: 'participants-list',
+                participants: currentParticipants
+              }));
+              
+              break;
+
+            case 'chat-message':
+              if (!client) {
+                ws.send(JSON.stringify({ type: 'error', message: 'Not joined to any room' }));
+                return;
+              }
+
+              // Save message to database
+              const newMessage = await storage.createStudyRoomMessage({
+                roomId: client.roomId,
+                userId: client.userId,
+                content: message.content,
+                type: 'text'
+              });
+
+              // Broadcast message to all room participants
+              broadcastToRoom(client.roomId, {
+                type: 'chat-message',
+                message: {
+                  id: newMessage.id,
+                  content: newMessage.content,
+                  userId: client.userId,
+                  username: client.username,
+                  createdAt: newMessage.createdAt
+                }
+              });
+              
+              break;
+
+            case 'whiteboard-update':
+              if (!client) {
+                ws.send(JSON.stringify({ type: 'error', message: 'Not joined to any room' }));
+                return;
+              }
+
+              // Broadcast whiteboard update to others
+              broadcastToRoom(client.roomId, {
+                type: 'whiteboard-update',
+                data: message.data,
+                userId: client.userId
+              }, client);
+              
+              break;
+
+            case 'screen-share-start':
+              if (!client) {
+                ws.send(JSON.stringify({ type: 'error', message: 'Not joined to any room' }));
+                return;
+              }
+
+              // Create screen sharing session
+              const sessionId = `${client.roomId}-${client.userId}-${Date.now()}`;
+              await storage.createScreenSharingSession({
+                roomId: client.roomId,
+                userId: client.userId,
+                sessionId
+              });
+
+              // Notify all participants
+              broadcastToRoom(client.roomId, {
+                type: 'screen-share-started',
+                userId: client.userId,
+                username: client.username,
+                sessionId
+              });
+              
+              break;
+
+            case 'screen-share-end':
+              if (!client) {
+                ws.send(JSON.stringify({ type: 'error', message: 'Not joined to any room' }));
+                return;
+              }
+
+              // End active screen sharing session
+              const activeSession = await storage.getActiveScreenSharingSession(client.roomId);
+              if (activeSession && activeSession.userId === client.userId) {
+                await storage.endScreenSharingSession(activeSession.id);
+                
+                broadcastToRoom(client.roomId, {
+                  type: 'screen-share-ended',
+                  userId: client.userId
+                });
+              }
+              
+              break;
+          }
+        } catch (error) {
+          console.error('WebSocket message error:', error);
+          ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
+        }
+      });
+
+      ws.on('close', () => {
+        if (client) {
+          // Remove client from room
+          const roomClients = studyRoomClients.get(client.roomId);
+          if (roomClients) {
+            roomClients.delete(client);
+            if (roomClients.size === 0) {
+              studyRoomClients.delete(client.roomId);
+            } else {
+              // Notify others about user leaving
+              broadcastToRoom(client.roomId, {
+                type: 'user-left',
+                userId: client.userId,
+                username: client.username
+              });
+            }
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('WebSocket connection error:', error);
+      ws.close(1011, 'Server error');
+    }
+  });
+
+  function broadcastToRoom(roomId: number, message: any, exclude?: StudyRoomClient) {
+    const roomClients = studyRoomClients.get(roomId);
+    if (!roomClients) return;
+
+    const messageStr = JSON.stringify(message);
+    roomClients.forEach(client => {
+      if (client !== exclude && client.ws.readyState === WebSocket.OPEN) {
+        client.ws.send(messageStr);
+      }
+    });
+  }
+
   // Forgot password routes
   app.post('/api/auth/forgot-password', async (req, res) => {
     try {
@@ -2578,6 +2795,243 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Update parent notification settings error:', error);
       res.status(500).json({ message: "Sozlamalarni yangilashda xatolik" });
+    }
+  });
+
+  // Study Room Routes
+  app.get("/api/study-rooms", authenticate, async (req, res) => {
+    try {
+      const rooms = await storage.getActiveStudyRooms();
+      return res.status(200).json(rooms);
+    } catch (error) {
+      console.error("Error fetching study rooms:", error);
+      return res.status(500).json({ message: "Study xonalarini olishda xatolik" });
+    }
+  });
+
+  app.post("/api/study-rooms", authenticate, async (req, res) => {
+    try {
+      // Generate unique room code
+      const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      const roomData = schema.insertStudyRoomSchema.parse({
+        ...req.body,
+        hostId: req.user!.userId,
+        roomCode,
+      });
+
+      const newRoom = await storage.createStudyRoom(roomData);
+      
+      // Automatically join the host to the room
+      await storage.joinStudyRoom(newRoom.id, req.user!.userId, 'host');
+      
+      return res.status(201).json(newRoom);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: fromZodError(error).details,
+        });
+      }
+      console.error("Error creating study room:", error);
+      return res.status(500).json({ message: "Study xonasini yaratishda xatolik" });
+    }
+  });
+
+  app.get("/api/study-rooms/:id", authenticate, async (req, res) => {
+    try {
+      const roomId = parseInt(req.params.id);
+      if (isNaN(roomId)) {
+        return res.status(400).json({ message: "Noto'g'ri xona ID" });
+      }
+
+      const room = await storage.getStudyRoomById(roomId);
+      if (!room) {
+        return res.status(404).json({ message: "Study xonasi topilmadi" });
+      }
+
+      return res.status(200).json(room);
+    } catch (error) {
+      console.error("Error fetching study room:", error);
+      return res.status(500).json({ message: "Study xonasini olishda xatolik" });
+    }
+  });
+
+  app.get("/api/study-rooms/code/:code", authenticate, async (req, res) => {
+    try {
+      const { code } = req.params;
+      const room = await storage.getStudyRoomByCode(code);
+      
+      if (!room) {
+        return res.status(404).json({ message: "Study xonasi topilmadi" });
+      }
+
+      return res.status(200).json(room);
+    } catch (error) {
+      console.error("Error fetching study room by code:", error);
+      return res.status(500).json({ message: "Study xonasini olishda xatolik" });
+    }
+  });
+
+  app.post("/api/study-rooms/:id/join", authenticate, async (req, res) => {
+    try {
+      const roomId = parseInt(req.params.id);
+      if (isNaN(roomId)) {
+        return res.status(400).json({ message: "Noto'g'ri xona ID" });
+      }
+
+      const room = await storage.getStudyRoomById(roomId);
+      if (!room) {
+        return res.status(404).json({ message: "Study xonasi topilmadi" });
+      }
+
+      // Check if room is private and password is required
+      if (room.type === 'private' && room.password) {
+        const { password } = req.body;
+        if (!password || password !== room.password) {
+          return res.status(401).json({ message: "Noto'g'ri parol" });
+        }
+      }
+
+      // Check participant limit
+      if ((room.currentParticipants || 0) >= (room.maxParticipants || 50)) {
+        return res.status(400).json({ message: "Xona to'lgan" });
+      }
+
+      const participant = await storage.joinStudyRoom(roomId, req.user!.userId);
+      return res.status(200).json(participant);
+    } catch (error) {
+      console.error("Error joining study room:", error);
+      return res.status(500).json({ message: "Study xonasiga qo'shilishda xatolik" });
+    }
+  });
+
+  app.post("/api/study-rooms/:id/leave", authenticate, async (req, res) => {
+    try {
+      const roomId = parseInt(req.params.id);
+      if (isNaN(roomId)) {
+        return res.status(400).json({ message: "Noto'g'ri xona ID" });
+      }
+
+      const success = await storage.leaveStudyRoom(roomId, req.user!.userId);
+      if (!success) {
+        return res.status(400).json({ message: "Xonani tark etishda xatolik" });
+      }
+
+      return res.status(200).json({ message: "Xonani muvaffaqiyatli tark etdingiz" });
+    } catch (error) {
+      console.error("Error leaving study room:", error);
+      return res.status(500).json({ message: "Xonani tark etishda xatolik" });
+    }
+  });
+
+  app.get("/api/study-rooms/:id/participants", authenticate, async (req, res) => {
+    try {
+      const roomId = parseInt(req.params.id);
+      if (isNaN(roomId)) {
+        return res.status(400).json({ message: "Noto'g'ri xona ID" });
+      }
+
+      const participants = await storage.getStudyRoomParticipants(roomId);
+      return res.status(200).json(participants);
+    } catch (error) {
+      console.error("Error fetching participants:", error);
+      return res.status(500).json({ message: "Ishtirokchilarni olishda xatolik" });
+    }
+  });
+
+  app.get("/api/my-study-rooms", authenticate, async (req, res) => {
+    try {
+      const rooms = await storage.getUserStudyRooms(req.user!.userId);
+      return res.status(200).json(rooms);
+    } catch (error) {
+      console.error("Error fetching user study rooms:", error);
+      return res.status(500).json({ message: "Sizning xonalaringizni olishda xatolik" });
+    }
+  });
+
+  app.get("/api/study-rooms/:id/messages", authenticate, async (req, res) => {
+    try {
+      const roomId = parseInt(req.params.id);
+      if (isNaN(roomId)) {
+        return res.status(400).json({ message: "Noto'g'ri xona ID" });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 50;
+      const messages = await storage.getStudyRoomMessages(roomId, limit);
+      return res.status(200).json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      return res.status(500).json({ message: "Xabarlarni olishda xatolik" });
+    }
+  });
+
+  app.post("/api/study-rooms/:id/messages", authenticate, async (req, res) => {
+    try {
+      const roomId = parseInt(req.params.id);
+      if (isNaN(roomId)) {
+        return res.status(400).json({ message: "Noto'g'ri xona ID" });
+      }
+
+      const messageData = schema.insertStudyRoomMessageSchema.parse({
+        ...req.body,
+        roomId,
+        userId: req.user!.userId,
+      });
+
+      const newMessage = await storage.createStudyRoomMessage(messageData);
+      return res.status(201).json(newMessage);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: fromZodError(error).details,
+        });
+      }
+      console.error("Error creating message:", error);
+      return res.status(500).json({ message: "Xabar yuborishda xatolik" });
+    }
+  });
+
+  app.get("/api/study-rooms/:id/whiteboard", authenticate, async (req, res) => {
+    try {
+      const roomId = parseInt(req.params.id);
+      if (isNaN(roomId)) {
+        return res.status(400).json({ message: "Noto'g'ri xona ID" });
+      }
+
+      const sessions = await storage.getWhiteboardSessions(roomId);
+      return res.status(200).json(sessions);
+    } catch (error) {
+      console.error("Error fetching whiteboard sessions:", error);
+      return res.status(500).json({ message: "Whiteboard sessiyalarini olishda xatolik" });
+    }
+  });
+
+  app.post("/api/study-rooms/:id/whiteboard", authenticate, async (req, res) => {
+    try {
+      const roomId = parseInt(req.params.id);
+      if (isNaN(roomId)) {
+        return res.status(400).json({ message: "Noto'g'ri xona ID" });
+      }
+
+      const sessionData = schema.insertWhiteboardSessionSchema.parse({
+        ...req.body,
+        roomId,
+        createdBy: req.user!.userId,
+      });
+
+      const newSession = await storage.createWhiteboardSession(sessionData);
+      return res.status(201).json(newSession);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: fromZodError(error).details,
+        });
+      }
+      console.error("Error creating whiteboard session:", error);
+      return res.status(500).json({ message: "Whiteboard sessiyasini yaratishda xatolik" });
     }
   });
 
