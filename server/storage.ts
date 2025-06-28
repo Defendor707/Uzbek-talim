@@ -40,7 +40,7 @@ export interface IStorage {
   updateLesson(id: number, lesson: Partial<schema.InsertLesson>): Promise<schema.Lesson | undefined>;
   deleteLessonById(id: number): Promise<boolean>;
   getLessonsByTeacherId(teacherId: number): Promise<schema.Lesson[]>;
-  getLessonsByGrade(grade: string): Promise<schema.Lesson[]>;
+
 
   // Test related methods
   createTest(test: schema.InsertTest): Promise<schema.Test>;
@@ -315,9 +315,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(schema.lessons).where(eq(schema.lessons.teacherId, teacherId));
   }
 
-  async getLessonsByGrade(grade: string): Promise<schema.Lesson[]> {
-    return await db.select().from(schema.lessons).where(eq(schema.lessons.grade, grade));
-  }
+
 
   // Test related methods
   async createTest(test: schema.InsertTest): Promise<schema.Test> {

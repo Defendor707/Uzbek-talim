@@ -61,7 +61,6 @@ const createLessonSchema = z.object({
     .or(z.literal('')),
   content: z.string()
     .min(50, "Darslik matni kamida 50 ta harfdan iborat bo'lishi kerak"),
-  grade: z.string().min(1, "Sinf tanlanishi shart"),
   topic: z.string()
     .min(3, "Mavzu kamida 3 ta harfdan iborat bo'lishi kerak")
     .max(50, "Mavzu 50 ta harfdan oshmasligi kerak")
@@ -100,7 +99,6 @@ const CreateLesson: React.FC = () => {
       title: '',
       description: '',
       content: '',
-      grade: '',
       topic: '',
       difficulty: 'medium',
       estimatedTime: 30,
@@ -307,50 +305,23 @@ const CreateLesson: React.FC = () => {
                       )}
                     />
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="grade"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Sinf *</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Sinf tanlang" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {[...Array(11)].map((_, i) => (
-                                  <SelectItem key={i + 1} value={`${i + 1}`}>
-                                    {i + 1}-sinf
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="topic"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Mavzu</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                placeholder="Masalan: Biologiya - O'simliklar"
-                                className="text-base"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="topic"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mavzu</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              placeholder="Masalan: Biologiya - O'simliklar"
+                              className="text-base"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </CardContent>
                 </Card>
 

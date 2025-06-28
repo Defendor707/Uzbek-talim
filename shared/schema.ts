@@ -110,7 +110,6 @@ export const lessons = pgTable("lessons", {
   coverImage: text("cover_image"), // Cover image for the lesson
   subjectId: integer("subject_id").references(() => subjects.id),
   teacherId: integer("teacher_id").notNull().references(() => users.id),
-  grade: text("grade").notNull(),
   topic: text("topic"), // Lesson topic/chapter
   learningObjectives: text("learning_objectives").array(), // What students will learn
   keywords: text("keywords").array(), // Search keywords
