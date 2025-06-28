@@ -89,23 +89,16 @@ export const register = async (req: Request, res: Response) => {
     // Validate request body
     const userData = registerUserSchema.parse(req.body);
     
-    // For simplified registration, we'll generate a dummy email from username
-    const dummyEmail = `${userData.username}@uzbektalim.local`;
-    
     // Check if username already exists
     const existingUsername = await storage.getUserByUsername(userData.username);
     if (existingUsername) {
-      return res.status(400).json({ message: 'Username already exists' });
+      return res.status(400).json({ message: 'Foydalanuvchi nomi allaqachon mavjud' });
     }
     
-    // Create new user with only required fields
+    // Create new user with only required fields (no email needed)
     const { confirmPassword, ...userDataWithoutConfirm } = userData;
     
-    // Add generated email since our database still requires it
-    const newUser = await storage.createUser({
-      ...userDataWithoutConfirm,
-      email: dummyEmail
-    });
+    const newUser = await storage.createUser(userDataWithoutConfirm);
     
     // Create profile based on role
     if (userData.role === 'student' && req.body.studentProfile) {
