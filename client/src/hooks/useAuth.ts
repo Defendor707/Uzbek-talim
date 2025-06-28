@@ -146,13 +146,17 @@ const useAuth = () => {
     setToken(null);
     setCachedUser(null);
     queryClient.clear();
-    setLocation('/');
     
     toast({
       title: 'Chiqish',
       description: 'Tizimdan chiqish muvaffaqiyatli amalga oshirildi',
       variant: 'default',
     });
+    
+    // Force page reload to ensure clean state
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 100);
   };
 
   // Handle token validation errors with better error checking
