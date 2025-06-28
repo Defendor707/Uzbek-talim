@@ -141,6 +141,7 @@ const useAuth = () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
       localStorage.removeItem('userSession');
+      localStorage.removeItem('visited'); // Clear visited flag to show onboarding after logout
     }
     setToken(null);
     setCachedUser(null);
