@@ -134,6 +134,15 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 28, 2025: Updated Lesson Creation System with Pricing and Scheduling Fields
+  - **Removed Fields**: Eliminated content, difficulty level, and estimated time fields from lesson creation
+  - **Added Pricing Fields**: Added lesson price (in som), course duration (days), weekly hours, and daily lesson duration
+  - **Added Scheduling Fields**: Added daily schedule system where teachers can specify time slots (e.g., "09:00-10:00")
+  - **Database Schema Updates**: Modified lessons table to remove old fields and add new pricing/scheduling columns
+  - **Enhanced User Experience**: Simplified lesson creation focusing on practical course management
+  - **Responsive Design**: Maintained mobile-first approach with grid layouts for new field organization
+  - User feedback: "Darslik yaratish jarayonidan. Darslik matni, qiyinlik darajasi va taxminiy vaqt qismini olib tashla va darslik narxi davomiyligi haftadan necha soat kunning qaysi vaqtlarida dars utilishi 1kunlik dars necha soat davom etishi kabi malumotlar kiritish imkonini yarat"
+
 - June 27, 2025: Implemented Comprehensive Lesson Creation System for Teachers and Students
   - **Enhanced Lesson Schema**: Extended lessons table with rich features
     - Added cover image support for visual appeal

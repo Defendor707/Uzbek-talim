@@ -106,15 +106,20 @@ export const lessons = pgTable("lessons", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
-  content: text("content").notNull(), // Rich text content
   coverImage: text("cover_image"), // Cover image for the lesson
   subjectId: integer("subject_id").references(() => subjects.id),
   teacherId: integer("teacher_id").notNull().references(() => users.id),
   topic: text("topic"), // Lesson topic/chapter
   learningObjectives: text("learning_objectives").array(), // What students will learn
   keywords: text("keywords").array(), // Search keywords
-  difficulty: text("difficulty"), // easy, medium, hard
-  estimatedTime: integer("estimated_time"), // in minutes
+  
+  // Pricing and scheduling fields
+  price: numeric("price"), // Lesson price
+  duration: integer("duration"), // Total course duration in days
+  weeklyHours: integer("weekly_hours"), // How many hours per week
+  dailySchedule: text("daily_schedule").array(), // Array of time slots like ["09:00-10:00", "14:00-15:00"]
+  dailyLessonDuration: integer("daily_lesson_duration"), // How many hours per day
+  
   status: text("status").notNull().default('active'),
   viewCount: integer("view_count").default(0),
   likeCount: integer("like_count").default(0),
@@ -314,8 +319,11 @@ export const insertLessonSchema = createInsertSchema(lessons)
   .extend({
     learningObjectives: z.array(z.string()).optional(),
     keywords: z.array(z.string()).optional(),
-    difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
-    estimatedTime: z.number().min(1).max(240).optional(),
+    price: z.number().min(0).optional(),
+    duration: z.number().min(1).optional(),
+    weeklyHours: z.number().min(1).max(168).optional(),
+    dailySchedule: z.array(z.string()).optional(),
+    dailyLessonDuration: z.number().min(1).max(24).optional(),
   });
 
 // Schema for inserting tests

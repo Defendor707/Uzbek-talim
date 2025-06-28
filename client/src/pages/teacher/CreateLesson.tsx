@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
@@ -12,7 +12,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { 
   BookOpen, 
@@ -27,7 +26,8 @@ import {
   ChevronRight,
   AlertCircle,
   CheckCircle2,
-  Loader2
+  Loader2,
+  DollarSign
 } from 'lucide-react';
 // API request function
 const apiRequest = async (url: string, options: RequestInit = {}) => {
@@ -59,17 +59,15 @@ const createLessonSchema = z.object({
     .max(500, "Tavsif 500 ta harfdan oshmasligi kerak")
     .optional()
     .or(z.literal('')),
-  content: z.string()
-    .min(50, "Darslik matni kamida 50 ta harfdan iborat bo'lishi kerak"),
   topic: z.string()
     .min(3, "Mavzu kamida 3 ta harfdan iborat bo'lishi kerak")
     .max(50, "Mavzu 50 ta harfdan oshmasligi kerak")
     .optional()
     .or(z.literal('')),
-  difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
-  estimatedTime: z.number().min(5).max(240).optional(),
-  learningObjectives: z.array(z.string()).optional(),
-  keywords: z.array(z.string()).optional(),
+  price: z.number().min(0, "Narx 0 dan kichik bo'lmasligi kerak").optional(),
+  duration: z.number().min(1, "Davomiylik kamida 1 kun bo'lishi kerak").optional(),
+  weeklyHours: z.number().min(1, "Haftalik soatlar kamida 1 soat bo'lishi kerak").max(168, "Haftalik soatlar 168 soatdan oshmasligi kerak").optional(),
+  dailyLessonDuration: z.number().min(1, "Kunlik dars davomiyligi kamida 1 soat bo'lishi kerak").max(24, "Kunlik dars davomiyligi 24 soatdan oshmasligi kerak").optional(),
 });
 
 type CreateLessonFormData = z.infer<typeof createLessonSchema>;
@@ -83,8 +81,10 @@ const CreateLesson: React.FC = () => {
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   const [objectives, setObjectives] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
+  const [dailySchedule, setDailySchedule] = useState<string[]>([]);
   const [newObjective, setNewObjective] = useState('');
   const [newKeyword, setNewKeyword] = useState('');
+  const [newTimeSlot, setNewTimeSlot] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const dashboardSections = [
@@ -98,18 +98,17 @@ const CreateLesson: React.FC = () => {
     defaultValues: {
       title: '',
       description: '',
-      content: '',
       topic: '',
-      difficulty: 'medium',
-      estimatedTime: 30,
-      learningObjectives: [],
-      keywords: [],
+      price: 0,
+      duration: 1,
+      weeklyHours: 1,
+      dailyLessonDuration: 1,
     },
   });
 
   // Create lesson mutation
   const createLessonMutation = useMutation({
-    mutationFn: async (data: CreateLessonFormData & { coverImage?: string }) => {
+    mutationFn: async (data: CreateLessonFormData & { coverImage?: string; learningObjectives?: string[]; keywords?: string[]; dailySchedule?: string[] }) => {
       return await apiRequest('/api/lessons', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -225,6 +224,7 @@ const CreateLesson: React.FC = () => {
       coverImage: coverImageUrl,
       learningObjectives: objectives,
       keywords: keywords,
+      dailySchedule: dailySchedule,
     });
   };
 
@@ -325,36 +325,100 @@ const CreateLesson: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                {/* Content */}
+                {/* Pricing and Duration Section */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <FileText className="w-5 h-5" />
-                      Darslik matni
+                      <Target className="w-5 h-5 text-green-600" />
+                      Narx va davomiylik
                     </CardTitle>
                     <CardDescription>
-                      Darslik matnini kiriting. Formatlash uchun markdown ishlatishingiz mumkin
+                      Darslik narxi va davomiylik ma'lumotlarini kiriting
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <FormField
-                      control={form.control}
-                      name="content"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Matn *</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              {...field} 
-                              placeholder="Darslik matnini yozing..."
-                              rows={12}
-                              className="resize-none font-mono text-sm"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="price"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Narx (so'm)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field}
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="duration"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Davomiylik (kun)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field}
+                                type="number"
+                                min="1"
+                                placeholder="1"
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="weeklyHours"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Haftadan necha soat</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field}
+                                type="number"
+                                min="1"
+                                max="168"
+                                placeholder="1"
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="dailyLessonDuration"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>1 kunlik dars necha soat</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field}
+                                type="number"
+                                min="1"
+                                max="24"
+                                placeholder="1"
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -489,57 +553,61 @@ const CreateLesson: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                {/* Additional Settings */}
+                {/* Daily Schedule */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Clock className="w-5 h-5" />
-                      Qo'shimcha sozlamalar
+                      <Clock className="w-5 h-5 text-purple-600" />
+                      Kunlik dars jadval
                     </CardTitle>
+                    <CardDescription>
+                      Kunning qaysi vaqtlarida dars o'tilishini kiriting (masalan: 09:00-10:00)
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="difficulty"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Qiyinlik darajasi</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Tanlang" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="easy">Oson</SelectItem>
-                              <SelectItem value="medium">O'rtacha</SelectItem>
-                              <SelectItem value="hard">Qiyin</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="estimatedTime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Taxminiy vaqt (daqiqa)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field}
-                              type="number"
-                              min={5}
-                              max={240}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 30)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        value={newTimeSlot}
+                        onChange={(e) => setNewTimeSlot(e.target.value)}
+                        placeholder="09:00-10:00"
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          if (newTimeSlot.trim() && !dailySchedule.includes(newTimeSlot.trim())) {
+                            setDailySchedule([...dailySchedule, newTimeSlot.trim()]);
+                            setNewTimeSlot('');
+                          }
+                        }}
+                        className="px-4"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    
+                    {dailySchedule.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {dailySchedule.map((slot, index) => (
+                          <Badge 
+                            key={index} 
+                            variant="secondary" 
+                            className="flex items-center gap-2 px-3 py-1"
+                          >
+                            {slot}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDailySchedule(dailySchedule.filter((_, i) => i !== index));
+                              }}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
