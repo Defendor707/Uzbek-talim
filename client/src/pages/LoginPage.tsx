@@ -6,8 +6,17 @@ import OnboardingSlides from '@/components/onboarding/OnboardingSlides';
 
 const LoginPage: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState(() => {
-    // Show onboarding if user hasn't visited before or after logout
-    return !localStorage.getItem('visited');
+    // Only show onboarding for first-time visitors, not after logout
+    const hasVisited = localStorage.getItem('visited');
+    const isAfterLogout = localStorage.getItem('afterLogout');
+    
+    // Clear afterLogout flag if it exists
+    if (isAfterLogout) {
+      localStorage.removeItem('afterLogout');
+      return false; // Don't show onboarding after logout
+    }
+    
+    return !hasVisited;
   });
   
   const [showPresentation, setShowPresentation] = useState(false);
