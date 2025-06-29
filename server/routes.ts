@@ -311,6 +311,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Center Member Request Routes
+  app.post("/api/center/member-requests", authenticate, authorize(["center"]), async (req, res) => {
+    try {
+      const { username, userRole, message } = req.body;
+      
+      if (!username || !userRole) {
+        return res.status(400).json({ message: "Username va rol talab qilinadi" });
+      }
+      
+      // Validate role
+      if (!['teacher', 'student'].includes(userRole)) {
+        return res.status(400).json({ message: "Noto'g'ri rol (teacher yoki student bo'lishi kerak)" });
+      }
+      
+      // Find user by username
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: "Foydalanuvchi topilmadi" });
+      }
+      
+      // Verify user has the correct role
+      if (user.role !== userRole) {
+        return res.status(400).json({ message: `Bu foydalanuvchi ${userRole} emas` });
+      }
+      
+      // Check if request already exists
+      const existingRequests = await storage.getCenterMemberRequestsByUser(user.id);
+      const existingRequest = existingRequests.find(r => r.centerId === req.user!.userId && r.status === 'pending');
+      
+      if (existingRequest) {
+        return res.status(400).json({ message: "Bu foydalanuvchi uchun allaqachon so'rov yuborilgan" });
+      }
+      
+      // Create request
+      const request = await storage.createCenterMemberRequest({
+        centerId: req.user!.userId,
+        userId: user.id,
+        userRole: userRole as 'teacher' | 'student',
+        message,
+        status: 'pending'
+      });
+      
+      return res.status(201).json(request);
+    } catch (error) {
+      console.error("Error creating member request:", error);
+      return res.status(500).json({ message: "So'rov yaratishda xatolik" });
+    }
+  });
+  
+  app.get("/api/center/member-requests", authenticate, authorize(["center"]), async (req, res) => {
+    try {
+      const requests = await storage.getCenterMemberRequestsByCenter(req.user!.userId);
+      return res.status(200).json(requests);
+    } catch (error) {
+      console.error("Error fetching member requests:", error);
+      return res.status(500).json({ message: "So'rovlarni olishda xatolik" });
+    }
+  });
+  
+  app.get("/api/my-member-requests", authenticate, async (req, res) => {
+    try {
+      const pendingRequests = await storage.getPendingRequestsForUser(req.user!.userId);
+      return res.status(200).json(pendingRequests);
+    } catch (error) {
+      console.error("Error fetching user requests:", error);
+      return res.status(500).json({ message: "So'rovlarni olishda xatolik" });
+    }
+  });
+  
+  app.put("/api/member-requests/:id/respond", authenticate, async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (isNaN(requestId)) {
+        return res.status(400).json({ message: "Noto'g'ri so'rov ID" });
+      }
+      
+      if (!['accepted', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: "Noto'g'ri status (accepted yoki rejected bo'lishi kerak)" });
+      }
+      
+      // Get request to verify it belongs to current user
+      const request = await storage.getCenterMemberRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ message: "So'rov topilmadi" });
+      }
+      
+      if (request.userId !== req.user!.userId) {
+        return res.status(403).json({ message: "Ruxsat berilmagan" });
+      }
+      
+      // Update request status
+      const success = await storage.updateCenterMemberRequestStatus(requestId, status as 'accepted' | 'rejected');
+      
+      if (!success) {
+        return res.status(500).json({ message: "So'rov holatini yangilashda xatolik" });
+      }
+      
+      // If accepted, assign user to center
+      if (status === 'accepted') {
+        if (request.userRole === 'teacher') {
+          await storage.assignTeacherToCenter(request.userId, request.centerId);
+        } else if (request.userRole === 'student') {
+          await storage.assignStudentToCenter(request.userId, request.centerId);
+        }
+      }
+      
+      return res.status(200).json({ message: "So'rov muvaffaqiyatli yangilandi" });
+    } catch (error) {
+      console.error("Error responding to member request:", error);
+      return res.status(500).json({ message: "So'rovga javob berishda xatolik" });
+    }
+  });
+
   // Lesson Routes
   app.post("/api/lessons", authenticate, authorize(["teacher"]), async (req, res) => {
     try {

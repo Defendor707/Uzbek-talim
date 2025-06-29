@@ -121,6 +121,14 @@ export interface IStorage {
   createScreenSharingSession(session: schema.InsertScreenSharingSession): Promise<schema.ScreenSharingSession>;
   endScreenSharingSession(sessionId: number): Promise<boolean>;
   getActiveScreenSharingSession(roomId: number): Promise<schema.ScreenSharingSession | undefined>;
+  
+  // Center Member Request methods
+  createCenterMemberRequest(request: schema.InsertCenterMemberRequest): Promise<schema.CenterMemberRequest>;
+  getCenterMemberRequest(id: number): Promise<schema.CenterMemberRequest | undefined>;
+  getCenterMemberRequestsByCenter(centerId: number): Promise<schema.CenterMemberRequest[]>;
+  getCenterMemberRequestsByUser(userId: number): Promise<schema.CenterMemberRequest[]>;
+  updateCenterMemberRequestStatus(id: number, status: 'accepted' | 'rejected'): Promise<boolean>;
+  getPendingRequestsForUser(userId: number): Promise<schema.CenterMemberRequest[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1092,6 +1100,61 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(schema.screenSharingSessions.startedAt))
       .limit(1);
     return session;
+  }
+  
+  // Center Member Request methods
+  async createCenterMemberRequest(request: schema.InsertCenterMemberRequest): Promise<schema.CenterMemberRequest> {
+    const result = await db.insert(schema.centerMemberRequests).values(request).returning();
+    return result[0];
+  }
+
+  async getCenterMemberRequest(id: number): Promise<schema.CenterMemberRequest | undefined> {
+    const [request] = await db.select()
+      .from(schema.centerMemberRequests)
+      .where(eq(schema.centerMemberRequests.id, id));
+    return request;
+  }
+
+  async getCenterMemberRequestsByCenter(centerId: number): Promise<schema.CenterMemberRequest[]> {
+    const requests = await db.select()
+      .from(schema.centerMemberRequests)
+      .where(eq(schema.centerMemberRequests.centerId, centerId))
+      .orderBy(desc(schema.centerMemberRequests.createdAt));
+    return requests;
+  }
+
+  async getCenterMemberRequestsByUser(userId: number): Promise<schema.CenterMemberRequest[]> {
+    const requests = await db.select()
+      .from(schema.centerMemberRequests)
+      .where(eq(schema.centerMemberRequests.userId, userId))
+      .orderBy(desc(schema.centerMemberRequests.createdAt));
+    return requests;
+  }
+
+  async updateCenterMemberRequestStatus(id: number, status: 'accepted' | 'rejected'): Promise<boolean> {
+    try {
+      await db.update(schema.centerMemberRequests)
+        .set({ 
+          status,
+          respondedAt: new Date()
+        })
+        .where(eq(schema.centerMemberRequests.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error updating center member request status:', error);
+      return false;
+    }
+  }
+
+  async getPendingRequestsForUser(userId: number): Promise<schema.CenterMemberRequest[]> {
+    const requests = await db.select()
+      .from(schema.centerMemberRequests)
+      .where(and(
+        eq(schema.centerMemberRequests.userId, userId),
+        eq(schema.centerMemberRequests.status, 'pending')
+      ))
+      .orderBy(desc(schema.centerMemberRequests.createdAt));
+    return requests;
   }
 }
 

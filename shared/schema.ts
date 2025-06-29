@@ -585,3 +585,33 @@ export type InsertWhiteboardSession = z.infer<typeof insertWhiteboardSessionSche
 
 export type ScreenSharingSession = typeof screenSharingSessions.$inferSelect;
 export type InsertScreenSharingSession = z.infer<typeof insertScreenSharingSessionSchema>;
+
+// Center request status enum
+export const requestStatusEnum = pgEnum('request_status', ['pending', 'accepted', 'rejected']);
+
+// Center member requests table
+export const centerMemberRequests = pgTable("center_member_requests", {
+  id: serial("id").primaryKey(),
+  centerId: integer("center_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  userRole: roleEnum("user_role").notNull(), // teacher or student
+  status: requestStatusEnum("status").notNull().default('pending'),
+  message: text("message"), // Optional message from center
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  respondedAt: timestamp("responded_at"),
+}, (table) => {
+  return {
+    centerIdIdx: index("idx_center_requests_center_id").on(table.centerId),
+    userIdIdx: index("idx_center_requests_user_id").on(table.userId),
+    statusIdx: index("idx_center_requests_status").on(table.status),
+  };
+});
+
+export const insertCenterMemberRequestSchema = createInsertSchema(centerMemberRequests).omit({
+  id: true,
+  createdAt: true,
+  respondedAt: true,
+});
+
+export type CenterMemberRequest = typeof centerMemberRequests.$inferSelect;
+export type InsertCenterMemberRequest = z.infer<typeof insertCenterMemberRequestSchema>;

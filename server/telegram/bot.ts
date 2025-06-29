@@ -7,6 +7,7 @@ import bcrypt from 'bcrypt';
 import * as schema from '@shared/schema';
 import { db } from '../db';
 import { eq, and, sql, desc } from 'drizzle-orm';
+import path from 'path';
 
 // Type for our session data
 interface BotSessionData extends Scenes.SceneSession {
@@ -2014,15 +2015,61 @@ bot.hears('👤 Profil', async (ctx) => {
       keyboard = [['🔙 Orqaga']];
     }
 
-    await ctx.reply(
-      `👤 Profil ma'lumotlari\n\n` +
+    // Get profile image path
+    let hasProfileImage = false;
+    let profileImagePath = '';
+    
+    if (user.role === 'teacher') {
+      const teacherProfile = await storage.getTeacherProfile(user.id);
+      if (teacherProfile?.profileImage) {
+        hasProfileImage = true;
+        profileImagePath = teacherProfile.profileImage;
+      }
+    } else if (user.role === 'student') {
+      const studentProfile = await storage.getStudentProfile(user.id);
+      if (studentProfile?.profileImage) {
+        hasProfileImage = true;
+        profileImagePath = studentProfile.profileImage;
+      }
+    } else if (user.role === 'center') {
+      const centerProfile = await storage.getCenterProfile(user.id);
+      if (centerProfile?.profileImage) {
+        hasProfileImage = true;
+        profileImagePath = centerProfile.profileImage;
+      }
+    } else if (user.role === 'parent' && user.profileImage) {
+      hasProfileImage = true;
+      profileImagePath = user.profileImage;
+    }
+    
+    const profileInfoText = `👤 Profil ma'lumotlari\n\n` +
       `👤 Ism: ${user.fullName}\n` +
       `🔑 Foydalanuvchi nomi: ${user.username}\n` +
       `🧩 Rol: ${getRoleNameInUzbek(user.role)}\n` +
       `📅 Ro'yxatdan o'tgan sana: ${new Date(user.createdAt).toLocaleDateString('uz-UZ')}\n\n` +
-      profileDetails,
-      Markup.keyboard(keyboard).resize()
-    );
+      profileDetails;
+    
+    if (hasProfileImage && profileImagePath) {
+      try {
+        // Send photo with caption
+        const fullPath = path.join(process.cwd(), profileImagePath.startsWith('/') ? profileImagePath.slice(1) : profileImagePath);
+        await ctx.replyWithPhoto(
+          { source: fullPath },
+          {
+            caption: profileInfoText,
+            parse_mode: 'Markdown',
+            ...Markup.keyboard(keyboard).resize()
+          }
+        );
+      } catch (photoError) {
+        console.error('Error sending profile photo:', photoError);
+        // Fallback to text-only message
+        await ctx.reply(profileInfoText, Markup.keyboard(keyboard).resize());
+      }
+    } else {
+      // No profile image, send text only
+      await ctx.reply(profileInfoText, Markup.keyboard(keyboard).resize());
+    }
   } catch (error) {
     console.error('Error fetching profile:', error);
     await ctx.reply('❌ Profil ma\'lumotlarini olishda xatolik yuz berdi.');
