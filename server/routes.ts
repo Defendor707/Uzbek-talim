@@ -53,8 +53,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
+      
+      // Get role-specific profile for profile image
+      let profileImage = user.profileImage;
+      
+      try {
+        if (user.role === 'teacher') {
+          const teacherProfile = await storage.getTeacherProfile(user.id);
+          if (teacherProfile?.profileImage) {
+            profileImage = teacherProfile.profileImage;
+          }
+        } else if (user.role === 'student') {
+          const studentProfile = await storage.getStudentProfile(user.id);
+          if (studentProfile?.profileImage) {
+            profileImage = studentProfile.profileImage;
+          }
+        } else if (user.role === 'center') {
+          const centerProfile = await storage.getCenterProfile(user.id);
+          if (centerProfile?.profileImage) {
+            profileImage = centerProfile.profileImage;
+          }
+        }
+        // Parents use the users table profileImage directly
+      } catch (profileError) {
+        console.log("Profile lookup failed, using base user data");
+      }
+      
       const { passwordHash, ...userData } = user;
-      return res.status(200).json(userData);
+      return res.status(200).json({
+        ...userData,
+        profileImage
+      });
     } catch (error) {
       console.error("Error fetching user:", error);
       return res.status(500).json({ message: "Failed to fetch user data" });
@@ -2158,6 +2187,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (profile) {
         // Update existing profile
         const updatedProfile = await storage.updateTeacherProfile(req.user!.userId, profileData);
+        
+        // Invalidate cache for auth/me endpoint to refresh profile image
+        invalidateUserCache(req.user!.userId);
+        
         return res.status(200).json({ 
           message: "Rasm muvaffaqiyatli yuklandi",
           profileImage: profileData.profileImage
@@ -2165,6 +2198,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Create new profile
         const newProfile = await storage.createTeacherProfile(profileData);
+        
+        // Invalidate cache for auth/me endpoint to refresh profile image
+        invalidateUserCache(req.user!.userId);
+        
         return res.status(201).json({ 
           message: "Rasm muvaffaqiyatli yuklandi",
           profileImage: profileData.profileImage
@@ -2202,6 +2239,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (profile) {
         // Update existing profile
         const updatedProfile = await storage.updateStudentProfile(req.user!.userId, profileData);
+        
+        // Invalidate cache for auth/me endpoint to refresh profile image
+        invalidateUserCache(req.user!.userId);
+        
         return res.status(200).json({ 
           message: "Rasm muvaffaqiyatli yuklandi",
           profileImage: profileData.profileImage
@@ -2209,6 +2250,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Create new profile
         const newProfile = await storage.createStudentProfile(profileData);
+        
+        // Invalidate cache for auth/me endpoint to refresh profile image
+        invalidateUserCache(req.user!.userId);
+        
         return res.status(201).json({ 
           message: "Rasm muvaffaqiyatli yuklandi",
           profileImage: profileData.profileImage
@@ -2254,6 +2299,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (profile) {
         // Update existing profile
         const updatedProfile = await storage.updateCenterProfile(req.user!.userId, profileData);
+        
+        // Invalidate cache for auth/me endpoint to refresh profile image
+        invalidateUserCache(req.user!.userId);
+        
         return res.status(200).json({ 
           message: "Rasm muvaffaqiyatli yuklandi",
           profileImage: profileData.profileImage
@@ -2261,6 +2310,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Create new profile
         const newProfile = await storage.createCenterProfile(profileData);
+        
+        // Invalidate cache for auth/me endpoint to refresh profile image
+        invalidateUserCache(req.user!.userId);
+        
         return res.status(201).json({ 
           message: "Rasm muvaffaqiyatli yuklandi",
           profileImage: profileData.profileImage
