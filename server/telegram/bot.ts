@@ -431,7 +431,7 @@ bot.on('text', async (ctx, next) => {
     
     if (ctx.session.testCreation.step === 'answers') {
       // Handle single line answers (1a2b3c4d format or abcda format)
-      const cleanText = messageText.toLowerCase().replace(/[^abcd0-9]/g, '');
+      const cleanText = messageText.toLowerCase().replace(/[^abcd0-9]/g);
       const answers: string[] = [];
       
       // Try to parse different formats
@@ -585,7 +585,7 @@ bot.action('back_to_menu', async (ctx) => {
   if (user.role === 'teacher') {
     roleButtons = [
       ['📝 Testlar', '📚 Darslar'],
-      ['👤 Profil', '📊 Statistika'],
+      ['👤 Profil'],
       ['⚙️ Sozlamalar', '❓ Yordam']
     ];
   } else if (user.role === 'student') {
@@ -603,7 +603,7 @@ bot.action('back_to_menu', async (ctx) => {
   } else {
     roleButtons = [
       ['📝 Testlar', '📚 Darslar'],
-      ['👤 Profil', '📊 Hisobotlar'],
+      ['👤 Profil'],
       ['⚙️ Sozlamalar', '❓ Yordam']
     ];
   }
@@ -675,7 +675,7 @@ bot.hears('🔙 Orqaga', async (ctx) => {
     'Bosh menyuga qaytdingiz.\n\nQuyidagi amallardan birini tanlang:',
     Markup.keyboard([
       ['🔑 Kirish', '📝 Ro\'yxatdan o\'tish'],
-      ['ℹ️ Ma\'lumot', '📊 Statistika']
+      ['ℹ️ Ma\'lumot']
     ]).resize()
   );
 });
@@ -690,7 +690,7 @@ bot.start(async (ctx) => {
     'Iltimos, quyidagi amallardan birini tanlang:',
     Markup.keyboard([
       ['🔑 Kirish', '📝 Ro\'yxatdan o\'tish'],
-      ['ℹ️ Ma\'lumot', '📊 Statistika']
+      ['ℹ️ Ma\'lumot']
     ]).resize()
   );
 });
@@ -2067,7 +2067,7 @@ bot.action('confirm_logout', async (ctx) => {
     'Tizimga qaytish uchun tugmalardan birini tanlang:',
     Markup.keyboard([
       ['🔑 Kirish', '📝 Ro\'yxatdan o\'tish'],
-      ['ℹ️ Ma\'lumot', '📊 Statistika']
+      ['ℹ️ Ma\'lumot']
     ]).resize()
   );
 });
@@ -2083,7 +2083,7 @@ bot.action('cancel_logout', async (ctx) => {
     if (user.role === 'teacher') {
       roleButtons = [
         ['📝 Testlar', '📚 Darslar'],
-        ['👤 Profil', '📊 Statistika'],
+        ['👤 Profil'],
         ['⚙️ Sozlamalar', '❓ Yordam']
       ];
     } else if (user.role === 'student') {
@@ -2101,7 +2101,7 @@ bot.action('cancel_logout', async (ctx) => {
     } else {
       roleButtons = [
         ['📝 Testlar', '📚 Darslar'],
-        ['👤 Profil', '📊 Hisobotlar'],
+        ['👤 Profil'],
         ['⚙️ Sozlamalar', '❓ Yordam']
       ];
     }
@@ -2138,28 +2138,7 @@ bot.hears('ℹ️ Ma\'lumot', async (ctx) => {
   );
 });
 
-// Statistics command
-bot.hears('📊 Hisobotlar', async (ctx) => {
-  try {
-    const teacherCount = (await storage.getUsersByRole('teacher')).length;
-    const studentCount = (await storage.getUsersByRole('student')).length;
-    const parentCount = (await storage.getUsersByRole('parent')).length;
-    const centerCount = (await storage.getUsersByRole('center')).length;
-    
-    await ctx.reply(
-      '*📊 Platforma statistikasi*\n\n' +
-      `👨‍🏫 O'qituvchilar: ${teacherCount} ta\n` +
-      `👨‍🎓 O'quvchilar: ${studentCount} ta\n` +
-      `👨‍👩‍👧‍👦 Ota-onalar: ${parentCount} ta\n` +
-      `🏫 O'quv markazlari: ${centerCount} ta\n\n` +
-      '📚 O\'rganishga tayyormisiz? Hoziroq platformamizga qo\'shiling!',
-      { parse_mode: 'Markdown' }
-    );
-  } catch (error) {
-    console.error('Error fetching statistics:', error);
-    await ctx.reply('❌ Statistika ma\'lumotlarini olishda xatolik yuz berdi.');
-  }
-});
+// Hisobotlar button removed - tez orada ishlab chiqiladi
 
 // Parent-specific button handlers
 bot.hears('👶 Farzandlarim', async (ctx) => {
@@ -2329,62 +2308,7 @@ bot.hears('📊 Test natijalari', async (ctx) => {
   }
 });
 
-bot.hears('📈 Hisobotlar', async (ctx) => {
-  if (!ctx.session.userId) {
-    await ctx.reply('❌ Siz tizimga kirmagansiz. Iltimos, avval tizimga kiring.');
-    return;
-  }
-  
-  try {
-    const user = await storage.getUser(ctx.session.userId);
-    if (!user || user.role !== 'parent') {
-      await ctx.reply('❌ Bu funksiya faqat ota-onalar uchun mavjud.');
-      return;
-    }
-    
-    // Get children data for basic report
-    const children = await db.select()
-      .from(schema.studentProfiles)
-      .where(eq(schema.studentProfiles.parentId, user.id));
-    
-    // Get all test attempts by children
-    const allAttempts = await db.select({
-      status: schema.testAttempts.status,
-      score: schema.testAttempts.score,
-      totalQuestions: schema.testAttempts.totalQuestions
-    })
-    .from(schema.testAttempts)
-    .innerJoin(schema.studentProfiles, eq(schema.testAttempts.studentId, schema.studentProfiles.userId))
-    .where(eq(schema.studentProfiles.parentId, user.id));
-    
-    const childrenCount = children.length;
-    const totalAttempts = allAttempts.length;
-    const completedAttempts = allAttempts.filter(a => a.status === 'completed').length;
-    
-    // Calculate average score for completed tests
-    const completedTests = allAttempts.filter(a => a.status === 'completed' && a.score !== null && a.totalQuestions > 0);
-    let avgScore = 0;
-    if (completedTests.length > 0) {
-      const totalPercentage = completedTests.reduce((sum, test) => {
-        const scoreNum = Number(test.score);
-        return sum + (scoreNum / test.totalQuestions) * 100;
-      }, 0);
-      avgScore = Math.round(totalPercentage / completedTests.length);
-    }
-    
-    const reportText = '📈 *Umumiy hisobot*\n\n' +
-      `👶 Farzandlar soni: ${childrenCount}\n` +
-      `📝 Jami test urinishlari: ${totalAttempts}\n` +
-      `✅ Tugallangan testlar: ${completedAttempts}\n` +
-      `💯 O'rtacha ball: ${avgScore}%\n\n` +
-      'Batafsil hisobot uchun veb-saytdan foydalaning.';
-    
-    await ctx.reply(reportText, { parse_mode: 'Markdown' });
-  } catch (error) {
-    console.error('Error generating report:', error);
-    await ctx.reply('❌ Hisobot yaratishda xatolik yuz berdi.');
-  }
-});
+// Hisobotlar button removed - tez orada ishlab chiqiladi
 
 // TEST CREATION HANDLERS
 
@@ -2869,7 +2793,7 @@ function getKeyboardByRole(role: string) {
   if (role === 'teacher') {
     return [
       ['👤 Profil', '📚 Darslik'],
-      ['📝 Testlar', '📊 Hisobotlar'],
+      ['📝 Testlar'],
       ['⚡ Boshqalar']
     ];
   } else if (role === 'student') {
@@ -3038,7 +2962,7 @@ async function checkAndSendNotifications(ctx: BotContext) {
       await ctx.reply(
         `🔔 *Yangi bildirishnomalar*\n\n` +
         `📝 ${testNotifications.length} ta yangi test yaratildi!\n` +
-        testNotifications.map(n => `• ${n.message.replace('📝 Yangi test yaratildi: ', '')}`).join('\n'),
+        testNotifications.map(n => `• ${n.message.replace('📝 Yangi test yaratildi: ')}`).join('\n'),
         { parse_mode: 'Markdown' }
       );
     }
@@ -3046,7 +2970,7 @@ async function checkAndSendNotifications(ctx: BotContext) {
     if (lessonNotifications.length > 0) {
       await ctx.reply(
         `📚 ${lessonNotifications.length} ta dars yangilandi!\n` +
-        lessonNotifications.map(n => `• ${n.message.replace('📚 Dars yangilandi: ', '')}`).join('\n'),
+        lessonNotifications.map(n => `• ${n.message.replace('📚 Dars yangilandi: ')}`).join('\n'),
         { parse_mode: 'Markdown' }
       );
     }
@@ -3161,7 +3085,7 @@ bot.hears('3️⃣ Darsliklarim', async (ctx) => {
     {
       parse_mode: 'Markdown',
       ...Markup.keyboard([
-        ['📖 Mavjud darsliklar', '📊 Statistika'],
+        ['📖 Mavjud darsliklar'],
         ['🔙 Orqaga']
       ]).resize()
     }
@@ -3658,7 +3582,7 @@ bot.hears('🔙 Orqaga', async (ctx) => {
       'Bosh menyuga qaytdingiz.\n\nQuyidagi amallardan birini tanlang:',
       Markup.keyboard([
         ['🔑 Kirish', '📝 Ro\'yxatdan o\'tish'],
-        ['ℹ️ Ma\'lumot', '📊 Statistika']
+        ['ℹ️ Ma\'lumot']
       ]).resize()
     );
   } else {
@@ -4036,57 +3960,7 @@ bot.hears('👤 Profil', async (ctx) => {
   }
 });
 
-// Statistics handler - shows platform statistics and user statistics
-bot.hears('📊 Statistika', async (ctx) => {
-  try {
-    // Get platform statistics
-    const totalUsers = await db.select({ count: sql`count(*)` }).from(schema.users);
-    const totalTeachers = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'teacher'));
-    const totalStudents = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'student'));
-    const totalParents = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'parent'));
-    const totalCenters = await db.select({ count: sql`count(*)` }).from(schema.users).where(eq(schema.users.role, 'center'));
-    const totalTests = await db.select({ count: sql`count(*)` }).from(schema.tests);
-    const totalLessons = await db.select({ count: sql`count(*)` }).from(schema.lessons);
-    
-    let statsMessage = `📊 *Platformadagi statistika*\n\n`;
-    statsMessage += `👥 Jami foydalanuvchilar: ${totalUsers[0]?.count || 0}\n`;
-    statsMessage += `👨‍🏫 O'qituvchilar: ${totalTeachers[0]?.count || 0}\n`;
-    statsMessage += `👨‍🎓 O'quvchilar: ${totalStudents[0]?.count || 0}\n`;
-    statsMessage += `👨‍👩‍👧‍👦 Ota-onalar: ${totalParents[0]?.count || 0}\n`;
-    statsMessage += `🏫 O'quv markazlari: ${totalCenters[0]?.count || 0}\n`;
-    statsMessage += `📝 Jami testlar: ${totalTests[0]?.count || 0}\n`;
-    statsMessage += `📚 Jami darsliklar: ${totalLessons[0]?.count || 0}\n\n`;
-
-    // If user is logged in, add personal statistics
-    if (ctx.session.userId) {
-      const user = await storage.getUser(ctx.session.userId);
-      if (user) {
-        statsMessage += `👤 *Sizning ma'lumotlaringiz:*\n`;
-        statsMessage += `🎯 Rol: ${getRoleNameInUzbek(user.role)}\n`;
-        
-        if (user.role === 'teacher') {
-          const tests = await storage.getTestsByTeacherId(user.id);
-          const lessons = await storage.getLessonsByTeacherId(user.id);
-          statsMessage += `📝 Yaratgan testlar: ${tests.length}\n`;
-          statsMessage += `📚 Yaratgan darsliklar: ${lessons.length}\n`;
-        } else if (user.role === 'student') {
-          const attempts = await storage.getTestAttemptsByStudentId(user.id);
-          const completedAttempts = attempts.filter(a => a.status === 'completed');
-          statsMessage += `🎯 Ishlagan testlar: ${attempts.length}\n`;
-          statsMessage += `✅ Tugatgan testlar: ${completedAttempts.length}\n`;
-        }
-      }
-    } else {
-      statsMessage += `Shaxsiy statistika uchun tizimga kiring!`;
-    }
-
-    await ctx.reply(statsMessage, { parse_mode: 'Markdown' });
-    
-  } catch (error) {
-    console.error('Error fetching statistics:', error);
-    await ctx.reply('❌ Statistikani olishda xatolik yuz berdi.');
-  }
-});
+// Statistika button removed - tez orada ishlab chiqiladi
 
 // Ma'lumot handler - shows user reports (hisobotlar)
 bot.hears('ℹ️ Ma\'lumot', async (ctx) => {
@@ -4174,7 +4048,7 @@ bot.hears(['👶 Farzandim', '💳 To\'lovlar'], async (ctx) => {
   await ctx.reply(`${action} bo'limi ishlab chiqilmoqda. Veb-saytdan to'liq funksiyalardan foydalaning! 👨‍👩‍👧‍👦`);
 });
 
-bot.hears(['👨‍🏫 O\'qituvchilar', '👨‍🎓 O\'quvchilar', '📊 Hisobotlar'], async (ctx) => {
+bot.hears(['👨‍🏫 O\'qituvchilar', '👨‍🎓 O\'quvchilar'], async (ctx) => {
   if (!ctx.session.userId) {
     await ctx.reply('❌ Avval tizimga kiring.');
     return;
@@ -4553,7 +4427,7 @@ bot.action(/view_test_(\d+)/, async (ctx) => {
       parse_mode: 'Markdown',
       ...Markup.inlineKeyboard([
         // Test editing removed
-        [Markup.button.callback('📊 Statistika', `test_stats_${test.id}`)],
+        [Markup.button.callback('', `test_stats_${test.id}`)],
         [Markup.button.callback('🔙 Orqaga', 'back_to_tests')]
       ])
     });
@@ -4720,7 +4594,7 @@ bot.action(/set_status_(active|draft|completed)_(\d+)/, async (ctx) => {
               parse_mode: 'Markdown',
               ...Markup.inlineKeyboard([
                 // Test editing removed
-                [Markup.button.callback('📊 Statistika', `test_stats_${test.id}`)],
+                [Markup.button.callback('', `test_stats_${test.id}`)],
                 [Markup.button.callback('🔙 Orqaga', 'back_to_tests')]
               ])
             });

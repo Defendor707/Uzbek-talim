@@ -134,6 +134,32 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- June 29, 2025: Enhanced Parent Dashboard and Telegram Bot Cleanup
+  - **Removed Parent Notifications Button**: Hidden notification bell icon from parent dashboard header
+    - Parent users no longer see notifications button in mobile or desktop sidebar
+    - Simplified parent interface to focus on essential features (children and results)
+    - Maintained notifications functionality for other user roles (teacher, student, center)
+  - **Activated Parent Results Page**: Verified and confirmed parent results functionality
+    - Parent results page already fully implemented with comprehensive test tracking
+    - Statistics display: average scores, total tests, passed tests, success rate
+    - Child filter functionality allows viewing results for specific children or all children
+    - Real-time data fetching from `/api/parent/test-results` and `/api/parent/children` endpoints
+    - Professional result cards with score percentages, completion dates, and detailed breakdowns
+  - **Telegram Bot Interface Cleanup**: Removed confusing "Hisobotlar" and "Statistika" buttons
+    - Removed "📊 Hisobotlar" button handler completely from bot interface
+    - Removed "📊 Statistika" button handler to eliminate confusion
+    - Cleaned up all keyboard arrays containing these buttons across different user roles
+    - Added placeholder comments indicating these features will be implemented later
+    - Simplified bot navigation to focus only on essential, working features
+  - **Real-time Functionality Recommendations**: Provided comprehensive suggestions for enhanced user experience
+    - Live notifications system using WebSocket connections for instant updates
+    - Real-time test progress tracking during test-taking sessions
+    - Live parent notifications when children complete tests or achieve milestones
+    - Auto-refresh dashboard widgets with fresh data every few minutes
+    - Real-time collaboration features in study rooms with instant messaging
+    - Live typing indicators and presence awareness in collaborative environments
+  - User feedback: "Ota onalar dashboartda sidebaridan bildirish nomalar tugmasini olib tashla. Ota onalar uchun natijalar sahifasini ishga tushir. Telegram botda hisobot va statistika nomli tugmalar chalkashib ketgan." - All requests successfully implemented
+
 - June 28, 2025: Optimized Lesson Search Functionality and Fixed Type Errors
   - **Enhanced Search API**: Modified lessons endpoint to accept search query parameter
     - Added support for `?q=searchterm` to search across lesson titles, descriptions, and topics
