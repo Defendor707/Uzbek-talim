@@ -23,6 +23,7 @@ import Students from "@/pages/center/Students";
 import ChildrenPage from "@/pages/parent/ChildrenPage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import NotificationSettings from "@/pages/parent/NotificationSettings";
+import ParentResults from "@/pages/parent/ParentResults";
 import LessonsPage from "@/pages/teacher/Lessons";
 import CreateLesson from "@/pages/teacher/CreateLesson";
 import ViewLesson from "@/pages/teacher/ViewLesson";
@@ -217,6 +218,11 @@ function Router() {
       <Route path="/parent/notification-settings">
         <ProtectedRoute allowedRoles={["parent"]}>
           <NotificationSettings />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/parent/results">
+        <ProtectedRoute allowedRoles={["parent"]}>
+          <ParentResults />
         </ProtectedRoute>
       </Route>
       <Route path="/parent/search-centers">

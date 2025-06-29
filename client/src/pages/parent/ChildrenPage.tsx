@@ -95,12 +95,6 @@ const ChildrenPage: React.FC = () => {
         </svg>
       ),
       href: '/parent/results',
-    },
-    {
-      id: 'notification-settings',
-      title: 'Bildirishnoma',
-      icon: <Bell className="w-5 h-5" />,
-      href: '/parent/notification-settings',
     }
   ];
 

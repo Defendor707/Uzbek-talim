@@ -51,16 +51,6 @@ const ParentDashboard: React.FC = () => {
         </svg>
       ),
       href: '/parent/results',
-    },
-    {
-      id: 'notification-settings',
-      title: 'Bildirishnoma',
-      icon: (
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5V7a1 1 0 011-1h3a1 1 0 011 1v10z" />
-        </svg>
-      ),
-      href: '/parent/notification-settings',
       badge: testResults?.length || 0
     }
   ];
