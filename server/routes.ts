@@ -129,7 +129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const testData = schema.insertTestSchema.parse({
         ...req.body,
-        userId: req.user!.userId
+        teacherId: req.user!.userId  // TUZATILDI: userId → teacherId
       });
 
       const newTest = await storage.createTest(testData);
@@ -164,11 +164,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'draft' as const,
         totalQuestions: parseInt(req.body.totalQuestions) || questions.length,
         testCode: req.body.testCode || Math.random().toString(36).substring(2, 8).toUpperCase(),
-        userId: req.user!.userId,
+        teacherId: req.user!.userId,  // TUZATILDI: userId → teacherId
+        duration: parseInt(req.body.duration) || 60,  // QO'SHILDI: duration maydoni
         testImages,
         startTime: req.body.startTime || null,
         endTime: req.body.endTime || null,
-        grade: req.body.grade || null,
+        grade: req.body.grade || '',
         classroom: req.body.classroom || null,
       };
 
@@ -181,6 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.createQuestion({
           testId: newTest.id,
           questionText: question.questionText,
+          questionType: req.body.type as schema.Test['type'],  // QO'SHILDI: questionType maydoni
           questionImage: question.questionImage || null,
           options: question.options || ['A', 'B', 'C', 'D'],
           correctAnswer: question.correctAnswer,
@@ -282,7 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const testId = parseInt(req.params.id);
       const attemptData = schema.insertTestAttemptSchema.parse({
         testId,
-        userId: req.user!.userId,
+        studentId: req.user!.userId,  // TUZATILDI: userId → studentId
         startTime: new Date(),
         status: 'in_progress'
       });
@@ -403,7 +405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const lessonData = schema.insertLessonSchema.parse({
         ...req.body,
-        userId: req.user!.userId
+        teacherId: req.user!.userId  // TUZATILDI: userId → teacherId
       });
 
       const newLesson = await storage.createLesson(lessonData);

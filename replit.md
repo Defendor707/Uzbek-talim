@@ -27,11 +27,221 @@ O'zbek Talim is a comprehensive educational management platform designed for the
 - **External Integration**: Telegram Bot API for notifications
 
 ### Database Design
-- **User Management**: Role-based user system (teacher, student, parent, center)
-- **Profile System**: Separate profile tables for each user type with specific attributes
-- **Test Management**: Comprehensive test creation with multiple question types and images
-- **Assessment Tracking**: Test attempts, scoring, and progress monitoring
-- **Content Management**: Lesson storage with file attachments
+
+#### **Ma'lumotlar Bazasi Tuzilishi - Complete Database Architecture**
+
+##### **1. Foydalanuvchi Boshqaruvi (User Management)**
+```sql
+-- Asosiy foydalanuvchilar jadvali
+users {
+  id: serial PRIMARY KEY
+  username: text UNIQUE NOT NULL
+  passwordHash: text NOT NULL
+  role: enum('teacher', 'student', 'parent', 'center')
+  fullName: text NOT NULL
+  profileImage: text
+  phone: text
+  telegramId: text UNIQUE
+  resetToken: text UNIQUE
+  resetTokenExpiry: timestamp
+  isActive: boolean DEFAULT true
+  createdAt: timestamp DEFAULT NOW()
+  updatedAt: timestamp DEFAULT NOW()
+}
+```
+
+##### **2. Profil Tizimlari (Profile Systems)**
+```sql
+-- O'qituvchi profillari
+teacher_profiles {
+  id: serial PRIMARY KEY
+  userId: integer → users.id CASCADE
+  profileImage: text
+  phoneNumber: text
+  specialty: text (max 20 chars)
+  subjects: text[]
+  bio: text (max 200 chars)
+  experience: integer
+  certificates: text[]
+  centerId: integer → users.id
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+
+-- O'quvchi profillari  
+student_profiles {
+  id: serial PRIMARY KEY
+  userId: integer → users.id CASCADE
+  profileImage: text
+  phoneNumber: text
+  grade: text
+  classroom: text
+  certificates: text[]
+  bio: text
+  parentId: integer → users.id
+  centerId: integer → users.id
+}
+
+-- Markaz profillari
+center_profiles {
+  id: serial PRIMARY KEY
+  userId: integer → users.id CASCADE
+  centerName: text NOT NULL
+  address: text NOT NULL
+  phoneNumber: text
+  email: text
+  website: text
+  description: text
+  director: text
+  establishedYear: integer
+  capacity: integer
+  specializations: text[]
+  facilities: text[]
+  workingHours: text
+  profileImage: text
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+```
+
+##### **3. Test Tizimi (Testing System)**
+```sql
+-- Testlar jadvali
+tests {
+  id: serial PRIMARY KEY
+  title: text NOT NULL
+  description: text
+  testImages: text[]
+  teacherId: integer → users.id NOT NULL  // MUHIM: NULL bo'lishi mumkin emas!
+  grade: text
+  classroom: text
+  duration: integer NOT NULL
+  type: enum('simple', 'open', 'dtm', 'certificate', 'disciplinary', 'public', 'numerical')
+  testCode: text UNIQUE
+  totalQuestions: integer NOT NULL
+  passingScore: numeric
+  maxAttempts: integer
+  isRandomOrder: boolean
+  showResults: boolean
+  status: enum('draft', 'active', 'completed')
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+
+-- Savollar jadvali
+questions {
+  id: serial PRIMARY KEY
+  testId: integer → tests.id CASCADE
+  questionText: text NOT NULL
+  questionImage: text
+  options: jsonb NOT NULL
+  correctAnswer: text NOT NULL
+  points: numeric DEFAULT 1
+  order: integer NOT NULL
+}
+
+-- Test urinishlari
+test_attempts {
+  id: serial PRIMARY KEY
+  testId: integer → tests.id NOT NULL
+  studentId: integer → users.id NOT NULL
+  startTime: timestamp DEFAULT NOW()
+  endTime: timestamp
+  score: numeric
+  correctAnswers: integer DEFAULT 0
+  totalQuestions: integer NOT NULL
+  status: text DEFAULT 'in_progress'
+  completed: boolean DEFAULT false
+}
+
+-- O'quvchi javoblari
+student_answers {
+  id: serial PRIMARY KEY
+  attemptId: integer → test_attempts.id CASCADE
+  questionId: integer → questions.id
+  answer: jsonb
+  isCorrect: boolean
+  pointsEarned: numeric
+}
+```
+
+##### **4. Darslik Tizimi (Lesson System)**
+```sql
+lessons {
+  id: serial PRIMARY KEY
+  teacherId: integer → users.id NOT NULL
+  title: text NOT NULL
+  description: text
+  content: text
+  coverImage: text
+  learningObjectives: text[]
+  keywords: text[]
+  difficulty: text
+  estimatedTime: integer
+  topic: text
+  price: numeric DEFAULT 0
+  duration: integer
+  weeklyHours: integer
+  dailySchedule: text[]
+  dailyLessonDuration: integer
+  status: text DEFAULT 'draft'
+  viewCount: integer DEFAULT 0
+  likeCount: integer DEFAULT 0
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+```
+
+##### **5. Bildirishnoma Tizimi (Notification System)**
+```sql
+notifications {
+  id: serial PRIMARY KEY
+  userId: integer → users.id CASCADE
+  title: text NOT NULL
+  message: text NOT NULL
+  isRead: boolean DEFAULT false
+  createdAt: timestamp
+}
+
+parent_notification_settings {
+  id: serial PRIMARY KEY
+  parentId: integer → users.id CASCADE
+  enableTelegram: boolean DEFAULT true
+  enableWebsite: boolean DEFAULT true
+  minScoreNotification: integer DEFAULT 0
+  maxScoreNotification: integer DEFAULT 100
+  notifyOnlyFailed: boolean DEFAULT false
+  notifyOnlyPassed: boolean DEFAULT false
+  instantNotification: boolean DEFAULT true
+  dailyDigest: boolean DEFAULT false
+  weeklyDigest: boolean DEFAULT false
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+```
+
+##### **6. Qo'shimcha Jadvallar (Additional Tables)**
+```sql
+subjects { id, name, description }
+schedules { teacherId, className, subjectId, dayOfWeek, startTime, endTime }
+files { userId, filename, originalName, mimetype, size, uploadDate }
+center_member_requests { centerId, userId, userRole, status, message, createdAt }
+```
+
+#### **Muhim Cheklovlar (Critical Constraints)**
+- `tests.teacherId` - NULL bo'lishi MUMKIN EMAS
+- `test_attempts.studentId` - NULL bo'lishi MUMKIN EMAS  
+- `questions.testId` - CASCADE DELETE
+- `student_answers.attemptId` - CASCADE DELETE
+- Barcha score maydonlari 0-100 oralig'ida
+- Duration va question count ijobiy bo'lishi shart
+
+#### **Indekslar (Performance Indexes)**
+- users: username, role, telegramId, fullName
+- tests: teacherId, status, grade, type
+- test_attempts: studentId, testId, status
+- questions: testId, order
+- student_answers: attemptId, questionId
 
 ## Key Components
 
@@ -133,6 +343,23 @@ Preferred communication style: Simple, everyday language.
 Dashboard design: User requested improved navigation without dropdown menus for better usability.
 
 ## Recent Changes
+
+- July 4, 2025: Study Room Funksiyasi To'liq Olib Tashlandi va Test Yaratish Muammosi Hal Qilindi
+  - **Study Room Funksiyasi Yo'q Qilindi**: Foydalanuvchi so'rovi bo'yicha butunlay olib tashlandi
+    - study_rooms, study_room_participants, study_room_messages, whiteboard_sessions, screen_sharing_sessions jadvallarini o'chirildi
+    - Barcha Study room enum'larini (study_room_status, study_room_type, participant_role) olib tashlandi
+    - Schema va storage interface'dan barcha Study room metodlarini tozalandi
+    - View'lar va performance optimizatsiyalarini olib tashlandi
+  - **Test Yaratish Muammosi Hal Qilindi**: teacher_id NULL bo'lish muammosi tuzatildi
+    - `/api/tests` endpoint'ida userId → teacherId o'zgartirildi
+    - `/api/tests/create-with-images` endpoint'ida userId → teacherId tuzatildi
+    - `/api/tests/:id/attempts` endpoint'ida userId → studentId o'zgartirildi
+    - `/api/lessons` endpoint'ida userId → teacherId tuzatildi
+    - Test yaratishda yetishmayotgan duration va questionType maydonlari qo'shildi
+  - **Ma'lumotlar Bazasi Hujjatlashuvi**: To'liq ma'lumotlar bazasi arxitekturasi hujjatlashtirildi
+    - Barcha jadvallar, maydonlar va cheklovlar batafsil tavsiflandi
+    - Critical constraint'lar va muhim indekslar ro'yxatlandi
+    - Har bir tizim uchun to'liq SQL tuzilmalari berildi
 
 - July 4, 2025: Complete Database Optimization to Maximum Performance Level
   - **Resolved Schema Conflicts**: Fixed all conflicts between code and database structure
