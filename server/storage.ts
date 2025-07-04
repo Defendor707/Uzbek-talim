@@ -89,39 +89,7 @@ export interface IStorage {
   // Center search methods
   searchCenters(filters: { query?: string; city?: string; specialization?: string }): Promise<any[]>;
 
-  // Study room methods
-  createStudyRoom(room: schema.InsertStudyRoom): Promise<schema.StudyRoom>;
-  getStudyRoomById(id: number): Promise<schema.StudyRoom | undefined>;
-  getStudyRoomByCode(roomCode: string): Promise<schema.StudyRoom | undefined>;
-  updateStudyRoom(id: number, roomData: Partial<schema.InsertStudyRoom>): Promise<schema.StudyRoom | undefined>;
-  deleteStudyRoom(id: number): Promise<boolean>;
-  getStudyRoomsByHost(hostId: number): Promise<schema.StudyRoom[]>;
-  getPublicStudyRooms(): Promise<schema.StudyRoom[]>;
-  searchStudyRooms(query: string): Promise<schema.StudyRoom[]>;
 
-  // Study room participant methods
-  joinStudyRoom(roomId: number, userId: number, role?: string): Promise<schema.StudyRoomParticipant>;
-  leaveStudyRoom(roomId: number, userId: number): Promise<boolean>;
-  getStudyRoomParticipants(roomId: number): Promise<any[]>;
-  getUserStudyRooms(userId: number): Promise<any[]>;
-  updateParticipantRole(roomId: number, userId: number, role: string): Promise<boolean>;
-
-  // Study room message methods
-  createStudyRoomMessage(message: schema.InsertStudyRoomMessage): Promise<schema.StudyRoomMessage>;
-  getStudyRoomMessages(roomId: number, limit?: number): Promise<schema.StudyRoomMessage[]>;
-  deleteStudyRoomMessage(id: number): Promise<boolean>;
-
-  // Whiteboard session methods
-  createWhiteboardSession(session: schema.InsertWhiteboardSession): Promise<schema.WhiteboardSession>;
-  getWhiteboardSessionsByRoom(roomId: number): Promise<schema.WhiteboardSession[]>;
-  updateWhiteboardSession(id: number, sessionData: Partial<schema.InsertWhiteboardSession>): Promise<schema.WhiteboardSession | undefined>;
-  endWhiteboardSession(id: number): Promise<boolean>;
-
-  // Screen sharing session methods
-  createScreenSharingSession(session: schema.InsertScreenSharingSession): Promise<schema.ScreenSharingSession>;
-  getScreenSharingSessionsByRoom(roomId: number): Promise<schema.ScreenSharingSession[]>;
-  endScreenSharingSession(id: number): Promise<boolean>;
-  getActiveScreenSharingSession(roomId: number): Promise<schema.ScreenSharingSession | undefined>;
 
 }
 
