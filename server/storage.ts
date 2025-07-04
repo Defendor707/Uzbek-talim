@@ -6,7 +6,6 @@ import bcrypt from 'bcrypt';
 export interface IStorage {
   // User related methods
   getUser(id: number): Promise<schema.User | undefined>;
-  getUserByEmail(email: string): Promise<schema.User | undefined>;
   getUserByUsername(username: string): Promise<schema.User | undefined>;
   createUser(user: schema.InsertUser): Promise<schema.User>;
   updateUser(id: number, userData: Partial<schema.InsertUser>): Promise<schema.User | undefined>;
@@ -90,8 +89,39 @@ export interface IStorage {
   // Center search methods
   searchCenters(filters: { query?: string; city?: string; specialization?: string }): Promise<any[]>;
 
+  // Study room methods
+  createStudyRoom(room: schema.InsertStudyRoom): Promise<schema.StudyRoom>;
+  getStudyRoomById(id: number): Promise<schema.StudyRoom | undefined>;
+  getStudyRoomByCode(roomCode: string): Promise<schema.StudyRoom | undefined>;
+  updateStudyRoom(id: number, roomData: Partial<schema.InsertStudyRoom>): Promise<schema.StudyRoom | undefined>;
+  deleteStudyRoom(id: number): Promise<boolean>;
+  getStudyRoomsByHost(hostId: number): Promise<schema.StudyRoom[]>;
+  getPublicStudyRooms(): Promise<schema.StudyRoom[]>;
+  searchStudyRooms(query: string): Promise<schema.StudyRoom[]>;
 
+  // Study room participant methods
+  joinStudyRoom(roomId: number, userId: number, role?: string): Promise<schema.StudyRoomParticipant>;
+  leaveStudyRoom(roomId: number, userId: number): Promise<boolean>;
+  getStudyRoomParticipants(roomId: number): Promise<any[]>;
+  getUserStudyRooms(userId: number): Promise<any[]>;
+  updateParticipantRole(roomId: number, userId: number, role: string): Promise<boolean>;
 
+  // Study room message methods
+  createStudyRoomMessage(message: schema.InsertStudyRoomMessage): Promise<schema.StudyRoomMessage>;
+  getStudyRoomMessages(roomId: number, limit?: number): Promise<schema.StudyRoomMessage[]>;
+  deleteStudyRoomMessage(id: number): Promise<boolean>;
+
+  // Whiteboard session methods
+  createWhiteboardSession(session: schema.InsertWhiteboardSession): Promise<schema.WhiteboardSession>;
+  getWhiteboardSessionsByRoom(roomId: number): Promise<schema.WhiteboardSession[]>;
+  updateWhiteboardSession(id: number, sessionData: Partial<schema.InsertWhiteboardSession>): Promise<schema.WhiteboardSession | undefined>;
+  endWhiteboardSession(id: number): Promise<boolean>;
+
+  // Screen sharing session methods
+  createScreenSharingSession(session: schema.InsertScreenSharingSession): Promise<schema.ScreenSharingSession>;
+  getScreenSharingSessionsByRoom(roomId: number): Promise<schema.ScreenSharingSession[]>;
+  endScreenSharingSession(id: number): Promise<boolean>;
+  getActiveScreenSharingSession(roomId: number): Promise<schema.ScreenSharingSession | undefined>;
 
 }
 
@@ -102,10 +132,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getUserByEmail(email: string): Promise<schema.User | undefined> {
-    // Email field was removed from users table
-    return undefined;
-  }
+
 
   async getUserByUsername(username: string): Promise<schema.User | undefined> {
     const [user] = await db.select().from(schema.users).where(eq(schema.users.username, username));
@@ -118,7 +145,6 @@ export class DatabaseStorage implements IStorage {
     const hashedPassword = await bcrypt.hash(passwordToHash, 10);
     const userData = { 
       username: user.username,
-      email: user.email,
       passwordHash: hashedPassword,
       role: user.role,
       fullName: user.fullName,
@@ -387,7 +413,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Get tests by teacher ID
-  async getTestsByTeacherId(teacherId: string): Promise<schema.Test[]> {
+  async getTestsByTeacherId(teacherId: number): Promise<schema.Test[]> {
     try {
       const tests = await db
         .select()
