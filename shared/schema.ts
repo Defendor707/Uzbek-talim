@@ -19,14 +19,7 @@ export const testTypeEnum = pgEnum('test_type', [
 // Define test statuses enum
 export const testStatusEnum = pgEnum('test_status', ['draft', 'active', 'completed']);
 
-// Define study room statuses enum
-export const studyRoomStatusEnum = pgEnum('study_room_status', ['active', 'paused', 'ended']);
 
-// Define study room types enum
-export const studyRoomTypeEnum = pgEnum('study_room_type', ['public', 'private', 'class']);
-
-// Define participant roles enum
-export const participantRoleEnum = pgEnum('participant_role', ['host', 'moderator', 'participant']);
 
 // Users table
 export const users = pgTable("users", {
@@ -440,151 +433,9 @@ export type InsertSchedule = z.infer<typeof insertScheduleSchema>;
 export type ParentNotificationSettings = typeof parentNotificationSettings.$inferSelect;
 export type InsertParentNotificationSettings = z.infer<typeof insertParentNotificationSettingsSchema>;
 
-// Study Rooms table
-export const studyRooms = pgTable("study_rooms", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  description: text("description"),
-  hostId: integer("host_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  type: studyRoomTypeEnum("type").notNull().default('public'),
-  status: studyRoomStatusEnum("status").notNull().default('active'),
-  maxParticipants: integer("max_participants").default(50),
-  currentParticipants: integer("current_participants").default(0),
-  roomCode: text("room_code").unique().notNull(),
-  password: text("password"), // For private rooms
-  subject: text("subject"),
-  grade: text("grade"),
-  scheduledAt: timestamp("scheduled_at"),
-  startedAt: timestamp("started_at"),
-  endedAt: timestamp("ended_at"),
-  settings: jsonb("settings").default({}), // Room configuration (camera, mic, whiteboard enabled, etc.)
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => {
-  return {
-    hostIdx: index("idx_study_rooms_host").on(table.hostId),
-    statusIdx: index("idx_study_rooms_status").on(table.status),
-    typeIdx: index("idx_study_rooms_type").on(table.type),
-    roomCodeIdx: index("idx_study_rooms_code").on(table.roomCode),
-    subjectIdx: index("idx_study_rooms_subject").on(table.subject),
-  };
-});
 
-// Study Room Participants table
-export const studyRoomParticipants = pgTable("study_room_participants", {
-  id: serial("id").primaryKey(),
-  roomId: integer("room_id").notNull().references(() => studyRooms.id, { onDelete: 'cascade' }),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  role: participantRoleEnum("role").notNull().default('participant'),
-  joinedAt: timestamp("joined_at").defaultNow().notNull(),
-  leftAt: timestamp("left_at"),
-  isActive: boolean("is_active").default(true).notNull(),
-  permissions: jsonb("permissions").default({}), // Camera, mic, whiteboard, etc.
-}, (table) => {
-  return {
-    roomIdx: index("idx_participants_room").on(table.roomId),
-    userIdx: index("idx_participants_user").on(table.userId),
-    activeIdx: index("idx_participants_active").on(table.isActive),
-  };
-});
 
-// Study Room Messages table for real-time chat
-export const studyRoomMessages = pgTable("study_room_messages", {
-  id: serial("id").primaryKey(),
-  roomId: integer("room_id").notNull().references(() => studyRooms.id, { onDelete: 'cascade' }),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  content: text("content").notNull(),
-  type: text("type").notNull().default('text'), // text, image, file, system
-  metadata: jsonb("metadata").default({}), // File info, mentions, reactions, etc.
-  isEdited: boolean("is_edited").default(false),
-  editedAt: timestamp("edited_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-}, (table) => {
-  return {
-    roomIdx: index("idx_messages_room").on(table.roomId),
-    userIdx: index("idx_messages_user").on(table.userId),
-    createdIdx: index("idx_messages_created").on(table.createdAt),
-  };
-});
 
-// Whiteboard Sessions table for collaborative drawing
-export const whiteboardSessions = pgTable("whiteboard_sessions", {
-  id: serial("id").primaryKey(),
-  roomId: integer("room_id").notNull().references(() => studyRooms.id, { onDelete: 'cascade' }),
-  title: text("title").notNull(),
-  data: jsonb("data").notNull().default({}), // Canvas data, drawings, shapes, etc.
-  createdBy: integer("created_by").notNull().references(() => users.id),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => {
-  return {
-    roomIdx: index("idx_whiteboard_room").on(table.roomId),
-    activeIdx: index("idx_whiteboard_active").on(table.isActive),
-  };
-});
-
-// Screen Sharing Sessions table
-export const screenSharingSessions = pgTable("screen_sharing_sessions", {
-  id: serial("id").primaryKey(),
-  roomId: integer("room_id").notNull().references(() => studyRooms.id, { onDelete: 'cascade' }),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  sessionId: text("session_id").notNull().unique(),
-  isActive: boolean("is_active").default(true),
-  startedAt: timestamp("started_at").defaultNow().notNull(),
-  endedAt: timestamp("ended_at"),
-}, (table) => {
-  return {
-    roomIdx: index("idx_screenshare_room").on(table.roomId),
-    userIdx: index("idx_screenshare_user").on(table.userId),
-    activeIdx: index("idx_screenshare_active").on(table.isActive),
-  };
-});
-
-// Create insert schemas
-export const insertStudyRoomSchema = createInsertSchema(studyRooms).omit({
-  id: true,
-  currentParticipants: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertStudyRoomParticipantSchema = createInsertSchema(studyRoomParticipants).omit({
-  id: true,
-  joinedAt: true,
-});
-
-export const insertStudyRoomMessageSchema = createInsertSchema(studyRoomMessages).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertWhiteboardSessionSchema = createInsertSchema(whiteboardSessions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertScreenSharingSessionSchema = createInsertSchema(screenSharingSessions).omit({
-  id: true,
-  startedAt: true,
-});
-
-// Study room types
-export type StudyRoom = typeof studyRooms.$inferSelect;
-export type InsertStudyRoom = z.infer<typeof insertStudyRoomSchema>;
-
-export type StudyRoomParticipant = typeof studyRoomParticipants.$inferSelect;
-export type InsertStudyRoomParticipant = z.infer<typeof insertStudyRoomParticipantSchema>;
-
-export type StudyRoomMessage = typeof studyRoomMessages.$inferSelect;
-export type InsertStudyRoomMessage = z.infer<typeof insertStudyRoomMessageSchema>;
-
-export type WhiteboardSession = typeof whiteboardSessions.$inferSelect;
-export type InsertWhiteboardSession = z.infer<typeof insertWhiteboardSessionSchema>;
-
-export type ScreenSharingSession = typeof screenSharingSessions.$inferSelect;
-export type InsertScreenSharingSession = z.infer<typeof insertScreenSharingSessionSchema>;
 
 // Center request status enum
 export const requestStatusEnum = pgEnum('request_status', ['pending', 'accepted', 'rejected']);

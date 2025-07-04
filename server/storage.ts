@@ -88,34 +88,8 @@ export interface IStorage {
   // Center search methods
   searchCenters(filters: { query?: string; city?: string; specialization?: string }): Promise<any[]>;
   
-  // Study Room methods
-  createStudyRoom(room: schema.InsertStudyRoom): Promise<schema.StudyRoom>;
-  getStudyRoomById(id: number): Promise<schema.StudyRoom | undefined>;
-  getStudyRoomByCode(roomCode: string): Promise<schema.StudyRoom | undefined>;
-  updateStudyRoom(id: number, roomData: Partial<schema.InsertStudyRoom>): Promise<schema.StudyRoom | undefined>;
-  deleteStudyRoom(id: number): Promise<boolean>;
-  getActiveStudyRooms(): Promise<schema.StudyRoom[]>;
-  getStudyRoomsByHost(hostId: number): Promise<schema.StudyRoom[]>;
-  getStudyRoomsBySubject(subject: string): Promise<schema.StudyRoom[]>;
-  
-  // Study Room Participant methods
-  joinStudyRoom(roomId: number, userId: number, role?: string): Promise<schema.StudyRoomParticipant>;
-  leaveStudyRoom(roomId: number, userId: number): Promise<boolean>;
-  getStudyRoomParticipants(roomId: number): Promise<any[]>;
-  getUserStudyRooms(userId: number): Promise<any[]>;
-  updateParticipantPermissions(roomId: number, userId: number, permissions: any): Promise<boolean>;
-  
-  // Study Room Message methods
-  createStudyRoomMessage(message: schema.InsertStudyRoomMessage): Promise<schema.StudyRoomMessage>;
-  getStudyRoomMessages(roomId: number, limit?: number): Promise<any[]>;
-  editStudyRoomMessage(messageId: number, content: string): Promise<boolean>;
-  deleteStudyRoomMessage(messageId: number): Promise<boolean>;
-  
-  // Whiteboard methods
-  createWhiteboardSession(session: schema.InsertWhiteboardSession): Promise<schema.WhiteboardSession>;
-  getWhiteboardSessions(roomId: number): Promise<schema.WhiteboardSession[]>;
-  updateWhiteboardSession(sessionId: number, data: any): Promise<boolean>;
-  deleteWhiteboardSession(sessionId: number): Promise<boolean>;
+
+
   
   // Screen Sharing methods
   createScreenSharingSession(session: schema.InsertScreenSharingSession): Promise<schema.ScreenSharingSession>;
