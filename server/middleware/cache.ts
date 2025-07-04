@@ -2,8 +2,19 @@ import { Request, Response, NextFunction } from 'express';
 
 interface CacheEntry {
   data: any;
-  timestamp: number;
-  expiresAt: number;
+  expiry: number;
+  tags: string[];
+  hitCount: number;
+  lastAccessed: number;
+  compressed?: boolean;
+}
+
+interface CacheStats {
+  hits: number;
+  misses: number;
+  hitRatio: number;
+  totalKeys: number;
+  memoryUsage: number;
 }
 
 interface CacheOptions {
@@ -18,7 +29,7 @@ class MemoryCache {
 
   constructor(maxSize: number = 1000) {
     this.maxSize = maxSize;
-    
+
     // Clean up expired entries every 5 minutes
     setInterval(() => this.cleanup(), 5 * 60 * 1000);
   }
@@ -44,28 +55,28 @@ class MemoryCache {
 
   set(key: string, data: any, ttl: number): void {
     this.evictOldest();
-    
+
     const entry: CacheEntry = {
       data,
       timestamp: Date.now(),
       expiresAt: Date.now() + ttl
     };
-    
+
     this.cache.set(key, entry);
   }
 
   get(key: string): any | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return null;
     }
-    
+
     if (entry.expiresAt < Date.now()) {
       this.cache.delete(key);
       return null;
     }
-    
+
     return entry.data;
   }
 
@@ -110,7 +121,7 @@ export function createCacheMiddleware(options: CacheOptions) {
 
     // Generate cache key
     const cacheKey = keyGenerator ? keyGenerator(req) : `${req.originalUrl}:${req.user?.userId || 'anonymous'}`;
-    
+
     // Try to get from cache
     const cachedData = globalCache.get(cacheKey);
     if (cachedData) {
@@ -131,7 +142,7 @@ export function createCacheMiddleware(options: CacheOptions) {
           console.error('Cache serialization error:', error);
         }
       }
-      
+
       return originalSend.call(this, body);
     };
 

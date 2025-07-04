@@ -42,6 +42,9 @@ export const users = pgTable("users", {
     roleIdx: index("idx_users_role").on(table.role),
     telegramIdIdx: index("idx_users_telegram_id").on(table.telegramId),
     resetTokenIdx: index("idx_users_reset_token").on(table.resetToken),
+    activeUsersIdx: index("idx_users_active_role").on(table.isActive, table.role),
+    createdAtIdx: index("idx_users_created_at").on(table.createdAt),
+    fullTextSearchIdx: index("idx_users_fullname_search").on(table.fullName),
   };
 });
 
@@ -169,6 +172,11 @@ export const tests = pgTable("tests", {
     testCodeIdx: index("idx_tests_test_code").on(table.testCode),
     statusIdx: index("idx_tests_status").on(table.status),
     typeIdx: index("idx_tests_type").on(table.type),
+    activeTestsIdx: index("idx_tests_active").on(table.status, table.startDate, table.endDate),
+    teacherStatusIdx: index("idx_tests_teacher_status").on(table.teacherId, table.status),
+    gradeTypeIdx: index("idx_tests_grade_type").on(table.grade, table.type),
+    dateRangeIdx: index("idx_tests_date_range").on(table.startDate, table.endDate),
+    createdAtIdx: index("idx_tests_created_at").on(table.createdAt),
   };
 });
 

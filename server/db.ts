@@ -11,14 +11,19 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Enhanced pool configuration with error handling and retry logic
+// Enhanced pool configuration with advanced optimization
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: 5,
-  idleTimeoutMillis: 60000,
-  connectionTimeoutMillis: 10000,
-  maxUses: 7500,
-  allowExitOnIdle: false
+  max: 20, // Increased pool size for better concurrency
+  min: 2,  // Minimum connections to keep alive
+  idleTimeoutMillis: 30000, // Reduced idle timeout
+  connectionTimeoutMillis: 8000,
+  maxUses: 10000, // Increased connection reuse
+  allowExitOnIdle: false,
+  statement_timeout: 30000, // 30 second query timeout
+  query_timeout: 25000,     // 25 second query timeout
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000,
 });
 
 // Handle pool errors with retry logic instead of exit

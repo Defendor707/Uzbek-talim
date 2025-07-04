@@ -2,10 +2,16 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { startTelegramBot } from "./telegram";
+import { dbOptimizer } from "./utils/dbOptimizer";
+import { dbBackup } from "./utils/dbBackup";
+import { dbPerformanceMiddleware } from "./middleware/dbMonitor";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Database performance monitoring
+app.use(dbPerformanceMiddleware);
 
 // Serve uploaded files statically
 app.use('/uploads', express.static('uploads'));
@@ -70,6 +76,16 @@ app.use((req, res, next) => {
     reusePort: true,
   }, async () => {
     log(`serving on port ${port}`);
+    
+    // Initialize database optimizations
+    try {
+      await dbOptimizer.createOptimalIndexes();
+      await dbOptimizer.optimizeTables();
+      await dbBackup.scheduleBackups();
+      log('Database optimizations initialized', 'database');
+    } catch (error) {
+      log(`Database optimization failed: ${error}`, 'database');
+    }
     
     // Start the Telegram bot
     try {
