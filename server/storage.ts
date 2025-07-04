@@ -11,7 +11,7 @@ export interface IStorage {
   createUser(user: schema.InsertUser): Promise<schema.User>;
   updateUser(id: number, userData: Partial<schema.InsertUser>): Promise<schema.User | undefined>;
   getUsersByRole(role: string): Promise<schema.User[]>;
-  
+
   // Password reset methods
   createResetToken(username: string): Promise<string | null>;
   getUserByResetToken(token: string): Promise<schema.User | undefined>;
@@ -27,7 +27,7 @@ export interface IStorage {
   createCenterProfile(profile: schema.InsertCenterProfile): Promise<schema.CenterProfile>;
   getCenterProfile(userId: number): Promise<schema.CenterProfile | undefined>;
   updateCenterProfile(userId: number, profileData: Partial<schema.InsertCenterProfile>): Promise<schema.CenterProfile | undefined>;
-  
+
   // Center management methods
   getTeachersByCenter(centerId: number): Promise<schema.User[]>;
   getStudentsByCenter(centerId: number): Promise<schema.User[]>;
@@ -42,6 +42,7 @@ export interface IStorage {
   getLessonsByTeacherId(teacherId: number): Promise<schema.Lesson[]>;
   getLessonsByGrade(grade: string): Promise<schema.Lesson[]>;
   searchLessons(query: string): Promise<schema.Lesson[]>;
+  getLessons(): Promise<schema.Lesson[]>;
 
 
   // Test related methods
@@ -54,6 +55,7 @@ export interface IStorage {
   getTestsByGradeAndClassroom(grade: string, classroom?: string): Promise<schema.Test[]>;
   getActiveTestsForStudent(grade: string, classroom?: string): Promise<schema.Test[]>;
   getAllPublicTests(): Promise<schema.Test[]>;
+  getTestsByUserId(userId: string): Promise<schema.Test[]>;
 
   // Question related methods
   createQuestion(question: schema.InsertQuestion): Promise<schema.Question>;
@@ -79,15 +81,15 @@ export interface IStorage {
   // Parent-child relationship methods
   addChildToParent(parentId: number, childUsername: string): Promise<boolean>;
   getChildrenByParentId(parentId: number): Promise<any[]>;
-  
+
   // Parent notification settings methods
   createParentNotificationSettings(settings: schema.InsertParentNotificationSettings): Promise<schema.ParentNotificationSettings>;
   getParentNotificationSettings(parentId: number): Promise<schema.ParentNotificationSettings | undefined>;
   updateParentNotificationSettings(parentId: number, settings: Partial<schema.InsertParentNotificationSettings>): Promise<schema.ParentNotificationSettings | undefined>;
-  
+
   // Center search methods
   searchCenters(filters: { query?: string; city?: string; specialization?: string }): Promise<any[]>;
-  
+
 
 
 
@@ -132,7 +134,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateUser(id: number, userData: any): Promise<schema.User | undefined> {
     const updateData: any = { ...userData };
-    
+
     // If updating password, hash it
     if (userData.password) {
       updateData.passwordHash = await bcrypt.hash(userData.password, 10);
@@ -312,7 +314,7 @@ export class DatabaseStorage implements IStorage {
       price: lessonData.price?.toString(), // Convert number to string for numeric type
       updatedAt: new Date()
     };
-    
+
     const [updatedLesson] = await db
       .update(schema.lessons)
       .set(updateData)
@@ -384,10 +386,52 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  async getTestsByTeacherId(teacherId: number): Promise<schema.Test[]> {
-    return await db.select().from(schema.tests)
-      .where(eq(schema.tests.teacherId, teacherId))
-      .orderBy(desc(schema.tests.createdAt));
+  // Get tests by teacher ID
+  async getTestsByTeacherId(teacherId: string): Promise<schema.Test[]> {
+    try {
+      const tests = await db
+        .select()
+        .from(schema.tests)
+        .where(eq(schema.tests.teacherId, teacherId))
+        .orderBy(desc(schema.tests.createdAt));
+
+      return tests;
+    } catch (error) {
+      console.error('Error fetching tests by teacher ID:', error);
+      throw error;
+    }
+  }
+
+  // Get tests by user ID (for students and general users)
+  async getTestsByUserId(userId: string): Promise<schema.Test[]> {
+    try {
+      const tests = await db
+        .select()
+        .from(schema.tests)
+        .where(eq(schema.tests.status, 'active'))
+        .orderBy(desc(schema.tests.createdAt));
+
+      return tests;
+    } catch (error) {
+      console.error('Error fetching tests by user ID:', error);
+      throw error;
+    }
+  }
+
+  // Get all lessons (for general access)
+  async getLessons(): Promise<schema.Lesson[]> {
+    try {
+      const lessons = await db
+        .select()
+        .from(schema.lessons)
+        .where(eq(schema.lessons.status, 'published'))
+        .orderBy(desc(schema.lessons.createdAt));
+
+      return lessons;
+    } catch (error) {
+      console.error('Error fetching lessons:', error);
+      throw error;
+    }
   }
 
   async getTestsByGradeAndClassroom(grade: string, classroom?: string): Promise<schema.Test[]> {
@@ -529,14 +573,14 @@ export class DatabaseStorage implements IStorage {
       const existingParentCheck = await db.execute(sql`
         SELECT parent_id FROM student_profiles WHERE user_id = ${child.id} AND parent_id IS NOT NULL
       `);
-      
+
       if (existingParentCheck.rows.length > 0) {
         throw new Error('Bu farzand allaqachon boshqa ota-onaga bog\'langan');
       }
 
       // Get existing student profile
       const existingProfile = await this.getStudentProfile(child.id);
-      
+
       if (existingProfile) {
         // Update existing profile with parent relationship
         await db.execute(sql`
@@ -559,7 +603,7 @@ export class DatabaseStorage implements IStorage {
 
   async getChildrenByParentId(parentId: number): Promise<any[]> {
     console.log('Getting children for parent ID:', parentId);
-    
+
     try {
       // Use raw SQL directly for reliability - removed email column as it doesn't exist
       const result = await db.execute(sql`
@@ -576,7 +620,7 @@ export class DatabaseStorage implements IStorage {
       `);
 
       console.log('Found children:', result.rows.length);
-      
+
       return result.rows.map((child: any) => ({
         ...child,
         firstName: child.fullName?.split(' ')[0] || child.username,

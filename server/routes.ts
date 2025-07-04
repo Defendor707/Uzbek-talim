@@ -18,22 +18,22 @@ import * as jwt from "jsonwebtoken";
 // Helper function to determine if notification should be sent based on settings
 function shouldSendNotification(settings: any, scorePercentage: number): boolean {
   if (!settings) return true; // Default: send all notifications
-  
+
   // Check score range
   if (scorePercentage < settings.minScoreNotification || scorePercentage > settings.maxScoreNotification) {
     return false;
   }
-  
+
   // Check pass/fail only settings
   const passingScore = 60; // Default passing score
   const isPassed = scorePercentage >= passingScore;
-  
+
   if (settings.notifyOnlyFailed && isPassed) return false;
   if (settings.notifyOnlyPassed && !isPassed) return false;
-  
+
   // Check if instant notifications are enabled
   if (!settings.instantNotification) return false;
-  
+
   return true;
 }
 import * as schema from "@shared/schema";
@@ -89,11 +89,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const testId = parseInt(req.params.id);
       const test = await storage.getTestById(testId);
-      
+
       if (!test) {
         return res.status(404).json({ error: "Test not found" });
       }
-      
+
       res.json(test);
     } catch (error) {
       console.error("Error fetching test:", error);
@@ -107,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         userId: req.user!.userId
       });
-      
+
       const newTest = await storage.createTest(testData);
       invalidateTestsCache();
       res.status(201).json(newTest);
@@ -127,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const testId = parseInt(req.params.id);
       const testData = schema.insertTestSchema.parse(req.body);
-      
+
       const updatedTest = await storage.updateTest(testId, testData);
       invalidateTestsCache();
       res.json(updatedTest);
@@ -163,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         testId
       });
-      
+
       const newQuestion = await storage.createQuestion(questionData);
       invalidateTestsCache();
       res.status(201).json(newQuestion);
@@ -212,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         startTime: new Date(),
         status: 'in_progress'
       });
-      
+
       const newAttempt = await storage.createTestAttempt(attemptData);
       res.status(201).json(newAttempt);
     } catch (error) {
@@ -231,11 +231,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const attemptId = parseInt(req.params.id);
       const attempt = await storage.getTestAttemptById(attemptId);
-      
+
       if (!attempt) {
         return res.status(404).json({ error: "Test attempt not found" });
       }
-      
+
       res.json(attempt);
     } catch (error) {
       console.error("Error fetching test attempt:", error);
@@ -247,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const attemptId = parseInt(req.params.id);
       const updateData = req.body;
-      
+
       const updatedAttempt = await storage.updateTestAttempt(attemptId, updateData);
       res.json(updatedAttempt);
     } catch (error) {
@@ -264,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         attemptId
       });
-      
+
       const newAnswer = await storage.createStudentAnswer(answerData);
       res.status(201).json(newAnswer);
     } catch (error) {
@@ -331,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         userId: req.user!.userId
       });
-      
+
       const newLesson = await storage.createLesson(lessonData);
       invalidateLessonsCache();
       res.status(201).json(newLesson);
@@ -390,7 +390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const testId = parseInt(req.params.testId);
       const buffer = await generateTestReportExcel(testId);
-      
+
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="test-report-${testId}.xlsx"`);
       res.send(buffer);
@@ -404,7 +404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const studentId = parseInt(req.params.studentId);
       const buffer = await generateStudentProgressExcel(studentId);
-      
+
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="student-progress-${studentId}.xlsx"`);
       res.send(buffer);
@@ -415,7 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Role-specific routes
-  
+
   // Teacher routes
   app.get("/api/teacher/profile", authenticate, authorize(['teacher']), async (req, res) => {
     try {
@@ -451,7 +451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!filename) {
         return res.status(400).json({ error: "No image uploaded" });
       }
-      
+
       await storage.updateTeacherProfileImage(req.user!.userId, filename);
       invalidateUserCache(req.user!.userId);
       res.json({ filename });
@@ -496,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!filename) {
         return res.status(400).json({ error: "No image uploaded" });
       }
-      
+
       await storage.updateStudentProfileImage(req.user!.userId, filename);
       invalidateUserCache(req.user!.userId);
       res.json({ filename });
@@ -622,7 +622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!filename) {
         return res.status(400).json({ error: "No image uploaded" });
       }
-      
+
       await storage.updateCenterProfileImage(req.user!.userId, filename);
       invalidateUserCache(req.user!.userId);
       res.json({ filename });
@@ -647,11 +647,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const code = req.params.code;
       const test = await storage.getTestByCode(code);
-      
+
       if (!test) {
         return res.status(404).json({ error: "Test not found" });
       }
-      
+
       res.json(test);
     } catch (error) {
       console.error("Error fetching test by code:", error);
@@ -672,7 +672,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { username } = result.data;
       const resetToken = await storage.createResetToken(username);
-      
+
       if (!resetToken) {
         return res.json({ 
           message: 'Foydalanuvchi topilmadi' 
@@ -681,7 +681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Reset token for ${username}: ${resetToken}`);
       console.log(`Reset URL: ${req.get('origin')}/reset-password?token=${resetToken}`);
-      
+
       res.json({ 
         message: 'Parol tiklash kodi yaratildi',
         resetUrl: `/reset-password?token=${resetToken}`
@@ -703,12 +703,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { token, password } = result.data;
-      
+
       const bcrypt = await import('bcrypt');
       const newPasswordHash = await bcrypt.hash(password, 10);
-      
+
       const success = await storage.resetPassword(token, newPasswordHash);
-      
+
       if (!success) {
         return res.status(400).json({ 
           error: 'Token yaroqsiz yoki muddati tugagan' 
@@ -726,7 +726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token } = req.params;
       const user = await storage.getUserByResetToken(token);
-      
+
       if (!user) {
         return res.status(400).json({ 
           error: 'Token yaroqsiz yoki muddati tugagan' 
@@ -740,12 +740,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get public test by ID
+  app.get('/api/tests/public', authenticate, async (req, res) => {
+    try {
+      const testIdParam = req.query.id as string;
+      if (!testIdParam || isNaN(parseInt(testIdParam))) {
+        return res.status(400).json({ error: 'Valid test ID is required' });
+      }
+
+      const testId = parseInt(testIdParam);
+      const test = await storage.getTestById(testId);
+
+      if (!test) {
+        return res.status(404).json({ error: 'Test not found' });
+      }
+
+      res.json(test);
+    } catch (error) {
+      console.error("Error fetching public test:", error);
+      res.status(500).json({ error: "Failed to fetch public test" });
+    }
+  });
+
   // Error handling middleware
   app.use(globalErrorHandler);
 
   // Create HTTP server
   const httpServer = createServer(app);
-  
+
   // Initialize WebSocket sync service
   syncService.init(httpServer);
 
