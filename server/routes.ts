@@ -741,7 +741,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Error handling middleware
-  app.use(notFoundHandler);
   app.use(globalErrorHandler);
 
   // Create HTTP server
