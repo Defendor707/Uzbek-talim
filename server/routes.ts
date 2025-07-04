@@ -147,6 +147,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create test with images endpoint
+  app.post("/api/tests/create-with-images", authenticate, upload.array('testImages', 5), async (req, res) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+      const testImages = files ? files.map(file => `/uploads/${file.filename}`) : [];
+      
+      // Parse questions from JSON string
+      const questions = JSON.parse(req.body.questions || '[]');
+      
+      // Create test data
+      const testData = {
+        title: req.body.title,
+        description: req.body.description || '',
+        type: req.body.type as schema.Test['type'],
+        status: 'draft' as const,
+        totalQuestions: parseInt(req.body.totalQuestions) || questions.length,
+        testCode: req.body.testCode || Math.random().toString(36).substring(2, 8).toUpperCase(),
+        userId: req.user!.userId,
+        testImages,
+        startTime: req.body.startTime || null,
+        endTime: req.body.endTime || null,
+        grade: req.body.grade || null,
+        classroom: req.body.classroom || null,
+      };
+
+      // Create test
+      const newTest = await storage.createTest(testData);
+
+      // Create questions
+      for (let i = 0; i < questions.length; i++) {
+        const question = questions[i];
+        await storage.createQuestion({
+          testId: newTest.id,
+          questionText: question.questionText,
+          questionImage: question.questionImage || null,
+          options: question.options || ['A', 'B', 'C', 'D'],
+          correctAnswer: question.correctAnswer,
+          points: question.points || 1,
+          order: i + 1
+        });
+      }
+
+      invalidateTestsCache();
+      res.status(201).json(newTest);
+    } catch (error) {
+      console.error("Error creating test with images:", error);
+      res.status(500).json({ error: "Failed to create test with images" });
+    }
+  });
+
   app.put("/api/tests/:id", authenticate, async (req, res) => {
     try {
       const testId = parseInt(req.params.id);
