@@ -62,7 +62,7 @@ class RateLimiter {
     // Check if limit exceeded
     if (this.store[key].count >= this.options.maxRequests) {
       const remainingTime = Math.ceil((this.store[key].resetTime - now) / 1000);
-      
+
       res.status(429).json({
         error: this.options.message,
         retryAfter: remainingTime
@@ -85,7 +85,7 @@ class RateLimiter {
     const self = this;
     res.send = function(body: any) {
       const statusCode = res.statusCode;
-      
+
       // Optionally skip counting based on response status
       if (
         (statusCode >= 200 && statusCode < 300 && self.options.skipSuccessfulRequests) ||
@@ -93,7 +93,7 @@ class RateLimiter {
       ) {
         self.store[key].count--;
       }
-      
+
       return originalSend.call(this, body);
     };
 
@@ -101,29 +101,33 @@ class RateLimiter {
   };
 }
 
-// Pre-configured rate limiters for different endpoints
+// General rate limiter for all API routes - more lenient
 export const generalLimiter = new RateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 100, // 100 requests per 15 minutes
-  message: 'Juda ko\'p so\'rov yuborildi, keyinroq urinib ko\'ring.'
+  maxRequests: 500, // increased from 100 to 500 requests per windowMs
+  message: 'Juda ko\'p so\'rov yuborildi, keyinroq urinib ko\'ring.',
+  skipSuccessfulRequests: true, // Don't count successful requests
 });
 
+// Authentication rate limiter - more lenient
 export const authLimiter = new RateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 10, // 10 login attempts per 15 minutes
+  maxRequests: 25, // increased from 10 to 25 requests per windowMs
   message: 'Juda ko\'p kirish urinishi. 15 daqiqadan so\'ng qayta urinib ko\'ring.',
   skipSuccessfulRequests: true
 });
 
+// Upload rate limiter - more lenient
 export const uploadLimiter = new RateLimiter({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  maxRequests: 20, // 20 uploads per 10 minutes
+  maxRequests: 50, // increased from 20 to 50 uploads per windowMs
   message: 'Juda ko\'p fayl yuklash urinishi. Keyinroq urinib ko\'ring.'
 });
 
+// Test-specific rate limiter - more lenient
 export const testLimiter = new RateLimiter({
   windowMs: 60 * 1000, // 1 minute
-  maxRequests: 30, // 30 test-related requests per minute
+  maxRequests: 60, // increased from 30 to 60 test requests per minute
   message: 'Test bilan bog\'liq juda ko\'p so\'rov. Biroz kuting.'
 });
 

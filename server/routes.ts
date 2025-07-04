@@ -46,7 +46,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth Routes with specific rate limiting
   app.post("/api/auth/register", authLimiter.middleware, register);
   app.post("/api/auth/login", authLimiter.middleware, login);
-  app.get("/api/auth/me", authenticate, profileCache, async (req, res) => {
+  // Auth me endpoint with lighter rate limiting
+  const authMeLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 100, // 100 requests per minute for auth/me
+    message: {
+      error: "Juda ko'p autentifikatsiya tekshiruvi, keyinroq urinib ko'ring",
+      retryAfter: "1 daqiqa"
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    keyGenerator: (req) => {
+      const user = (req as any).user;
+      return user ? `authme:${user.userId}` : req.ip;
+    }
+  });
+
+  app.get("/api/auth/me", authMeLimiter, authenticate, profileCache, async (req, res) => {
     try {
       const user = await storage.getUser(req.user!.userId);
       if (!user) {

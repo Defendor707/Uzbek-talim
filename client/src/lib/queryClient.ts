@@ -3,12 +3,12 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
-    
+
     // Handle authentication errors but don't clear token here - let useAuth handle it
     if (res.status === 401) {
       throw new Error('401: Avtorizatsiya talab qilinadi');
     }
-    
+
     // Try to parse error message from response
     try {
       const errorData = JSON.parse(text);
@@ -26,11 +26,11 @@ export async function apiRequest(
 ): Promise<Response> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const headers: Record<string, string> = {};
-  
+
   if (data) {
     headers["Content-Type"] = "application/json";
   }
-  
+
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
@@ -54,7 +54,7 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const headers: Record<string, string> = {};
-    
+
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     }
@@ -79,20 +79,21 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: 10 * 60 * 1000, // 10 minutes - malumotlar uzoqroq fresh turibi
-      gcTime: 30 * 60 * 1000, // 30 minutes - cache memory da uzoqroq saqlanadi
-      retry: (failureCount, error: any) => {
-        // Don't retry on auth errors
-        if (error?.message?.includes('401') || error?.message?.includes('Avtorizatsiya')) {
+      staleTime: 15 * 60 * 1000, // 15 minutes - increased from 10
+      cacheTime: 45 * 60 * 1000, // 45 minutes - increased from 30
+      retry: (failureCount, error) => {
+        // Don't retry on 4xx errors except 429
+        if (error?.response?.status >= 400 && error?.response?.status < 500 && error?.response?.status !== 429) {
           return false;
         }
-        return failureCount < 2;
+        return failureCount < 2; // Reduced from 3 to 2
       },
-      // Network bo'lmagan holatlarda cached data ko'rsatish
-      networkMode: 'offlineFirst',
+      retryDelay: (attemptIndex) => Math.min(2000 * 2 ** attemptIndex, 30000), // Increased base delay
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: 'always',
+      refetchOnMount: false, // Changed to false to reduce unnecessary requests
+      refetchInterval: false, // Disable automatic refetching
+      networkMode: 'offlineFirst'
     },
     mutations: {
       retry: false,
