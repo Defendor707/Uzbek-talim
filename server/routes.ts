@@ -10,6 +10,7 @@ import express from "express";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { generalLimiter, authLimiter, uploadLimiter, testLimiter } from "./middleware/rateLimiter";
+import RateLimiter from "./middleware/rateLimiter";
 import { testsCache, lessonsCache, profileCache, statisticsCache, invalidateTestsCache, invalidateLessonsCache, invalidateUserCache } from "./middleware/cache";
 import { globalErrorHandler, notFoundHandler, requestLogger, asyncHandler } from "./middleware/errorHandler";
 import autoSaveMiddleware from "./middleware/autoSave";
@@ -40,6 +41,9 @@ import * as schema from "@shared/schema";
 import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Create HTTP server
+  const httpServer = createServer(app);
+  
   // Apply general rate limiting to all API routes
   app.use('/api', generalLimiter.middleware);
 
@@ -47,23 +51,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", authLimiter.middleware, register);
   app.post("/api/auth/login", authLimiter.middleware, login);
   // Auth me endpoint with lighter rate limiting
-  const authMeLimiter = rateLimit({
+  const authMeLimiter = new RateLimiter({
     windowMs: 1 * 60 * 1000, // 1 minute
-    max: 100, // 100 requests per minute for auth/me
-    message: {
-      error: "Juda ko'p autentifikatsiya tekshiruvi, keyinroq urinib ko'ring",
-      retryAfter: "1 daqiqa"
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
-    skipSuccessfulRequests: true,
-    keyGenerator: (req) => {
-      const user = (req as any).user;
-      return user ? `authme:${user.userId}` : req.ip;
-    }
+    maxRequests: 100, // 100 requests per minute for auth/me
+    message: "Juda ko'p autentifikatsiya tekshiruvi, keyinroq urinib ko'ring",
+    skipSuccessfulRequests: true
   });
 
-  app.get("/api/auth/me", authMeLimiter, authenticate, profileCache, async (req, res) => {
+  app.get("/api/auth/me", authMeLimiter.middleware, authenticate, profileCache, async (req, res) => {
     try {
       const user = await storage.getUser(req.user!.userId);
       if (!user) {
@@ -83,7 +78,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // General user statistics
   app.get("/api/stats", statisticsCache, async (req, res) => {
     try {
-      const stats = await storage.getGeneralStats();
+      // Get basic statistics
+      const teachers = await storage.getUsersByRole('teacher');
+      const students = await storage.getUsersByRole('student');
+      const parents = await storage.getUsersByRole('parent');
+      const centers = await storage.getUsersByRole('center');
+      
+      const stats = {
+        teachers: teachers.length,
+        students: students.length,
+        parents: parents.length,
+        centers: centers.length
+      };
+      
       res.json(stats);
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -94,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test routes
   app.get("/api/tests", authenticate, testsCache, async (req, res) => {
     try {
-      const tests = await storage.getTestsByUserId(req.user!.userId);
+      const tests = await storage.getTestsByUserId(req.user!.userId.toString());
       res.json(tests);
     } catch (error) {
       console.error("Error fetching tests:", error);
@@ -163,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/tests/:id", authenticate, async (req, res) => {
     try {
       const testId = parseInt(req.params.id);
-      await storage.deleteTest(testId);
+      await storage.deleteTestById(testId);
       invalidateTestsCache();
       res.status(204).send();
     } catch (error) {
@@ -210,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/questions/:id", authenticate, async (req, res) => {
     try {
       const questionId = parseInt(req.params.id);
-      await storage.deleteQuestion(questionId);
+      await storage.deleteQuestionById(questionId);
       invalidateTestsCache();
       res.status(204).send();
     } catch (error) {
@@ -652,7 +659,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public test routes
   app.get("/api/public-tests", authenticate, async (req, res) => {
     try {
-      const tests = await storage.getPublicTests();
+      const tests = await storage.getAllPublicTests();
       res.json(tests);
     } catch (error) {
       console.error("Error fetching public tests:", error);
@@ -781,9 +788,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Error handling middleware
   app.use(globalErrorHandler);
-
-  // Create HTTP server
-  const httpServer = createServer(app);
 
   // Initialize WebSocket sync service
   syncService.init(httpServer);
