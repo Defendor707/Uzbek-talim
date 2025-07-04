@@ -165,10 +165,12 @@ const useAuth = () => {
       // Only logout on authentication errors, not network errors
       const isAuthError = userError.message?.includes('401') || 
                          userError.message?.includes('Authentication') ||
-                         userError.message?.includes('Unauthorized');
+                         userError.message?.includes('Unauthorized') ||
+                         userError.message?.includes('Avtorizatsiya');
       
       if (isAuthError) {
         // Authentication error detected, logging out
+        console.log('Authentication error detected, logging out user');
         if (typeof window !== 'undefined') {
           localStorage.removeItem('token');
           localStorage.removeItem('userSession');
@@ -176,12 +178,20 @@ const useAuth = () => {
         setToken(null);
         setCachedUser(null);
         queryClient.clear();
+        
+        toast({
+          title: 'Session tugadi',
+          description: 'Iltimos, qaytadan kirib, test yarating',
+          variant: 'destructive',
+        });
+        
         setLocation('/');
       } else {
         // Network error, keeping session
+        console.log('Network error, keeping session');
       }
     }
-  }, [userError, token, setLocation]);
+  }, [userError, token, setLocation, toast]);
 
   // Auto-login effect for persistent sessions with better debugging
   useEffect(() => {
