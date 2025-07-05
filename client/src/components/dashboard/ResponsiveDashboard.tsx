@@ -63,7 +63,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Mobile Layout
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="min-h-screen gradient-ocean pb-20">
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
           <div className="fixed inset-0 z-50">
@@ -137,7 +137,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           </div>
         )}
         {/* Mobile Header */}
-        <header className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-40">
+        <header className="glass border-b border-white/20 px-4 py-3 sticky top-0 z-40 backdrop-blur-xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Button
@@ -248,7 +248,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </main>
 
         {/* Mobile Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50">
+        <div className="fixed bottom-0 left-0 right-0 glass border-t border-white/20 px-4 py-3 z-50 backdrop-blur-xl">
           <div className="flex items-center justify-around max-w-sm mx-auto">
             {sections.slice(0, 3).map((section) => {
               const isActive = location === section.href || location.startsWith(section.href + '/');
@@ -294,10 +294,10 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
   // Desktop Layout
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen mesh-gradient">
       {/* Desktop Sidebar */}
       {sidebarOpen && (
-        <div className="w-64 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
+        <div className="w-64 glass border-r border-white/20 flex flex-col transition-all duration-300 ease-in-out backdrop-blur-xl">
           {/* Sidebar Header */}
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <div className="flex items-center space-x-3">

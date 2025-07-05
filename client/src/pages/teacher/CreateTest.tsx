@@ -164,19 +164,13 @@ const CreateTestPage: React.FC = () => {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        if (response.status === 401) {
-          toast({
-            title: 'Avtorizatsiya xatosi',
-            description: 'Sessiya tugagan. Iltimos, qaytadan kiring.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        throw new Error(errorData.error || `Xatolik: ${response.status}`);
+        // Don't logout on any errors - just show the error
+        throw new Error(errorData.error || errorData.message || `Test yaratishda xatolik: ${response.status}`);
       }
 
       const result = await response.json();
@@ -246,10 +240,12 @@ const CreateTestPage: React.FC = () => {
       sections={dashboardSections}
       currentPage="Test yaratish"
     >
-      {/* Progress Steps */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center justify-center space-x-4 mb-8">
-          <div className={`flex items-center space-x-2 ${step === 'info' ? 'text-blue-600' : step === 'images' || step === 'questions' ? 'text-green-600' : 'text-gray-400'}`}>
+      <div className="min-h-screen gradient-aurora">
+        <div className="absolute inset-0 particles opacity-20"></div>
+        {/* Progress Steps */}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-center space-x-4 mb-8">
+            <div className={`flex items-center space-x-2 ${step === 'info' ? 'text-blue-600' : step === 'images' || step === 'questions' ? 'text-green-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'info' ? 'border-blue-600 bg-blue-50' : step === 'images' || step === 'questions' ? 'border-green-600 bg-green-50' : 'border-gray-300'}`}>
               1
             </div>
@@ -269,11 +265,12 @@ const CreateTestPage: React.FC = () => {
             </div>
             <span className="font-medium">Savollar</span>
           </div>
+          </div>
         </div>
 
         {/* Step 1: Test Information */}
         {step === 'info' && (
-          <Card className="max-w-2xl mx-auto">
+          <Card className="max-w-2xl mx-auto glass border-gradient card-hover-lift backdrop-blur-lg">
             <CardHeader>
               <CardTitle>Test ma'lumotlari</CardTitle>
             </CardHeader>
@@ -342,7 +339,7 @@ const CreateTestPage: React.FC = () => {
 
         {/* Step 2: Images */}
         {step === 'images' && (
-          <Card className="max-w-2xl mx-auto">
+          <Card className="max-w-2xl mx-auto glass border-gradient card-hover-lift backdrop-blur-lg">
             <CardHeader>
               <CardTitle>Test rasmlari</CardTitle>
               <p className="text-gray-600">Test uchun rasmlar yuklang (ixtiyoriy)</p>
@@ -400,7 +397,7 @@ const CreateTestPage: React.FC = () => {
 
         {/* Step 3: Questions */}
         {step === 'questions' && (
-          <Card className="max-w-4xl mx-auto">
+          <Card className="max-w-4xl mx-auto glass border-gradient card-hover-lift backdrop-blur-lg">
             <CardHeader>
               <CardTitle>Savollar va javoblar</CardTitle>
               <p className="text-gray-600">Har bir savol uchun to'g'ri javobni belgilang</p>
@@ -509,6 +506,7 @@ const CreateTestPage: React.FC = () => {
             </CardContent>
           </Card>
         )}
+        </div>
       </div>
     </ResponsiveDashboard>
   );
