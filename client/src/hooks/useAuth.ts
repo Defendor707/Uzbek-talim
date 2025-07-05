@@ -164,17 +164,15 @@ const useAuth = () => {
     if (userError && token) {
       // Only logout on specific authentication errors, not general network errors
       const errorMessage = userError.message?.toLowerCase() || '';
+      
+      // Check for actual authentication errors (not network errors)
       const isAuthError = errorMessage.includes('invalid token') || 
                          errorMessage.includes('expired token') ||
                          errorMessage.includes('authentication failed') ||
-                         errorMessage.includes('avtorizatsiya');
+                         errorMessage.includes('authentication required') ||
+                         (errorMessage.includes('401') && errorMessage.includes('avtorizatsiya'));
       
-      // Also check for 401 status specifically for authentication failures
-      const is401Error = errorMessage.includes('401') && 
-                         (errorMessage.includes('unauthorized') || 
-                          errorMessage.includes('authentication required'));
-      
-      if (isAuthError || is401Error) {
+      if (isAuthError) {
         // Authentication error detected, logging out
         console.log('Authentication error detected, logging out user:', errorMessage);
         if (typeof window !== 'undefined') {
@@ -193,7 +191,7 @@ const useAuth = () => {
         
         setLocation('/');
       } else {
-        // Network or other error, keeping session and showing less intrusive message
+        // Network or other error, keeping session
         console.log('Network error, keeping session:', errorMessage);
       }
     }
