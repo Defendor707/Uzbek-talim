@@ -48,30 +48,7 @@ const CreateTestPage: React.FC = () => {
     },
   });
 
-  const createTestMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return await apiRequest('POST', '/api/tests', data);
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Muvaffaqiyat',
-        description: 'Test muvaffaqiyatli yaratildi!',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
-      // Reset form and go back to tests page
-      form.reset();
-      setStep('info');
-      setUploadedImages([]);
-      setQuestions([]);
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Xatolik',
-        description: error.message || 'Test yaratishda xatolik yuz berdi',
-        variant: 'destructive',
-      });
-    },
-  });
+  const [isCreatingTest, setIsCreatingTest] = useState(false);
 
   const handleTestInfoSubmit = (data: TestFormData) => {
     if (data.type === 'numerical') {
@@ -110,46 +87,99 @@ const CreateTestPage: React.FC = () => {
   const handleCreateTest = async () => {
     const formData = form.getValues();
     
-    // Prepare form data with images
-    const testFormData = new FormData();
-    testFormData.append('title', formData.title);
-    testFormData.append('description', formData.description || '');
-    testFormData.append('type', formData.type);
-    testFormData.append('duration', '0');
-    testFormData.append('totalQuestions', formData.totalQuestions.toString());
-    testFormData.append('status', 'active');
-    
-    if (testCode) {
-      testFormData.append('testCode', testCode);
+    // Validate that we have at least one question
+    if (questions.length === 0) {
+      toast({
+        title: 'Xatolik',
+        description: 'Kamida bitta savol qo\'shing',
+        variant: 'destructive',
+      });
+      return;
     }
 
-    // Add images
-    uploadedImages.forEach((image, index) => {
-      testFormData.append(`testImages`, image);
-    });
-
-    // Add questions
-    testFormData.append('questions', JSON.stringify(questions.map((q, index) => ({
-      questionText: q.questionText || `${index + 1}-savol`,
-      questionType: 'simple',
-      options: ['A', 'B', 'C', 'D'],
-      correctAnswer: q.correctAnswer,
-      points: 1,
-      order: index + 1
-    }))));
-
+    // Validate questions
+    for (const question of questions) {
+      if (!question.questionText.trim()) {
+        toast({
+          title: 'Xatolik',
+          description: 'Barcha savollar to\'ldirilishi kerak',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (!question.correctAnswer) {
+        toast({
+          title: 'Xatolik',
+          description: 'Barcha savollar uchun to\'g\'ri javob belgilanishi kerak',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+    
+    setIsCreatingTest(true);
+    
     try {
+      // Prepare form data with images
+      const testFormData = new FormData();
+      testFormData.append('title', formData.title);
+      testFormData.append('description', formData.description || '');
+      testFormData.append('type', formData.type);
+      testFormData.append('duration', '60');
+      testFormData.append('totalQuestions', formData.totalQuestions.toString());
+      testFormData.append('status', 'active');
+      
+      if (testCode) {
+        testFormData.append('testCode', testCode);
+      }
+
+      // Add images
+      uploadedImages.forEach((image, index) => {
+        testFormData.append(`testImages`, image);
+      });
+
+      // Add questions
+      testFormData.append('questions', JSON.stringify(questions.map((q, index) => ({
+        questionText: q.questionText || `${index + 1}-savol`,
+        questionType: 'simple',
+        options: ['A', 'B', 'C', 'D'],
+        correctAnswer: q.correctAnswer,
+        points: 1,
+        order: index + 1
+      }))));
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast({
+          title: 'Xatolik',
+          description: 'Avtorizatsiya kerak. Iltimos, qaytadan kiring.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const response = await fetch('/api/tests/create-with-images', {
         method: 'POST',
         body: testFormData,
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
-        throw new Error('Test yaratishda xatolik');
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          toast({
+            title: 'Avtorizatsiya xatosi',
+            description: 'Sessiya tugagan. Iltimos, qaytadan kiring.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        throw new Error(errorData.error || `Xatolik: ${response.status}`);
       }
+
+      const result = await response.json();
 
       toast({
         title: 'Muvaffaqiyat',
@@ -165,11 +195,14 @@ const CreateTestPage: React.FC = () => {
       setQuestions([]);
       window.location.href = '/teacher/tests';
     } catch (error: any) {
+      console.error('Test creation error:', error);
       toast({
         title: 'Xatolik',
         description: error.message || 'Test yaratishda xatolik yuz berdi',
         variant: 'destructive',
       });
+    } finally {
+      setIsCreatingTest(false);
     }
   };
 
@@ -454,10 +487,10 @@ const CreateTestPage: React.FC = () => {
                     <Button 
                       type="button"
                       onClick={handleCreateTest}
-                      disabled={createTestMutation.isPending}
+                      disabled={isCreatingTest}
                       className="bg-green-600 hover:bg-green-700"
                     >
-                      {createTestMutation.isPending ? 'Yaratilmoqda...' : 'Testni yaratish'}
+                      {isCreatingTest ? 'Yaratilmoqda...' : 'Testni yaratish'}
                     </Button>
                   )}
                 </div>

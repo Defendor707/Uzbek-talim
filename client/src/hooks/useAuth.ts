@@ -162,15 +162,21 @@ const useAuth = () => {
   // Handle token validation errors with better error checking
   useEffect(() => {
     if (userError && token) {
-      // Only logout on authentication errors, not network errors
-      const isAuthError = userError.message?.includes('401') || 
-                         userError.message?.includes('Authentication') ||
-                         userError.message?.includes('Unauthorized') ||
-                         userError.message?.includes('Avtorizatsiya');
+      // Only logout on specific authentication errors, not general network errors
+      const errorMessage = userError.message?.toLowerCase() || '';
+      const isAuthError = errorMessage.includes('invalid token') || 
+                         errorMessage.includes('expired token') ||
+                         errorMessage.includes('authentication failed') ||
+                         errorMessage.includes('avtorizatsiya');
       
-      if (isAuthError) {
+      // Also check for 401 status specifically for authentication failures
+      const is401Error = errorMessage.includes('401') && 
+                         (errorMessage.includes('unauthorized') || 
+                          errorMessage.includes('authentication required'));
+      
+      if (isAuthError || is401Error) {
         // Authentication error detected, logging out
-        console.log('Authentication error detected, logging out user');
+        console.log('Authentication error detected, logging out user:', errorMessage);
         if (typeof window !== 'undefined') {
           localStorage.removeItem('token');
           localStorage.removeItem('userSession');
@@ -181,14 +187,14 @@ const useAuth = () => {
         
         toast({
           title: 'Session tugadi',
-          description: 'Iltimos, qaytadan kirib, test yarating',
+          description: 'Iltimos, qaytadan kiring',
           variant: 'destructive',
         });
         
         setLocation('/');
       } else {
-        // Network error, keeping session
-        console.log('Network error, keeping session');
+        // Network or other error, keeping session and showing less intrusive message
+        console.log('Network error, keeping session:', errorMessage);
       }
     }
   }, [userError, token, setLocation, toast]);
