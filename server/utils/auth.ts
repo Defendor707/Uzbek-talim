@@ -7,20 +7,27 @@ import { fromZodError } from 'zod-validation-error';
 import { loginSchema, registerUserSchema } from '@shared/schema';
 
 // JWT secret should be in environment variables
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_EXPIRES_IN = '7d';
+const JWT_SECRET = process.env.JWT_SECRET || 'ozbek-talim-secret-key-2025-production-jwt-secure';
+const JWT_EXPIRES_IN = '24h'; // Reduced to 24 hours for better security
 
 // Generate JWT token
 export const generateToken = (userId: number, role: string): string => {
   return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
-// Verify JWT token
+// Verify JWT token with detailed error handling
 export const verifyToken = (token: string): { userId: number; role: string } | null => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: number; role: string };
     return decoded;
   } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      console.log('Token expired, user needs to login again');
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      console.log('Invalid token format');
+    } else {
+      console.log('Token verification failed:', error);
+    }
     return null;
   }
 };
@@ -146,12 +153,8 @@ export const login = async (req: Request, res: Response) => {
     // Validate request body
     const credentials = loginSchema.parse(req.body);
     
-    // Find user by username or email
-    let user = await storage.getUserByUsername(credentials.username);
-    if (!user) {
-      // Try to find by email if username doesn't work
-      user = await storage.getUserByEmail(credentials.username);
-    }
+    // Find user by username
+    const user = await storage.getUserByUsername(credentials.username);
     if (!user) {
       return res.status(401).json({ message: 'Noto\'g\'ri foydalanuvchi nomi yoki parol' });
     }

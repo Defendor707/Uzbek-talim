@@ -1,7 +1,7 @@
+@import './styles/gradients.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import './styles/gradients.css';
 
 /* Mobile-first responsive design utilities */
 @layer base {
