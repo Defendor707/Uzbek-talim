@@ -243,40 +243,40 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </header>
 
         {/* Mobile Content */}
-        <main className="px-4 py-6 pb-16 transition-all duration-300 ease-out dashboard-bg">
+        <main className="px-4 py-6 pb-12 transition-all duration-300 ease-out dashboard-bg">
           <div className="max-w-lg mx-auto">
             {children}
           </div>
         </main>
 
-        {/* Compact Mobile Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-sm border-t border-gray-200 z-50 safe-area-pb">
-          <div className="flex items-center justify-around px-4 py-1 max-w-sm mx-auto">
+        {/* Minimal Mobile Bottom Navigation */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200/60 z-50 safe-area-pb">
+          <div className="flex items-center justify-around px-6 py-1 max-w-xs mx-auto">
             {sections.slice(0, 3).map((section) => {
               const isActive = location === section.href || location.startsWith(section.href + '/');
               return (
                 <Link key={section.id} href={section.href}>
                   <div className={cn(
-                    "flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all duration-200 ease-out relative min-w-[60px] active:scale-95",
+                    "flex flex-col items-center justify-center px-2 py-1.5 rounded-lg transition-all duration-200 ease-out relative min-w-[50px] active:scale-95",
                     isActive 
                       ? "bg-blue-600 text-white" 
                       : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
                   )}>
                     <div className={cn(
-                      "w-5 h-5 mb-0.5 transition-all duration-200",
+                      "w-4 h-4 mb-0.5 transition-all duration-200",
                       isActive ? "text-white" : "text-gray-500"
                     )}>
                       {section.icon}
                     </div>
                     <span className={cn(
-                      "text-[10px] font-medium leading-tight text-center",
+                      "text-[8px] font-medium leading-tight text-center",
                       isActive ? "text-white" : "text-gray-600"
                     )}>
                       {section.title}
                     </span>
                     {section.badge && (
                       <span className={cn(
-                        "absolute -top-0.5 -right-0.5 px-1 py-0.5 text-[9px] rounded-full min-w-[16px] text-center font-bold",
+                        "absolute -top-0.5 -right-0.5 px-1 py-0.5 text-[8px] rounded-full min-w-[14px] text-center font-bold",
                         isActive 
                           ? "bg-white text-blue-600" 
                           : "bg-red-500 text-white"
