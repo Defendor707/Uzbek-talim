@@ -243,41 +243,43 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </header>
 
         {/* Mobile Content */}
-        <main className="px-4 py-6">
-          {children}
+        <main className="px-4 py-6 pb-20 transition-all duration-300 ease-out dashboard-bg">
+          <div className="max-w-lg mx-auto">
+            {children}
+          </div>
         </main>
 
-        {/* Mobile Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 glass border-t border-white/20 px-4 py-3 z-50 backdrop-blur-xl">
-          <div className="flex items-center justify-around max-w-sm mx-auto">
+        {/* Modern Mobile Bottom Navigation */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200/80 z-50 safe-area-pb">
+          <div className="flex items-center justify-around px-2 py-2 max-w-md mx-auto">
             {sections.slice(0, 3).map((section) => {
               const isActive = location === section.href || location.startsWith(section.href + '/');
               return (
                 <Link key={section.id} href={section.href}>
                   <div className={cn(
-                    "flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all duration-200 relative min-w-[70px]",
+                    "flex flex-col items-center justify-center px-4 py-3 rounded-2xl transition-all duration-300 ease-out relative min-w-[80px] active:scale-95",
                     isActive 
-                      ? "bg-blue-50 text-blue-600 shadow-sm" 
-                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25" 
+                      : "text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 active:bg-blue-100/50"
                   )}>
                     <div className={cn(
-                      "w-5 h-5 mb-1 transition-colors",
-                      isActive ? "text-blue-600" : "text-gray-400"
+                      "w-6 h-6 mb-1 transition-all duration-300",
+                      isActive ? "text-white scale-110" : "text-gray-500"
                     )}>
                       {section.icon}
                     </div>
                     <span className={cn(
-                      "text-xs font-medium leading-tight text-center",
-                      isActive ? "text-blue-600" : "text-gray-500"
+                      "text-xs font-semibold leading-tight text-center",
+                      isActive ? "text-white" : "text-gray-600"
                     )}>
                       {section.title}
                     </span>
                     {section.badge && (
                       <span className={cn(
-                        "absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full min-w-[18px] text-center",
+                        "absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full min-w-[18px] text-center font-bold border-2",
                         isActive 
-                          ? "bg-blue-100 text-blue-700" 
-                          : "bg-gray-100 text-gray-600"
+                          ? "bg-white text-blue-600 border-blue-600" 
+                          : "bg-red-500 text-white border-white"
                       )}>
                         {section.badge}
                       </span>
@@ -287,6 +289,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               );
             })}
           </div>
+          <div className="h-safe-area-inset-bottom"></div>
         </div>
       </div>
     );
@@ -294,10 +297,10 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
   // Desktop Layout
   return (
-    <div className="flex h-screen mesh-gradient">
+    <div className="flex h-screen professional-bg">
       {/* Desktop Sidebar */}
       {sidebarOpen && (
-        <div className="w-64 glass border-r border-white/20 flex flex-col transition-all duration-300 ease-in-out backdrop-blur-xl">
+        <div className="w-64 glass-modern border-r border-gray-200/50 flex flex-col transition-all duration-300 ease-in-out shadow-lg">
           {/* Sidebar Header */}
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -489,8 +492,10 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
+        <main className="flex-1 overflow-y-auto p-6 dashboard-bg transition-all duration-300 ease-out">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>
