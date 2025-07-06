@@ -224,21 +224,8 @@
 }
 
 .dashboard-bg {
-  background: #fafbfc;
+  background: #ffffff;
   position: relative;
-}
-
-.dashboard-bg::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: 
-    radial-gradient(circle at 1px 1px, rgba(156, 163, 175, 0.15) 1px, transparent 0);
-  background-size: 16px 16px;
-  pointer-events: none;
 }
 
 /* Enhanced card backgrounds */

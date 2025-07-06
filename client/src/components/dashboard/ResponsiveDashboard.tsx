@@ -243,54 +243,13 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </header>
 
         {/* Mobile Content */}
-        <main className="px-4 py-6 pb-12 transition-all duration-300 ease-out dashboard-bg">
+        <main className="px-4 py-6 transition-all duration-300 ease-out">
           <div className="max-w-lg mx-auto">
             {children}
           </div>
         </main>
 
-        {/* Minimal Mobile Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200/60 z-50 safe-area-pb">
-          <div className="flex items-center justify-around px-6 py-1 max-w-xs mx-auto">
-            {sections.slice(0, 3).map((section) => {
-              const isActive = location === section.href || location.startsWith(section.href + '/');
-              return (
-                <Link key={section.id} href={section.href}>
-                  <div className={cn(
-                    "flex flex-col items-center justify-center px-2 py-1.5 rounded-lg transition-all duration-200 ease-out relative min-w-[50px] active:scale-95",
-                    isActive 
-                      ? "bg-blue-600 text-white" 
-                      : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                  )}>
-                    <div className={cn(
-                      "w-4 h-4 mb-0.5 transition-all duration-200",
-                      isActive ? "text-white" : "text-gray-500"
-                    )}>
-                      {section.icon}
-                    </div>
-                    <span className={cn(
-                      "text-[8px] font-medium leading-tight text-center",
-                      isActive ? "text-white" : "text-gray-600"
-                    )}>
-                      {section.title}
-                    </span>
-                    {section.badge && (
-                      <span className={cn(
-                        "absolute -top-0.5 -right-0.5 px-1 py-0.5 text-[8px] rounded-full min-w-[14px] text-center font-bold",
-                        isActive 
-                          ? "bg-white text-blue-600" 
-                          : "bg-red-500 text-white"
-                      )}>
-                        {section.badge}
-                      </span>
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-          <div className="h-safe-area-inset-bottom"></div>
-        </div>
+
       </div>
     );
   }
@@ -492,7 +451,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6 dashboard-bg transition-all duration-300 ease-out">
+        <main className="flex-1 overflow-y-auto p-6 transition-all duration-300 ease-out">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
