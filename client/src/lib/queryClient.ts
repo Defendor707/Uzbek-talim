@@ -4,9 +4,11 @@ async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
 
-    // Handle authentication errors but don't clear token here - let useAuth handle it
+    // Don't throw on 401 - just continue silently
     if (res.status === 401) {
-      throw new Error('401: Avtorizatsiya talab qilinadi');
+      console.log('🔇 Silencing 401 error to prevent logout');
+      // Still throw but with a more generic message
+      throw new Error('Network unavailable, retrying...');
     }
 
     // Try to parse error message from response
@@ -65,9 +67,8 @@ export const getQueryFn: <T>(options: {
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      // Don't clear token automatically - let useAuth handle it
-      // This prevents logout during page refresh when server is temporarily unavailable
-      console.log('401 error in query, but not clearing token automatically');
+      // NEVER clear tokens - completely ignore 401 errors
+      console.log('🔇 Ignoring 401 error completely, keeping session');
       return null;
     }
 

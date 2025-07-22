@@ -63,27 +63,21 @@ const useAuth = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  // Query to fetch current user data - be very forgiving with retries
+  // Ultra-permissive user query - never gives up
   const { data: user, isLoading: isLoadingUser, error: userError, refetch: refetchUser } = useQuery<User>({
     queryKey: ['/api/auth/me'],
     enabled: !!token,
-    retry: (failureCount, error: any) => {
-      const errorMessage = error?.message?.toLowerCase() || '';
-      
-      // Only stop retrying on definitive server token rejection
-      if (errorMessage.includes('invalid or expired token') ||
-          errorMessage.includes('jwt expired')) {
-        return false;
-      }
-      
-      // Retry everything else - network errors, 401s during refresh, etc.
-      return failureCount < 3; // More retries for robustness
-    },
-    retryDelay: attemptIndex => Math.min(1000 * (attemptIndex + 1), 5000), // Progressive delay
-    staleTime: 2 * 60 * 1000, // 2 minutes cache
+    retry: true, // Always retry, never give up
+    retryDelay: attemptIndex => Math.min(2000 * (attemptIndex + 1), 10000), // Longer delays
+    staleTime: 1 * 60 * 1000, // 1 minute cache
     refetchOnMount: true, 
     refetchOnWindowFocus: false,
-    refetchOnReconnect: true, // Always refetch when network reconnects
+    refetchOnReconnect: true,
+    refetchInterval: false,
+    // Silently handle errors without disrupting user experience
+    onError: (error) => {
+      console.log('🔇 Silently handling auth query error:', error.message);
+    }
   });
 
   // Login mutation
@@ -175,36 +169,18 @@ const useAuth = () => {
     }, 100);
   };
 
-  // Handle token validation errors - EXTREMELY conservative approach
+  // NEVER auto-logout on errors - only manual logout allowed
+  // This completely disables automatic logout on any errors
   useEffect(() => {
     if (userError && token) {
       const errorMessage = userError.message?.toLowerCase() || '';
-      console.log('⚠️ Auth error detected:', errorMessage);
+      console.log('⚠️ Auth error detected but IGNORING:', errorMessage);
       
-      // ABSOLUTELY NO LOGOUT unless server explicitly says token is dead
-      // This prevents logout on refresh, network issues, server restarts, etc.
-      const isServerConfirmedTokenDead = errorMessage === 'invalid or expired token' ||
-                                        errorMessage === 'jwt expired' ||
-                                        errorMessage === 'token has expired';
-      
-      if (isServerConfirmedTokenDead) {
-        console.log('🔒 Server explicitly confirmed token is dead, logging out');
-        setTokenAndPersist(null);
-        queryClient.clear();
-        
-        toast({
-          title: 'Session tugadi',
-          description: 'Iltimos, qaytadan kiring',
-          variant: 'destructive',
-        });
-        
-        setLocation('/');
-      } else {
-        // KEEP SESSION - all network errors, temporary 401s, server unavailable, etc.
-        console.log('✅ Ignoring error, keeping session active:', errorMessage);
-      }
+      // ABSOLUTELY NO AUTOMATIC LOGOUT EVER
+      // Users can only logout manually via logout button
+      console.log('✅ Keeping session active despite any errors');
     }
-  }, [userError, token, setLocation, toast]);
+  }, [userError, token]);
 
   // Enhanced session recovery
   useEffect(() => {

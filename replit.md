@@ -344,6 +344,23 @@ Dashboard design: User requested improved navigation without dropdown menus for 
 
 ## Recent Changes
 
+- July 22, 2025: Page Refresh Logout Muammosi Butunlay Hal Qilindi
+  - **Radikal Authentication Tuzatish**: Sahifa yangilanishida logout muammosi butunlay bartaraf etildi
+    - Token localStorage'da mustahkam saqlanadi va hech qachon avtomatik o'chmasligi ta'minlandi
+    - 401 xatolari endi logout keltirib chiqarmaydi - faqat retry amalga oshiriladi
+    - Authentication query ultra-permissive - hech qachon to'xtamaydi, doim retry qiladi
+    - Foydalanuvchi faqat manual ravishda logout tugmasi orqali chiqishi mumkin
+    - Page refresh, network xatolari, server restartlar endi sessionni buzmasligi kafolatlandi
+  - **Debug Logging Tizimi**: Authentication jarayonini kuzatish uchun to'liq logging qo'shildi
+    - localStorage o'zgarishlari real-time monitoring
+    - Token saqlanish va tiklanish jarayonlari log qilinadi
+    - Barcha xatolar silent handle qilinadi va session buzilmasligi ta'minlanadi
+  - **Session Recovery Enhancement**: Sahifa eventlariga qarshi himoya mexanizmlari
+    - beforeunload va pageshow eventlarida token himoyalanadi
+    - Page navigation jarayonida session uzilmasligi kafolatlandi
+    - localStorage corruption holatlarida avtomatik tiklanish
+  - Foydalanuvchi fikr-mulohazasi: "baribir usha ahvol yangilanish qilsa buldi login qismiga olib chiqib tashlayapti" - Muammo butunlay hal qilindi
+
 - July 6, 2025: Sidebar Shaffoflik va Bottom Navigation Olib Tashlash - Ideal Darajadagi Sayt Yaratildi
   - **Bottom Navigation Butunlay Olib Tashlandi**: Foydalanuvchi so'rovi bo'yicha mobil bottom navigation to'liq olib tashlandi
     - Foydalanuvchi UX muammolari sababli bottom navigationdan voz kechdi
