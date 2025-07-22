@@ -392,8 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lesson routes
   app.get("/api/lessons", authenticate, lessonsCache, async (req, res) => {
     try {
-      const searchQuery = req.query.q as string;
-      const lessons = await storage.getLessons(searchQuery);
+      const lessons = await storage.getLessons();
       res.json(lessons);
     } catch (error) {
       console.error("Error fetching lessons:", error);
