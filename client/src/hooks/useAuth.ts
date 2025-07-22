@@ -4,6 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthDebug } from './useAuthDebug';
 
 export type User = {
   id: number;
@@ -30,12 +31,14 @@ export type RegisterData = {
 };
 
 const useAuth = () => {
-  // Token state with persistence
+  // Enable debug logging
+  useAuthDebug();
+  
+  // Token state with persistence - never clear on page refresh
   const [token, setToken] = useState<string | null>(() => {
-    // Check if running in browser before accessing localStorage
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('token');
-      console.log('Initial token from localStorage:', stored ? 'present' : 'not found');
+      console.log('🚀 useAuth initialized - token:', stored ? 'found' : 'not found');
       return stored;
     }
     return null;
@@ -172,20 +175,20 @@ const useAuth = () => {
     }, 100);
   };
 
-  // Handle token validation errors - be very conservative about logging out
+  // Handle token validation errors - EXTREMELY conservative approach
   useEffect(() => {
     if (userError && token) {
       const errorMessage = userError.message?.toLowerCase() || '';
-      console.log('Auth error detected:', errorMessage);
+      console.log('⚠️ Auth error detected:', errorMessage);
       
-      // NEVER logout on page refresh errors - only on explicit server-confirmed token issues
-      // Only logout if the server explicitly says the token is invalid/expired
-      const isDefiniteAuthError = errorMessage.includes('invalid or expired token') ||
-                                 errorMessage.includes('token expired') ||
-                                 errorMessage.includes('jwt expired');
+      // ABSOLUTELY NO LOGOUT unless server explicitly says token is dead
+      // This prevents logout on refresh, network issues, server restarts, etc.
+      const isServerConfirmedTokenDead = errorMessage === 'invalid or expired token' ||
+                                        errorMessage === 'jwt expired' ||
+                                        errorMessage === 'token has expired';
       
-      if (isDefiniteAuthError) {
-        console.log('Server confirmed token is invalid, logging out:', errorMessage);
+      if (isServerConfirmedTokenDead) {
+        console.log('🔒 Server explicitly confirmed token is dead, logging out');
         setTokenAndPersist(null);
         queryClient.clear();
         
@@ -197,19 +200,46 @@ const useAuth = () => {
         
         setLocation('/');
       } else {
-        // All other errors (including 401, network errors, etc.) - keep session
-        console.log('Keeping session despite error:', errorMessage);
+        // KEEP SESSION - all network errors, temporary 401s, server unavailable, etc.
+        console.log('✅ Ignoring error, keeping session active:', errorMessage);
       }
     }
   }, [userError, token, setLocation, toast]);
 
-  // Auto-login effect for persistent sessions with better debugging
+  // Enhanced session recovery
   useEffect(() => {
     if (token && !user && !isLoadingUser && !userError) {
-      console.log('Auto-refetching user data...');
+      console.log('🔄 Auto-refetching user data for session recovery...');
       refetchUser();
     }
   }, [token, user, isLoadingUser, userError, refetchUser]);
+  
+  // Prevent token loss on page events
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const currentToken = localStorage.getItem('token');
+      if (currentToken && token) {
+        console.log('📌 Preserving token before page unload');
+        localStorage.setItem('token', currentToken);
+      }
+    };
+    
+    const handlePageShow = () => {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken && storedToken !== token) {
+        console.log('🔄 Restoring token after page show');
+        setToken(storedToken);
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pageshow', handlePageShow);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, [token]);
 
   // Session persistence - save user data locally for offline access
   useEffect(() => {
