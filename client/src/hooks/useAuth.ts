@@ -45,14 +45,20 @@ const useAuth = () => {
     queryKey: ['/api/auth/me'],
     enabled: !!token,
     retry: (failureCount, error: any) => {
-      // Don't retry on auth errors
-      if (error?.message?.includes('401') || error?.message?.includes('Avtorizatsiya')) {
+      // Be more lenient with retries during page refresh
+      const errorMessage = error?.message?.toLowerCase() || '';
+      
+      // Only stop retrying on explicit token errors
+      if ((errorMessage.includes('invalid') && errorMessage.includes('token')) ||
+          (errorMessage.includes('expired') && errorMessage.includes('token'))) {
         return false;
       }
-      return failureCount < 1;
+      
+      // Allow more retries for network issues during page refresh
+      return failureCount < 2;
     },
-    staleTime: 30000, // 30 seconds cache to reduce unnecessary requests
-    refetchOnMount: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache to reduce requests
+    refetchOnMount: true, // Always refetch on mount to ensure fresh data
     refetchOnWindowFocus: false,
   });
 
@@ -144,8 +150,12 @@ const useAuth = () => {
       localStorage.setItem('afterLogout', 'true'); // Flag to show login form directly after logout
     }
     setToken(null);
-    setCachedUser(null);
     queryClient.clear();
+    
+    // Clear cached user data
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('userSession');
+    }
     
     toast({
       title: 'Chiqish',
@@ -164,23 +174,25 @@ const useAuth = () => {
     if (userError && token) {
       // Only logout on specific authentication errors, not general network errors
       const errorMessage = userError.message?.toLowerCase() || '';
+      console.log('Auth error detected:', errorMessage);
       
-      // Check for actual authentication errors (not network errors)
-      const isAuthError = errorMessage.includes('invalid token') || 
-                         errorMessage.includes('expired token') ||
+      // Be more strict - only logout on explicit auth failures, not network errors
+      const isAuthError = (errorMessage.includes('invalid') && errorMessage.includes('token')) ||
+                         (errorMessage.includes('expired') && errorMessage.includes('token')) ||
                          errorMessage.includes('authentication failed') ||
-                         errorMessage.includes('authentication required') ||
-                         (errorMessage.includes('401') && errorMessage.includes('avtorizatsiya'));
+                         (errorMessage.includes('401') && (errorMessage.includes('invalid') || errorMessage.includes('expired')));
+      
+      // Don't logout on "authentication required" - this might be a network issue
+      // Don't logout on generic 401 errors during page refresh
       
       if (isAuthError) {
-        // Authentication error detected, logging out
-        console.log('Authentication error detected, logging out user:', errorMessage);
+        // Confirmed authentication error detected, logging out
+        console.log('Confirmed authentication error, logging out user:', errorMessage);
         if (typeof window !== 'undefined') {
           localStorage.removeItem('token');
           localStorage.removeItem('userSession');
         }
         setToken(null);
-        setCachedUser(null);
         queryClient.clear();
         
         toast({
@@ -191,8 +203,8 @@ const useAuth = () => {
         
         setLocation('/');
       } else {
-        // Network or other error, keeping session
-        console.log('Network error, keeping session:', errorMessage);
+        // Network or temporary error, keeping session
+        console.log('Network or temporary error, keeping session:', errorMessage);
       }
     }
   }, [userError, token, setLocation, toast]);
