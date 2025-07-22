@@ -63,21 +63,25 @@ const useAuth = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  // Ultra-permissive user query - never gives up
+  // MOST PERMISSIVE user query possible - literally never stops trying
   const { data: user, isLoading: isLoadingUser, error: userError, refetch: refetchUser } = useQuery<User>({
     queryKey: ['/api/auth/me'],
     enabled: !!token,
-    retry: true, // Always retry, never give up
-    retryDelay: attemptIndex => Math.min(2000 * (attemptIndex + 1), 10000), // Longer delays
-    staleTime: 1 * 60 * 1000, // 1 minute cache
-    refetchOnMount: true, 
+    retry: (failureCount, error) => {
+      console.log('🔄 Auth query retry attempt:', failureCount, error?.message);
+      return true; // ALWAYS retry, no matter what
+    },
+    retryDelay: attemptIndex => {
+      const delay = Math.min(1000 * Math.pow(1.5, attemptIndex), 30000);
+      console.log('⏰ Next retry in:', delay, 'ms');
+      return delay;
+    },
+    staleTime: 30 * 1000, // 30 seconds cache
+    refetchOnMount: false, // Don't refetch on mount to prevent loops
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
     refetchInterval: false,
-    // Silently handle errors without disrupting user experience
-    onError: (error) => {
-      console.log('🔇 Silently handling auth query error:', error.message);
-    }
+    // Never let errors stop the query - removed onError/onSuccess as they're deprecated
   });
 
   // Login mutation
@@ -221,10 +225,10 @@ const useAuth = () => {
   useEffect(() => {
     if (user && typeof window !== 'undefined') {
       localStorage.setItem('userSession', JSON.stringify({
-        id: user.id,
-        username: user.username,
-        role: user.role,
-        fullName: user.fullName,
+        id: (user as any).id,
+        username: (user as any).username,
+        role: (user as any).role,
+        fullName: (user as any).fullName,
         timestamp: Date.now()
       }));
     }
