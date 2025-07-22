@@ -65,10 +65,9 @@ export const getQueryFn: <T>(options: {
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      // Clear invalid token
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-      }
+      // Don't clear token automatically - let useAuth handle it
+      // This prevents logout during page refresh when server is temporarily unavailable
+      console.log('401 error in query, but not clearing token automatically');
       return null;
     }
 

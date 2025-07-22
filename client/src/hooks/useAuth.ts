@@ -30,36 +30,57 @@ export type RegisterData = {
 };
 
 const useAuth = () => {
+  // Token state with persistence
   const [token, setToken] = useState<string | null>(() => {
     // Check if running in browser before accessing localStorage
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('token');
+      const stored = localStorage.getItem('token');
+      console.log('Initial token from localStorage:', stored ? 'present' : 'not found');
+      return stored;
     }
     return null;
   });
+
+  // Custom setToken that always saves to localStorage
+  const setTokenAndPersist = (newToken: string | null) => {
+    console.log('Setting new token:', newToken ? 'token set' : 'token cleared');
+    setToken(newToken);
+    
+    if (typeof window !== 'undefined') {
+      if (newToken) {
+        localStorage.setItem('token', newToken);
+        console.log('Token saved to localStorage');
+      } else {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userSession');
+        console.log('Token removed from localStorage');
+      }
+    }
+  };
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  // Query to fetch current user data
+  // Query to fetch current user data - be very forgiving with retries
   const { data: user, isLoading: isLoadingUser, error: userError, refetch: refetchUser } = useQuery<User>({
     queryKey: ['/api/auth/me'],
     enabled: !!token,
     retry: (failureCount, error: any) => {
-      // Be more lenient with retries during page refresh
       const errorMessage = error?.message?.toLowerCase() || '';
       
-      // Only stop retrying on explicit token errors
-      if ((errorMessage.includes('invalid') && errorMessage.includes('token')) ||
-          (errorMessage.includes('expired') && errorMessage.includes('token'))) {
+      // Only stop retrying on definitive server token rejection
+      if (errorMessage.includes('invalid or expired token') ||
+          errorMessage.includes('jwt expired')) {
         return false;
       }
       
-      // Allow more retries for network issues during page refresh
-      return failureCount < 2;
+      // Retry everything else - network errors, 401s during refresh, etc.
+      return failureCount < 3; // More retries for robustness
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes cache to reduce requests
-    refetchOnMount: true, // Always refetch on mount to ensure fresh data
+    retryDelay: attemptIndex => Math.min(1000 * (attemptIndex + 1), 5000), // Progressive delay
+    staleTime: 2 * 60 * 1000, // 2 minutes cache
+    refetchOnMount: true, 
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true, // Always refetch when network reconnects
   });
 
   // Login mutation
@@ -69,10 +90,7 @@ const useAuth = () => {
       return await response.json();
     },
     onSuccess: (data) => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', data.token);
-      }
-      setToken(data.token);
+      setTokenAndPersist(data.token);
       
       // Force refresh of user data with new token
       queryClient.setQueryData(['/api/auth/me'], data.user);
@@ -89,10 +107,7 @@ const useAuth = () => {
     },
     onError: (error: any) => {
       // Clear invalid token on error
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-      }
-      setToken(null);
+      setTokenAndPersist(null);
       
       toast({
         title: 'Xatolik',
@@ -109,10 +124,7 @@ const useAuth = () => {
       return await response.json();
     },
     onSuccess: (data) => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', data.token);
-      }
-      setToken(data.token);
+      setTokenAndPersist(data.token);
       
       // Force refresh of user data with new token
       queryClient.setQueryData(['/api/auth/me'], data.user);
@@ -129,10 +141,7 @@ const useAuth = () => {
     },
     onError: (error: any) => {
       // Clear invalid token on error
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-      }
-      setToken(null);
+      setTokenAndPersist(null);
       
       toast({
         title: 'Xatolik',
@@ -144,17 +153,11 @@ const useAuth = () => {
 
   // Logout function
   const logout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userSession');
-      localStorage.setItem('afterLogout', 'true'); // Flag to show login form directly after logout
-    }
-    setToken(null);
+    setTokenAndPersist(null);
     queryClient.clear();
     
-    // Clear cached user data
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('userSession');
+      localStorage.setItem('afterLogout', 'true'); // Flag to show login form directly after logout
     }
     
     toast({
@@ -169,30 +172,21 @@ const useAuth = () => {
     }, 100);
   };
 
-  // Handle token validation errors with better error checking
+  // Handle token validation errors - be very conservative about logging out
   useEffect(() => {
     if (userError && token) {
-      // Only logout on specific authentication errors, not general network errors
       const errorMessage = userError.message?.toLowerCase() || '';
       console.log('Auth error detected:', errorMessage);
       
-      // Be more strict - only logout on explicit auth failures, not network errors
-      const isAuthError = (errorMessage.includes('invalid') && errorMessage.includes('token')) ||
-                         (errorMessage.includes('expired') && errorMessage.includes('token')) ||
-                         errorMessage.includes('authentication failed') ||
-                         (errorMessage.includes('401') && (errorMessage.includes('invalid') || errorMessage.includes('expired')));
+      // NEVER logout on page refresh errors - only on explicit server-confirmed token issues
+      // Only logout if the server explicitly says the token is invalid/expired
+      const isDefiniteAuthError = errorMessage.includes('invalid or expired token') ||
+                                 errorMessage.includes('token expired') ||
+                                 errorMessage.includes('jwt expired');
       
-      // Don't logout on "authentication required" - this might be a network issue
-      // Don't logout on generic 401 errors during page refresh
-      
-      if (isAuthError) {
-        // Confirmed authentication error detected, logging out
-        console.log('Confirmed authentication error, logging out user:', errorMessage);
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('token');
-          localStorage.removeItem('userSession');
-        }
-        setToken(null);
+      if (isDefiniteAuthError) {
+        console.log('Server confirmed token is invalid, logging out:', errorMessage);
+        setTokenAndPersist(null);
         queryClient.clear();
         
         toast({
@@ -203,8 +197,8 @@ const useAuth = () => {
         
         setLocation('/');
       } else {
-        // Network or temporary error, keeping session
-        console.log('Network or temporary error, keeping session:', errorMessage);
+        // All other errors (including 401, network errors, etc.) - keep session
+        console.log('Keeping session despite error:', errorMessage);
       }
     }
   }, [userError, token, setLocation, toast]);
