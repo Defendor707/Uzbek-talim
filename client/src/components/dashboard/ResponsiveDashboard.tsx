@@ -243,61 +243,23 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </header>
 
         {/* Mobile Content */}
-        <main className="px-4 py-6">
-          {children}
+        <main className="px-4 py-6 transition-all duration-300 ease-out">
+          <div className="max-w-lg mx-auto">
+            {children}
+          </div>
         </main>
 
-        {/* Mobile Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 glass border-t border-white/20 px-4 py-3 z-50 backdrop-blur-xl">
-          <div className="flex items-center justify-around max-w-sm mx-auto">
-            {sections.slice(0, 3).map((section) => {
-              const isActive = location === section.href || location.startsWith(section.href + '/');
-              return (
-                <Link key={section.id} href={section.href}>
-                  <div className={cn(
-                    "flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all duration-200 relative min-w-[70px]",
-                    isActive 
-                      ? "bg-blue-50 text-blue-600 shadow-sm" 
-                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                  )}>
-                    <div className={cn(
-                      "w-5 h-5 mb-1 transition-colors",
-                      isActive ? "text-blue-600" : "text-gray-400"
-                    )}>
-                      {section.icon}
-                    </div>
-                    <span className={cn(
-                      "text-xs font-medium leading-tight text-center",
-                      isActive ? "text-blue-600" : "text-gray-500"
-                    )}>
-                      {section.title}
-                    </span>
-                    {section.badge && (
-                      <span className={cn(
-                        "absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full min-w-[18px] text-center",
-                        isActive 
-                          ? "bg-blue-100 text-blue-700" 
-                          : "bg-gray-100 text-gray-600"
-                      )}>
-                        {section.badge}
-                      </span>
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+
       </div>
     );
   }
 
   // Desktop Layout
   return (
-    <div className="flex h-screen mesh-gradient">
+    <div className="flex h-screen professional-bg">
       {/* Desktop Sidebar */}
       {sidebarOpen && (
-        <div className="w-64 glass border-r border-white/20 flex flex-col transition-all duration-300 ease-in-out backdrop-blur-xl">
+        <div className="w-64 glass-modern border-r border-gray-200/50 flex flex-col transition-all duration-300 ease-in-out shadow-lg">
           {/* Sidebar Header */}
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -489,8 +451,10 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
+        <main className="flex-1 overflow-y-auto p-6 transition-all duration-300 ease-out">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>

@@ -89,8 +89,19 @@ export interface IStorage {
   // Center search methods
   searchCenters(filters: { query?: string; city?: string; specialization?: string }): Promise<any[]>;
 
-
-
+  // Missing methods from routes.ts
+  getUserProfile(userId: number): Promise<any | undefined>;
+  updateUserProfile(userId: number, profileData: any): Promise<any | undefined>;
+  getNotifications(userId: number): Promise<any[]>;
+  markNotificationAsRead(notificationId: number): Promise<boolean>;
+  updateTeacherProfileImage(userId: number, profileImage: string): Promise<boolean>;
+  updateStudentProfileImage(userId: number, profileImage: string): Promise<boolean>;
+  getParentProfile(userId: number): Promise<any | undefined>;
+  updateParentProfile(userId: number, profileData: any): Promise<any | undefined>;
+  getParentChildren(parentId: number): Promise<any[]>;
+  addParentChild(parentId: number, childUsername: string): Promise<boolean>;
+  getParentTestResults(parentId: number): Promise<any[]>;
+  updateCenterProfileImage(userId: number, profileImage: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -396,19 +407,29 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Get tests by user ID (for students and general users)
+  // Get tests by user ID (for different roles)
   async getTestsByUserId(userId: string): Promise<schema.Test[]> {
     try {
-      const tests = await db
-        .select()
-        .from(schema.tests)
-        .where(eq(schema.tests.status, 'active'))
-        .orderBy(desc(schema.tests.createdAt));
+      const userIdNum = parseInt(userId);
+      const user = await this.getUser(userIdNum);
+      
+      if (!user) return [];
 
-      return tests;
+      if (user.role === 'teacher') {
+        // Teachers see their own tests
+        return await this.getTestsByTeacherId(userIdNum);
+      } else {
+        // Students and others see all active tests
+        const tests = await db
+          .select()
+          .from(schema.tests)
+          .where(eq(schema.tests.status, 'active'))
+          .orderBy(desc(schema.tests.createdAt));
+        return tests;
+      }
     } catch (error) {
       console.error('Error fetching tests by user ID:', error);
-      throw error;
+      return [];
     }
   }
 
@@ -785,6 +806,177 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error searching centers:', error);
       return [];
+    }
+  }
+
+  // Missing methods implementation
+  async getUserProfile(userId: number): Promise<any | undefined> {
+    try {
+      const user = await this.getUser(userId);
+      if (!user) return undefined;
+
+      switch (user.role) {
+        case 'student':
+          return await this.getStudentProfile(userId);
+        case 'teacher':
+          return await this.getTeacherProfile(userId);
+        case 'parent':
+          return user; // Parents don't have separate profiles
+        case 'center':
+          return await this.getCenterProfile(userId);
+        default:
+          return user;
+      }
+    } catch (error) {
+      console.error('Error getting user profile:', error);
+      return undefined;
+    }
+  }
+
+  async updateUserProfile(userId: number, profileData: any): Promise<any | undefined> {
+    try {
+      const user = await this.getUser(userId);
+      if (!user) return undefined;
+
+      switch (user.role) {
+        case 'student':
+          return await this.updateStudentProfile(userId, profileData);
+        case 'teacher':
+          return await this.updateTeacherProfile(userId, profileData);
+        case 'center':
+          return await this.updateCenterProfile(userId, profileData);
+        default:
+          return undefined;
+      }
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      return undefined;
+    }
+  }
+
+  async getNotifications(userId: number): Promise<any[]> {
+    try {
+      const notifications = await db.select()
+        .from(schema.notifications)
+        .where(eq(schema.notifications.userId, userId))
+        .orderBy(desc(schema.notifications.createdAt));
+      return notifications;
+    } catch (error) {
+      console.error('Error getting notifications:', error);
+      return [];
+    }
+  }
+
+  async markNotificationAsRead(notificationId: number): Promise<boolean> {
+    try {
+      await db.update(schema.notifications)
+        .set({ isRead: true })
+        .where(eq(schema.notifications.id, notificationId));
+      return true;
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      return false;
+    }
+  }
+
+  async updateTeacherProfileImage(userId: number, profileImage: string): Promise<boolean> {
+    try {
+      await db.update(schema.teacherProfiles)
+        .set({ profileImage })
+        .where(eq(schema.teacherProfiles.userId, userId));
+      return true;
+    } catch (error) {
+      console.error('Error updating teacher profile image:', error);
+      return false;
+    }
+  }
+
+  async updateStudentProfileImage(userId: number, profileImage: string): Promise<boolean> {
+    try {
+      await db.update(schema.studentProfiles)
+        .set({ profileImage })
+        .where(eq(schema.studentProfiles.userId, userId));
+      return true;
+    } catch (error) {
+      console.error('Error updating student profile image:', error);
+      return false;
+    }
+  }
+
+  async getParentProfile(userId: number): Promise<any | undefined> {
+    try {
+      const user = await this.getUser(userId);
+      return user;
+    } catch (error) {
+      console.error('Error getting parent profile:', error);
+      return undefined;
+    }
+  }
+
+  async updateParentProfile(userId: number, profileData: any): Promise<any | undefined> {
+    try {
+      const [updatedUser] = await db.update(schema.users)
+        .set({ ...profileData, updatedAt: new Date() })
+        .where(eq(schema.users.id, userId))
+        .returning();
+      return updatedUser;
+    } catch (error) {
+      console.error('Error updating parent profile:', error);
+      return undefined;
+    }
+  }
+
+  async getParentChildren(parentId: number): Promise<any[]> {
+    return await this.getChildrenByParentId(parentId);
+  }
+
+  async addParentChild(parentId: number, childUsername: string): Promise<boolean> {
+    return await this.addChildToParent(parentId, childUsername);
+  }
+
+  async getParentTestResults(parentId: number): Promise<any[]> {
+    try {
+      const children = await this.getChildrenByParentId(parentId);
+      const childIds = children.map(child => child.id);
+      
+      if (childIds.length === 0) return [];
+
+      const testResults = await db.select({
+        attemptId: schema.testAttempts.id,
+        testId: schema.testAttempts.testId,
+        studentId: schema.testAttempts.studentId,
+        startTime: schema.testAttempts.startTime,
+        endTime: schema.testAttempts.endTime,
+        score: schema.testAttempts.score,
+        correctAnswers: schema.testAttempts.correctAnswers,
+        totalQuestions: schema.testAttempts.totalQuestions,
+        completed: schema.testAttempts.completed,
+        testTitle: schema.tests.title,
+        testType: schema.tests.type,
+        studentName: schema.users.fullName
+      })
+      .from(schema.testAttempts)
+      .innerJoin(schema.tests, eq(schema.testAttempts.testId, schema.tests.id))
+      .innerJoin(schema.users, eq(schema.testAttempts.studentId, schema.users.id))
+      .where(inArray(schema.testAttempts.studentId, childIds))
+      .orderBy(desc(schema.testAttempts.startTime));
+
+      return testResults;
+    } catch (error) {
+      console.error('Error getting parent test results:', error);
+      return [];
+    }
+  }
+
+  async updateCenterProfileImage(userId: number, profileImage: string): Promise<boolean> {
+    try {
+      await db.update(schema.centerProfiles)
+        .set({ profileImage })
+        .where(eq(schema.centerProfiles.userId, userId));
+      return true;
+    } catch (error) {
+      console.error('Error updating center profile image:', error);
+      return false;
     }
   }
 }

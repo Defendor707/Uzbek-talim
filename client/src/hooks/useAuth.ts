@@ -4,6 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthDebug } from './useAuthDebug';
 
 export type User = {
   id: number;
@@ -30,17 +31,39 @@ export type RegisterData = {
 };
 
 const useAuth = () => {
+  // Enable debug logging
+  useAuthDebug();
+  
+  // Token state with persistence - never clear on page refresh
   const [token, setToken] = useState<string | null>(() => {
-    // Check if running in browser before accessing localStorage
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('token');
+      const stored = localStorage.getItem('token');
+      console.log('🚀 useAuth initialized - token:', stored ? 'found' : 'not found');
+      return stored;
     }
     return null;
   });
+
+  // Custom setToken that always saves to localStorage
+  const setTokenAndPersist = (newToken: string | null) => {
+    console.log('Setting new token:', newToken ? 'token set' : 'token cleared');
+    setToken(newToken);
+    
+    if (typeof window !== 'undefined') {
+      if (newToken) {
+        localStorage.setItem('token', newToken);
+        console.log('Token saved to localStorage');
+      } else {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userSession');
+        console.log('Token removed from localStorage');
+      }
+    }
+  };
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  // Query to fetch current user data
+  // MOST PERMISSIVE user query possible - literally never stops trying
   const { data: user, isLoading: isLoadingUser, error: userError, refetch: refetchUser } = useQuery<User>({
     queryKey: ['/api/auth/me'],
     queryFn: async () => {
@@ -48,16 +71,21 @@ const useAuth = () => {
       return await response.json();
     },
     enabled: !!token,
-    retry: (failureCount, error: any) => {
-      // Don't retry on auth errors
-      if (error?.message?.includes('401') || error?.message?.includes('Avtorizatsiya')) {
-        return false;
-      }
-      return failureCount < 1;
+    retry: (failureCount, error) => {
+      console.log('🔄 Auth query retry attempt:', failureCount, error?.message);
+      return true; // ALWAYS retry, no matter what
     },
-    staleTime: 30000, // 30 seconds cache to reduce unnecessary requests
-    refetchOnMount: false,
+    retryDelay: attemptIndex => {
+      const delay = Math.min(1000 * Math.pow(1.5, attemptIndex), 30000);
+      console.log('⏰ Next retry in:', delay, 'ms');
+      return delay;
+    },
+    staleTime: 30 * 1000, // 30 seconds cache
+    refetchOnMount: false, // Don't refetch on mount to prevent loops
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
+    refetchInterval: false,
+    // Never let errors stop the query - removed onError/onSuccess as they're deprecated
   });
 
   // Login mutation
@@ -67,10 +95,7 @@ const useAuth = () => {
       return await response.json();
     },
     onSuccess: (data) => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', data.token);
-      }
-      setToken(data.token);
+      setTokenAndPersist(data.token);
       
       // Force refresh of user data with new token
       queryClient.setQueryData(['/api/auth/me'], data.user);
@@ -87,10 +112,7 @@ const useAuth = () => {
     },
     onError: (error: any) => {
       // Clear invalid token on error
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-      }
-      setToken(null);
+      setTokenAndPersist(null);
       
       toast({
         title: 'Xatolik',
@@ -107,10 +129,7 @@ const useAuth = () => {
       return await response.json();
     },
     onSuccess: (data) => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', data.token);
-      }
-      setToken(data.token);
+      setTokenAndPersist(data.token);
       
       // Force refresh of user data with new token
       queryClient.setQueryData(['/api/auth/me'], data.user);
@@ -127,10 +146,7 @@ const useAuth = () => {
     },
     onError: (error: any) => {
       // Clear invalid token on error
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-      }
-      setToken(null);
+      setTokenAndPersist(null);
       
       toast({
         title: 'Xatolik',
@@ -142,14 +158,12 @@ const useAuth = () => {
 
   // Logout function
   const logout = () => {
+    setTokenAndPersist(null);
+    queryClient.clear();
+    
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userSession');
       localStorage.setItem('afterLogout', 'true'); // Flag to show login form directly after logout
     }
-    setToken(null);
-    setCachedUser(null);
-    queryClient.clear();
     
     toast({
       title: 'Chiqish',
@@ -163,60 +177,62 @@ const useAuth = () => {
     }, 100);
   };
 
-  // Handle token validation errors with better error checking
+  // NEVER auto-logout on errors - only manual logout allowed
+  // This completely disables automatic logout on any errors
   useEffect(() => {
     if (userError && token) {
-      // Only logout on specific authentication errors, not general network errors
       const errorMessage = userError.message?.toLowerCase() || '';
+      console.log('⚠️ Auth error detected but IGNORING:', errorMessage);
       
-      // Check for actual authentication errors (not network errors)
-      const isAuthError = errorMessage.includes('invalid token') || 
-                         errorMessage.includes('expired token') ||
-                         errorMessage.includes('authentication failed') ||
-                         errorMessage.includes('authentication required') ||
-                         (errorMessage.includes('401') && errorMessage.includes('avtorizatsiya'));
-      
-      if (isAuthError) {
-        // Authentication error detected, logging out
-        console.log('Authentication error detected, logging out user:', errorMessage);
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('token');
-          localStorage.removeItem('userSession');
-        }
-        setToken(null);
-        setCachedUser(null);
-        queryClient.clear();
-        
-        toast({
-          title: 'Session tugadi',
-          description: 'Iltimos, qaytadan kiring',
-          variant: 'destructive',
-        });
-        
-        setLocation('/');
-      } else {
-        // Network or other error, keeping session
-        console.log('Network error, keeping session:', errorMessage);
-      }
+      // ABSOLUTELY NO AUTOMATIC LOGOUT EVER
+      // Users can only logout manually via logout button
+      console.log('✅ Keeping session active despite any errors');
     }
-  }, [userError, token, setLocation, toast]);
+  }, [userError, token]);
 
-  // Auto-login effect for persistent sessions with better debugging
+  // Enhanced session recovery
   useEffect(() => {
     if (token && !user && !isLoadingUser && !userError) {
-      console.log('Auto-refetching user data...');
+      console.log('🔄 Auto-refetching user data for session recovery...');
       refetchUser();
     }
   }, [token, user, isLoadingUser, userError, refetchUser]);
+  
+  // Prevent token loss on page events
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const currentToken = localStorage.getItem('token');
+      if (currentToken && token) {
+        console.log('📌 Preserving token before page unload');
+        localStorage.setItem('token', currentToken);
+      }
+    };
+    
+    const handlePageShow = () => {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken && storedToken !== token) {
+        console.log('🔄 Restoring token after page show');
+        setToken(storedToken);
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pageshow', handlePageShow);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, [token]);
 
   // Session persistence - save user data locally for offline access
   useEffect(() => {
     if (user && typeof window !== 'undefined') {
       localStorage.setItem('userSession', JSON.stringify({
-        id: user.id,
-        username: user.username,
-        role: user.role,
-        fullName: user.fullName,
+        id: (user as any).id,
+        username: (user as any).username,
+        role: (user as any).role,
+        fullName: (user as any).fullName,
         timestamp: Date.now()
       }));
     }

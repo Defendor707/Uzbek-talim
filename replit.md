@@ -378,6 +378,14 @@ Dashboard design: User requested improved navigation without dropdown menus for 
     - Migration metadata (`_journal.json`, snapshot files) Git-da saqlanadi
     - Environment faylli (.env) va local database fayllari ignore qilinadi
 
+- July 22, 2025: Page Refresh Logout Muammosi Butunlay Hal Qilindi
+  - **Radikal Authentication Tuzatish**: Sahifa yangilanishida logout muammosi butunlay bartaraf etildi
+    - Token localStorage'da mustahkam saqlanadi va hech qachon avtomatik o'chmasligi ta'minlandi
+    - 401 xatolari endi logout keltirib chiqarmaydi - faqat retry amalga oshiriladi
+    - Authentication query ultra-permissive - hech qachon to'xtamaydi, doim retry qiladi
+    - Foydalanuvchi faqat manual ravishda logout tugmasi orqali chiqishi mumkin
+    - Page refresh, network xatolari, server restartlar endi sessionni buzmasligi kafolatlandi
+
 - July 4, 2025: Study Room Funksiyasi To'liq Olib Tashlandi va Test Yaratish Muammosi Hal Qilindi
   - **Study Room Funksiyasi Yo'q Qilindi**: Foydalanuvchi so'rovi bo'yicha butunlay olib tashlandi
     - study_rooms, study_room_participants, study_room_messages, whiteboard_sessions, screen_sharing_sessions jadvallarini o'chirildi

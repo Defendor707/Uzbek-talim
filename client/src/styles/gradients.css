@@ -175,3 +175,156 @@
   background-position: 0 0, 40px 40px;
   animation: float 20s linear infinite;
 }
+
+/* Professional Geometric Background */
+.professional-bg {
+  background: #fcfcfd;
+  position: relative;
+  min-height: 100vh;
+}
+
+.professional-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(30deg, transparent 40%, rgba(156, 163, 175, 0.08) 40.5%, rgba(156, 163, 175, 0.08) 41%, transparent 41.5%),
+    linear-gradient(150deg, transparent 40%, rgba(156, 163, 175, 0.08) 40.5%, rgba(156, 163, 175, 0.08) 41%, transparent 41.5%);
+  background-size: 80px 80px;
+  pointer-events: none;
+}
+
+.professional-bg::after {
+  content: '';
+  position: absolute;
+  top: 50px;
+  right: 50px;
+  width: 200px;
+  height: 200px;
+  background: 
+    linear-gradient(45deg, transparent 30%, rgba(203, 213, 225, 0.4) 30%, rgba(203, 213, 225, 0.4) 70%, transparent 70%),
+    linear-gradient(-45deg, transparent 30%, rgba(203, 213, 225, 0.4) 30%, rgba(203, 213, 225, 0.4) 70%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.educational-gradient {
+  background: linear-gradient(135deg, 
+    #667eea 0%, 
+    #764ba2 25%, 
+    #f093fb 50%, 
+    #f5576c 75%, 
+    #4facfe 100%);
+  background-size: 400% 400%;
+  animation: gradient-shift 20s ease infinite;
+}
+
+.dashboard-bg {
+  background: #ffffff;
+  position: relative;
+}
+
+/* Enhanced card backgrounds */
+.card-professional {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.card-professional:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Dynamic geometric patterns */
+.geometric-bg {
+  position: relative;
+  background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+}
+
+.geometric-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(30deg, transparent 40%, rgba(59, 130, 246, 0.03) 41%, rgba(59, 130, 246, 0.03) 42%, transparent 43%),
+    linear-gradient(150deg, transparent 40%, rgba(16, 185, 129, 0.03) 41%, rgba(16, 185, 129, 0.03) 42%, transparent 43%);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+
+/* Uzbekistan-inspired colors */
+.uzbek-gradient {
+  background: linear-gradient(135deg, 
+    #3b82f6 0%,    /* Blue from flag */
+    #10b981 25%,   /* Green accent */
+    #ffffff 50%,   /* White stripe */
+    #10b981 75%,   /* Green again */
+    #3b82f6 100%); /* Blue again */
+}
+
+.uzbek-subtle {
+  background: linear-gradient(135deg, 
+    rgba(59, 130, 246, 0.1) 0%, 
+    rgba(16, 185, 129, 0.1) 50%, 
+    rgba(255, 255, 255, 0.9) 100%);
+}
+
+/* Transparent Glass Effects */
+.glass-modern {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.03),
+    0 2px 4px -1px rgba(0, 0, 0, 0.02);
+  position: relative;
+}
+
+.glass-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(45deg, rgba(248, 250, 252, 0.3) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(248, 250, 252, 0.3) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(248, 250, 252, 0.3) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(248, 250, 252, 0.3) 75%);
+  background-size: 12px 12px;
+  background-position: 0 0, 0 6px, 6px -6px, -6px 0px;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+/* Professional shadows */
+.shadow-professional {
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-professional-lg {
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+}

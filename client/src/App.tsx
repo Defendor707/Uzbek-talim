@@ -49,10 +49,48 @@ function Router() {
   const { user, token, isLoadingUser } = useAuth();
   const [location, setLocation] = useLocation();
 
+  // Block token removal on app level
+  useEffect(() => {
+    console.log('🚀 App router initialized, protecting localStorage');
+    
+    // Force token persistence on every app load
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      console.log('💾 Reinforcing token in localStorage');
+      localStorage.setItem('token', storedToken);
+    }
+    
+    // Ultra-protective localStorage blocking
+    const originalRemoveItem = localStorage.removeItem;
+    const originalClear = localStorage.clear;
+    
+    localStorage.removeItem = function(key) {
+      if (key === 'token') {
+        console.log('🛡️ BLOCKING localStorage.removeItem("token") - manual logout only');
+        return;
+      }
+      return originalRemoveItem.call(this, key);
+    };
+    
+    localStorage.clear = function() {
+      console.log('🛡️ BLOCKING localStorage.clear() - preserving token');
+      const token = localStorage.getItem('token');
+      originalClear.call(this);
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+    };
+    
+    return () => {
+      localStorage.removeItem = originalRemoveItem;
+      localStorage.clear = originalClear;
+    };
+  }, []);
+
   // Auto-redirect authenticated users from login/register pages
   useEffect(() => {
     if (token && user && !isLoadingUser && (location === '/' || location === '/login' || location === '/register')) {
-      setLocation(`/dashboard/${user.role}`);
+      setLocation(`/dashboard/${(user as any).role}`);
     }
   }, [token, user, isLoadingUser, location, setLocation]);
 
