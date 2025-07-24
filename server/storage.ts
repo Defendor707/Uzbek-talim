@@ -735,7 +735,31 @@ export class DatabaseStorage implements IStorage {
 
   async searchCenters(filters: { query?: string; city?: string; specialization?: string }): Promise<any[]> {
     try {
-      let query = db.select({
+      // Build where conditions array
+      let whereConditions = [eq(schema.users.role, 'center')];
+
+      if (filters.query) {
+        const queryCondition = or(
+          ilike(schema.centerProfiles.centerName, `%${filters.query}%`),
+          ilike(schema.centerProfiles.description, `%${filters.query}%`),
+          ilike(schema.centerProfiles.director, `%${filters.query}%`)
+        );
+        if (queryCondition) {
+          whereConditions.push(queryCondition);
+        }
+      }
+
+      if (filters.city) {
+        whereConditions.push(ilike(schema.centerProfiles.address, `%${filters.city}%`));
+      }
+
+      if (filters.specialization) {
+        whereConditions.push(
+          sql`${schema.centerProfiles.specializations} @> ${JSON.stringify([filters.specialization])}`
+        );
+      }
+
+      const result = await db.select({
         id: schema.users.id,
         username: schema.users.username,
         fullName: schema.users.fullName,
@@ -755,30 +779,8 @@ export class DatabaseStorage implements IStorage {
       })
       .from(schema.users)
       .innerJoin(schema.centerProfiles, eq(schema.users.id, schema.centerProfiles.userId))
-      .where(eq(schema.users.role, 'center'));
+      .where(and(...whereConditions));
 
-      // Apply filters
-      if (filters.query) {
-        query = query.where(
-          or(
-            ilike(schema.centerProfiles.centerName, `%${filters.query}%`),
-            ilike(schema.centerProfiles.description, `%${filters.query}%`),
-            ilike(schema.centerProfiles.director, `%${filters.query}%`)
-          )
-        );
-      }
-
-      if (filters.city) {
-        query = query.where(ilike(schema.centerProfiles.address, `%${filters.city}%`));
-      }
-
-      if (filters.specialization) {
-        query = query.where(
-          sql`${schema.centerProfiles.specializations} @> ${JSON.stringify([filters.specialization])}`
-        );
-      }
-
-      const result = await query;
       return result;
     } catch (error) {
       console.error('Error searching centers:', error);
