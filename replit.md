@@ -371,6 +371,12 @@ Dashboard design: User requested improved navigation without dropdown menus for 
     - Express server port 5000 da ishlamoqda
     - Vite development server frontend uchun faol
     - Database bilan barcha ulanishlar ishlayapti
+  - **Git Version Control O'rnatildi**: Database va migration fayllar to'g'ri saqlanishi ta'minlandi
+    - Drizzle Kit migration file yaratildi: `0000_goofy_marvel_boy.sql`
+    - .gitignore yangilandi: migration fayllari version control-da saqlanadi
+    - DATABASE.md va SCHEMA_DOCS.md hujjatlar yaratildi
+    - Migration metadata (`_journal.json`, snapshot files) Git-da saqlanadi
+    - Environment faylli (.env) va local database fayllari ignore qilinadi
 
 - July 4, 2025: Study Room Funksiyasi To'liq Olib Tashlandi va Test Yaratish Muammosi Hal Qilindi
   - **Study Room Funksiyasi Yo'q Qilindi**: Foydalanuvchi so'rovi bo'yicha butunlay olib tashlandi
