@@ -79,11 +79,12 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      queryFn: getQueryFn({ on401: "throw" }),
       staleTime: 15 * 60 * 1000, // 15 minutes - increased from 10
-      cacheTime: 45 * 60 * 1000, // 45 minutes - increased from 30
-      retry: (failureCount, error) => {
+      gcTime: 45 * 60 * 1000, // 45 minutes - TanStack Query v5 uses gcTime instead of cacheTime
+      retry: (failureCount, error: any) => {
         // Don't retry on 4xx errors except 429
-        if (error?.response?.status >= 400 && error?.response?.status < 500 && error?.response?.status !== 429) {
+        if (error?.message?.includes('401') || error?.message?.includes('403') || error?.message?.includes('404')) {
           return false;
         }
         return failureCount < 2; // Reduced from 3 to 2

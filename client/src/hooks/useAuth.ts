@@ -43,6 +43,10 @@ const useAuth = () => {
   // Query to fetch current user data
   const { data: user, isLoading: isLoadingUser, error: userError, refetch: refetchUser } = useQuery<User>({
     queryKey: ['/api/auth/me'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/auth/me');
+      return await response.json();
+    },
     enabled: !!token,
     retry: (failureCount, error: any) => {
       // Don't retry on auth errors
