@@ -29,11 +29,7 @@ const ForgotPasswordPage: React.FC = () => {
   const onSubmit = async (values: ForgotPasswordFormValues) => {
     setIsSubmitting(true);
     try {
-      const response = await apiRequest('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
-      });
+      const response = await apiRequest('POST', '/api/auth/forgot-password', values);
 
       const data = await response.json();
       

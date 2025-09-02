@@ -432,7 +432,7 @@ bot.on('text', async (ctx, next) => {
     
     if (ctx.session.testCreation.step === 'answers') {
       // Handle single line answers (1a2b3c4d format or abcda format)
-      const cleanText = messageText.toLowerCase().replace(/[^abcd0-9]/g);
+      const cleanText = messageText.toLowerCase().replace(/[^abcd0-9]/g, "");
       const answers: string[] = [];
       
       // Try to parse different formats
@@ -734,7 +734,7 @@ bot.command('login', async (ctx) => {
   await startLogin(ctx);
 });
 
-async function startLogin(ctx: BotContext) {
+const startLogin = async (ctx: BotContext) => {
   ctx.session.loginStep = 'username';
   await ctx.reply(
     '🔑 *Tizimga kirish*\n\nFoydalanuvchi nomingizni kiriting:',
@@ -751,7 +751,7 @@ bot.command('register', async (ctx) => {
   await startRegistration(ctx);
 });
 
-async function startRegistration(ctx: BotContext) {
+const startRegistration = async (ctx: BotContext) => {
   ctx.session.registrationData = {};
   ctx.session.registrationStep = 'role';
   
@@ -2471,7 +2471,7 @@ bot.hears(['1️⃣ Bitta qatorda', '2️⃣ Har bir savolni alohida', '3️⃣ 
 });
 
 // Helper function to generate question buttons text
-function generateQuestionButtonsText(ctx: BotContext): string {
+const generateQuestionButtonsText = (ctx: BotContext): string => {
   if (!ctx.session.testCreation || !ctx.session.testCreation.questionCount) return '';
   
   const totalQuestions = ctx.session.testCreation.questionCount;
@@ -2494,7 +2494,7 @@ function generateQuestionButtonsText(ctx: BotContext): string {
 }
 
 // Helper function to generate question buttons keyboard
-function generateQuestionButtonsKeyboard(ctx: BotContext): any[][] {
+const generateQuestionButtonsKeyboard = (ctx: BotContext): any[][] => {
   if (!ctx.session.testCreation || !ctx.session.testCreation.questionCount) return [];
   
   const totalQuestions = ctx.session.testCreation.questionCount;
@@ -2559,7 +2559,7 @@ function generateQuestionButtonsKeyboard(ctx: BotContext): any[][] {
 }
 
 // Tugmalar orqali javob kiritish
-async function showQuestionButtons(ctx: BotContext) {
+const showQuestionButtons = async (ctx: BotContext) => {
   if (!ctx.session.testCreation || !ctx.session.testCreation.questionCount) return;
   
   const text = generateQuestionButtonsText(ctx);
@@ -2675,7 +2675,7 @@ bot.action('save_test', async (ctx) => {
 });
 
 // Testni saqlash funksiyasi
-async function saveTest(ctx: BotContext) {
+const saveTest = async (ctx: BotContext) => {
   if (!ctx.session.testCreation || !ctx.session.userId) return;
   
   try {
@@ -2786,7 +2786,7 @@ bot.catch((err, ctx) => {
 
 
 // Helper function to notify parent of test completion
-async function notifyParentOfTestCompletion(studentId: number, testTitle: string, studentName: string, scorePercentage: number) {
+const notifyParentOfTestCompletion = async (studentId: number, testTitle: string, studentName: string, scorePercentage: number) => {
   try {
     // Get student profile to find parent
     const studentProfile = await storage.getStudentProfile(studentId);
@@ -2836,7 +2836,7 @@ async function notifyParentOfTestCompletion(studentId: number, testTitle: string
 }
 
 // Helper functions
-function getKeyboardByRole(role: string) {
+const getKeyboardByRole = (role: string) => {
   if (role === 'teacher') {
     return [
       ['👤 Profil', '📚 Darslik'],
@@ -2871,7 +2871,7 @@ function getKeyboardByRole(role: string) {
   ];
 }
 
-function getRoleNameInUzbek(role: string): string {
+const getRoleNameInUzbek = (role: string): string => {
   const roleMap: Record<string, string> = {
     'teacher': 'O\'qituvchi',
     'student': 'O\'quvchi',
@@ -2882,7 +2882,7 @@ function getRoleNameInUzbek(role: string): string {
   return roleMap[role] || role;
 }
 
-function getTestStatusInUzbek(status: string): string {
+const getTestStatusInUzbek = (status: string): string => {
   const statusMap: Record<string, string> = {
     'draft': 'Qoralama',
     'active': 'Faol',
@@ -2893,7 +2893,7 @@ function getTestStatusInUzbek(status: string): string {
 }
 
 // Helper functions for student test interface
-function generateStudentTestText(ctx: BotContext): string {
+const generateStudentTestText = (ctx: BotContext): string => {
   if (!ctx.session.testAttempt || !ctx.session.testAttempt.questions) return '';
   
   const currentPage = ctx.session.testAttempt.currentPage || 0;
@@ -2917,7 +2917,7 @@ function generateStudentTestText(ctx: BotContext): string {
     `Har bir savol uchun A, B, C, D tugmalaridan birini tanlang:`;
 }
 
-function generateStudentTestKeyboard(ctx: BotContext): any[][] {
+const generateStudentTestKeyboard = (ctx: BotContext): any[][] => {
   if (!ctx.session.testAttempt || !ctx.session.testAttempt.questions) return [];
   
   const currentPage = ctx.session.testAttempt.currentPage || 0;
@@ -2977,7 +2977,7 @@ function generateStudentTestKeyboard(ctx: BotContext): any[][] {
 }
 
 // Show test questions page with inline keyboard
-async function showTestQuestionsPage(ctx: BotContext) {
+const showTestQuestionsPage = async (ctx: BotContext) => {
   if (!ctx.session.testAttempt || !ctx.session.testAttempt.questions) return;
   
   const text = generateStudentTestText(ctx);
@@ -2992,7 +2992,7 @@ async function showTestQuestionsPage(ctx: BotContext) {
 }
 
 // Check and send pending notifications to user
-async function checkAndSendNotifications(ctx: BotContext) {
+const checkAndSendNotifications = async (ctx: BotContext) => {
   if (!ctx.session.userId) return;
   
   const notifications = botNotificationService.getNotifications(ctx.session.userId);
@@ -3009,7 +3009,7 @@ async function checkAndSendNotifications(ctx: BotContext) {
       await ctx.reply(
         `🔔 *Yangi bildirishnomalar*\n\n` +
         `📝 ${testNotifications.length} ta yangi test yaratildi!\n` +
-        testNotifications.map(n => `• ${n.message.replace('📝 Yangi test yaratildi: ')}`).join('\n'),
+        testNotifications.map(n => `• ${n.message.replace('📝 Yangi test yaratildi: ', '')}`).join('\n'),
         { parse_mode: 'Markdown' }
       );
     }
@@ -3017,7 +3017,7 @@ async function checkAndSendNotifications(ctx: BotContext) {
     if (lessonNotifications.length > 0) {
       await ctx.reply(
         `📚 ${lessonNotifications.length} ta dars yangilandi!\n` +
-        lessonNotifications.map(n => `• ${n.message.replace('📚 Dars yangilandi: ')}`).join('\n'),
+        lessonNotifications.map(n => `• ${n.message.replace('📚 Dars yangilandi: ', '')}`).join('\n'),
         { parse_mode: 'Markdown' }
       );
     }
@@ -4175,7 +4175,6 @@ bot.action(/test_submit_(\d+)/, async (ctx) => {
     await storage.updateTestAttempt(attemptId, {
       status: 'completed',
       score: correctAnswers.toString(),
-      totalCorrect: correctAnswers,
       endTime: new Date()
     });
     
@@ -4222,7 +4221,7 @@ bot.action(/test_submit_(\d+)/, async (ctx) => {
 // (This handler is replaced by the confirmation function above)
 
 // Helper function to show tests page with pagination
-async function showTestsPage(ctx: any, page: number = 0) {
+const showTestsPage = async (ctx: any, page: number = 0) => {
   const tests = (ctx.session as any).existingTests || [];
   const testsPerPage = 3;
   const totalPages = Math.ceil(tests.length / testsPerPage);
@@ -4713,7 +4712,7 @@ bot.action(/clear_category_(\d+)/, async (ctx) => {
 
 
 // Function to handle test editing text inputs
-async function handleTestEditing(ctx: any, messageText: string) {
+const handleTestEditing = async (ctx: any, messageText: string) => {
   if (!(ctx.session as any).editingTest) return;
   
   const { testId, step } = (ctx.session as any).editingTest;

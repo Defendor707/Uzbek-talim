@@ -82,31 +82,29 @@ const NotificationSettings: React.FC = () => {
   React.useEffect(() => {
     if (settings) {
       form.reset({
-        enableTelegram: settings.enableTelegram,
-        enableWebsite: settings.enableWebsite,
-        minScoreNotification: settings.minScoreNotification,
-        maxScoreNotification: settings.maxScoreNotification,
-        notifyOnlyFailed: settings.notifyOnlyFailed,
-        notifyOnlyPassed: settings.notifyOnlyPassed,
-        instantNotification: settings.instantNotification,
-        dailyDigest: settings.dailyDigest,
-        weeklyDigest: settings.weeklyDigest,
+        enableTelegram: (settings as any)?.enableTelegram ?? false,
+        enableWebsite: (settings as any)?.enableWebsite ?? false,
+        minScoreNotification: (settings as any)?.minScoreNotification ?? 0,
+        maxScoreNotification: (settings as any)?.maxScoreNotification ?? 100,
+        notifyOnlyFailed: (settings as any)?.notifyOnlyFailed ?? false,
+        notifyOnlyPassed: (settings as any)?.notifyOnlyPassed ?? false,
+        instantNotification: (settings as any)?.instantNotification ?? false,
+        dailyDigest: (settings as any)?.dailyDigest ?? false,
+        weeklyDigest: (settings as any)?.weeklyDigest ?? false,
       });
     }
   }, [settings, form]);
 
   const updateSettingsMutation = useMutation({
     mutationFn: (data: NotificationSettingsForm) =>
-      apiRequest('/api/parent/notification-settings', {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-    onSuccess: () => {
+      apiRequest('PUT', '/api/parent/notification-settings', data),
+      onSuccess: () => {
       toast({
         title: "Sozlamalar saqlandi",
         description: "Bildirishnoma sozlamalari muvaffaqiyatli yangilandi",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/parent/notification-settings'] });
+    },
     },
     onError: (error: any) => {
       toast({

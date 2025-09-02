@@ -18,7 +18,7 @@ import { Building2, MapPin, Phone, Mail, Globe, User, Calendar, FileText, Users,
 import * as schema from '@shared/schema';
 
 // Center profile form schema
-const centerProfileSchema = schema.insertCenterProfileSchema.omit({ licenseNumber: true }).extend({
+const centerProfileSchema = schema.insertCenterProfileSchema.extend({
   userId: z.number(),
 });
 

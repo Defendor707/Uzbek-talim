@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { UserPlus, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
-import { ResponsiveDashboard } from "@/components/dashboard/ResponsiveDashboard";
+import ResponsiveDashboard from "@/components/dashboard/ResponsiveDashboard";
 
 interface MemberRequest {
   id: number;

@@ -82,7 +82,7 @@ export const dbPerformanceMiddleware = (req: Request, res: Response, next: NextF
   const startTime = Date.now();
   
   const originalEnd = res.end;
-  res.end = function(this: Response, ...args: any[]) {
+  res.end = function(this: Response, chunk?: any, encoding?: BufferEncoding, cb?: () => void) {
     const duration = Date.now() - startTime;
     const success = res.statusCode < 400;
     
@@ -91,7 +91,7 @@ export const dbPerformanceMiddleware = (req: Request, res: Response, next: NextF
       dbMonitor.recordQuery(req.path, duration, success);
     }
     
-    originalEnd.apply(this, args);
+    originalEnd.call(this, chunk, encoding, cb);
   };
 
   next();

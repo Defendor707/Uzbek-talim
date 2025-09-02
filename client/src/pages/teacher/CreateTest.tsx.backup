@@ -507,6 +507,7 @@ const CreateTestPage: React.FC = () => {
           </Card>
         )}
         </div>
+      </div>
     </ResponsiveDashboard>
   );
 };

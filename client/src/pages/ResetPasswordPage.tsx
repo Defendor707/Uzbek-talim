@@ -59,14 +59,10 @@ const ResetPasswordPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await apiRequest('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token,
-          password: values.password,
-          confirmPassword: values.confirmPassword,
-        }),
+      const response = await apiRequest('POST', '/api/auth/reset-password', {
+        token,
+        password: values.password,
+        confirmPassword: values.confirmPassword,
       });
 
       const data = await response.json();

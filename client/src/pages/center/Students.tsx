@@ -68,7 +68,7 @@ const Students: React.FC = () => {
   });
 
   // Get unique grades for filter
-  const grades = [...new Set(students.map(s => s.grade).filter(Boolean))];
+  const grades = Array.from(new Set(students.map(s => s.grade).filter(Boolean)));
 
   if (isLoading) {
     return (

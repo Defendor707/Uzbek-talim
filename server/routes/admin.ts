@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { dbOptimizer } from '../utils/dbOptimizer';
 import { dbMonitor } from '../middleware/dbMonitor';
-import { cacheManager } from '../middleware/cache';
+import { globalCache as cacheManager } from '../middleware/cache';
 
 const router = Router();
 
@@ -21,7 +21,7 @@ router.get('/db/health', requireAuth, requireRole(['center']), async (req, res) 
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    res.status(500).json({ message: 'Health check failed', error: error.message });
+    res.status(500).json({ message: 'Health check failed', error: (error as Error).message });
   }
 });
 
@@ -31,7 +31,7 @@ router.post('/db/optimize', requireAuth, requireRole(['center']), async (req, re
     await dbOptimizer.performMaintenance();
     res.json({ message: 'Database optimization completed successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Optimization failed', error: error.message });
+    res.status(500).json({ message: 'Optimization failed', error: (error as Error).message });
   }
 });
 
@@ -41,7 +41,7 @@ router.delete('/cache/clear', requireAuth, requireRole(['center']), (req, res) =
     cacheManager.clear();
     res.json({ message: 'Cache cleared successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Cache clear failed', error: error.message });
+    res.status(500).json({ message: 'Cache clear failed', error: (error as Error).message });
   }
 });
 

@@ -38,7 +38,7 @@ class MemoryCache {
     const now = Date.now();
     const entries = Array.from(this.cache.entries());
     for (const [key, entry] of entries) {
-      if (entry.expiresAt < now) {
+      if (entry.expiry < now) {
         this.cache.delete(key);
       }
     }
@@ -58,8 +58,7 @@ class MemoryCache {
 
     const entry: CacheEntry = {
       data,
-      timestamp: Date.now(),
-      expiresAt: Date.now() + ttl
+      expiry: Date.now() + ttl,
     };
 
     this.cache.set(key, entry);
@@ -72,7 +71,7 @@ class MemoryCache {
       return null;
     }
 
-    if (entry.expiresAt < Date.now()) {
+    if (entry.expiry < Date.now()) {
       this.cache.delete(key);
       return null;
     }
