@@ -1,0 +1,315 @@
+/* O'zbekiston Milliy Temasi */
+
+/* O'zbekiston bayrog'i ranglari */
+:root {
+  --uzbek-blue: #1eb53a;      /* Yashil */
+  --uzbek-white: #ffffff;     /* Oq */
+  --uzbek-red: #ff0000;       /* Qizil */
+  --uzbek-gold: #ffd700;      /* Oltin */
+  --uzbek-navy: #003366;      /* Ko'k */
+  --uzbek-orange: #ff6600;    /* Qizg'ish */
+}
+
+/* Milliy gradient fonlar */
+.uzbek-gradient-flag {
+  background: linear-gradient(135deg, #1eb53a 0%, #ffffff 25%, #ff0000 50%, #ffffff 75%, #1eb53a 100%);
+  background-size: 400% 400%;
+  animation: uzbek-flag 8s ease infinite;
+}
+
+@keyframes uzbek-flag {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.uzbek-gradient-sky {
+  background: linear-gradient(135deg, #87CEEB 0%, #1eb53a 25%, #ffffff 50%, #ffd700 75%, #ff6600 100%);
+  background-size: 400% 400%;
+  animation: uzbek-sky 10s ease infinite;
+}
+
+@keyframes uzbek-sky {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.uzbek-gradient-sunset {
+  background: linear-gradient(135deg, #ff6600 0%, #ffd700 25%, #1eb53a 50%, #003366 75%, #ff0000 100%);
+  background-size: 400% 400%;
+  animation: uzbek-sunset 12s ease infinite;
+}
+
+@keyframes uzbek-sunset {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Milliy ranglar bilan buttonlar */
+.btn-uzbek-primary {
+  background: linear-gradient(135deg, #1eb53a 0%, #ffd700 100%);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(30, 181, 58, 0.3);
+}
+
+.btn-uzbek-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(30, 181, 58, 0.4);
+  background: linear-gradient(135deg, #17a03a 0%, #e6c200 100%);
+}
+
+.btn-uzbek-secondary {
+  background: linear-gradient(135deg, #003366 0%, #1eb53a 100%);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 51, 102, 0.3);
+}
+
+.btn-uzbek-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 51, 102, 0.4);
+}
+
+.btn-uzbek-accent {
+  background: linear-gradient(135deg, #ff6600 0%, #ffd700 100%);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3);
+}
+
+.btn-uzbek-accent:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 102, 0, 0.4);
+}
+
+/* Milliy card dizaynlari */
+.card-uzbek {
+  background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-uzbek::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #1eb53a 0%, #ffffff 25%, #ff0000 50%, #ffffff 75%, #1eb53a 100%);
+}
+
+.card-uzbek-gold {
+  background: linear-gradient(145deg, #ffd700 0%, #ffffff 100%);
+  border: 2px solid #ffd700;
+  box-shadow: 0 10px 30px rgba(255, 215, 0, 0.2);
+}
+
+.card-uzbek-green {
+  background: linear-gradient(145deg, #1eb53a 0%, #ffffff 100%);
+  border: 2px solid #1eb53a;
+  box-shadow: 0 10px 30px rgba(30, 181, 58, 0.2);
+}
+
+.card-uzbek-blue {
+  background: linear-gradient(145deg, #003366 0%, #ffffff 100%);
+  border: 2px solid #003366;
+  box-shadow: 0 10px 30px rgba(0, 51, 102, 0.2);
+}
+
+/* Navigation yaxshilanishi */
+.nav-uzbek {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(30, 181, 58, 0.2);
+  box-shadow: 0 8px 32px rgba(30, 181, 58, 0.1);
+}
+
+.nav-item-uzbek {
+  position: relative;
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.nav-item-uzbek::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(30, 181, 58, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.nav-item-uzbek:hover::before {
+  left: 100%;
+}
+
+.nav-item-uzbek.active {
+  background: linear-gradient(135deg, #1eb53a 0%, #ffd700 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(30, 181, 58, 0.3);
+}
+
+.nav-item-uzbek:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(30, 181, 58, 0.2);
+}
+
+/* Milliy iconlar */
+.icon-uzbek {
+  color: #1eb53a;
+  background: rgba(30, 181, 58, 0.1);
+  border-radius: 8px;
+  padding: 8px;
+  transition: all 0.3s ease;
+}
+
+.icon-uzbek:hover {
+  background: rgba(30, 181, 58, 0.2);
+  transform: scale(1.1);
+}
+
+/* O'zbekiston milliy naqshlari */
+.uzbek-pattern {
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(30, 181, 58, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(0, 51, 102, 0.05) 0%, transparent 50%);
+  background-size: 200px 200px, 300px 300px, 400px 400px;
+  animation: uzbek-pattern 20s ease infinite;
+}
+
+@keyframes uzbek-pattern {
+  0%, 100% { background-position: 0 0, 0 0, 0 0; }
+  25% { background-position: 100px 100px, 150px 150px, 200px 200px; }
+  50% { background-position: 200px 0, 300px 0, 400px 0; }
+  75% { background-position: 100px -100px, 150px -150px, 200px -200px; }
+}
+
+/* Milliy text ranglari */
+.text-uzbek-green { color: #1eb53a; }
+.text-uzbek-gold { color: #ffd700; }
+.text-uzbek-blue { color: #003366; }
+.text-uzbek-red { color: #ff0000; }
+
+/* Milliy border ranglari */
+.border-uzbek-green { border-color: #1eb53a; }
+.border-uzbek-gold { border-color: #ffd700; }
+.border-uzbek-blue { border-color: #003366; }
+
+/* O'zbekiston milliy bayrog'i ranglari bilan gradient */
+.gradient-uzbek-flag {
+  background: linear-gradient(135deg, #1eb53a 0%, #ffffff 25%, #ff0000 50%, #ffffff 75%, #1eb53a 100%);
+}
+
+.gradient-uzbek-sun {
+  background: linear-gradient(135deg, #ffd700 0%, #ff6600 50%, #ffd700 100%);
+}
+
+.gradient-uzbek-sky {
+  background: linear-gradient(135deg, #87CEEB 0%, #1eb53a 50%, #003366 100%);
+}
+
+/* Milliy shadow effektlari */
+.shadow-uzbek {
+  box-shadow: 0 10px 30px rgba(30, 181, 58, 0.2);
+}
+
+.shadow-uzbek-lg {
+  box-shadow: 0 20px 50px rgba(30, 181, 58, 0.3);
+}
+
+/* Milliy animationlar */
+@keyframes uzbek-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+.uzbek-float {
+  animation: uzbek-float 3s ease-in-out infinite;
+}
+
+@keyframes uzbek-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.uzbek-pulse {
+  animation: uzbek-pulse 2s ease-in-out infinite;
+}
+
+/* Milliy mobile navigation */
+.mobile-nav-uzbek {
+  background: linear-gradient(135deg, #1eb53a 0%, #003366 100%);
+  backdrop-filter: blur(20px);
+  border-top: 3px solid #ffd700;
+}
+
+.mobile-nav-item-uzbek {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.mobile-nav-item-uzbek::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.mobile-nav-item-uzbek:hover::before {
+  left: 100%;
+}
+
+.mobile-nav-item-uzbek.active {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+  transform: translateY(-2px);
+}
+
+.mobile-nav-item-uzbek:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Milliy loading spinner */
+.uzbek-spinner {
+  border: 4px solid rgba(30, 181, 58, 0.1);
+  border-top: 4px solid #1eb53a;
+  border-radius: 50%;
+  animation: uzbek-spin 1s linear infinite;
+}
+
+@keyframes uzbek-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Milliy progress bar */
+.uzbek-progress {
+  background: linear-gradient(90deg, #1eb53a 0%, #ffd700 50%, #1eb53a 100%);
+  background-size: 200% 100%;
+  animation: uzbek-progress 2s ease infinite;
+}
+
+@keyframes uzbek-progress {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
