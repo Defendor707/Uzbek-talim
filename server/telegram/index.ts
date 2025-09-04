@@ -6,6 +6,8 @@ import { log } from '../vite';
  */
 export async function startTelegramBot() {
   try {
+    // Clean any existing webhooks before polling
+    try { await bot.telegram.deleteWebhook({ drop_pending_updates: true }); } catch {}
     if (!bot) {
       log('Telegram bot token not provided - skipping bot startup', 'telegram');
       return null;

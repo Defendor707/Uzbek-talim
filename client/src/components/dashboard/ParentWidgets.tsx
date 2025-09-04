@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardWidget from './DashboardWidget';
-import { Users, TrendingUp, Calendar, Award, UserPlus, BarChart3, Clock, Star } from 'lucide-react';
+import { Users, FileText, BarChart3, BookOpen, Settings, Award, Clock, TrendingUp } from 'lucide-react';
 
 const ParentWidgets: React.FC = () => {
   // Fetch data for widgets
@@ -9,150 +9,131 @@ const ParentWidgets: React.FC = () => {
     queryKey: ['/api/parent/children'],
   });
 
+  const { data: attempts = [] } = useQuery<any[]>({
+    queryKey: ['/api/parent/attempts'],
+  });
+
+  const { data: notifications = [] } = useQuery<any[]>({
+    queryKey: ['/api/parent/notifications'],
+  });
+
+  // Calculate statistics
+  const completedAttempts = attempts.filter((a: any) => a.status === 'completed');
+  const averageScore = completedAttempts.length > 0 
+    ? Math.round(completedAttempts.reduce((sum: number, a: any) => sum + (Number(a.score) || 0), 0) / completedAttempts.length)
+    : 0;
+
   const quickActions = [
     {
-      label: 'Farzand qo\'shish',
-      href: '/parent/children',
-      icon: <UserPlus className="w-4 h-4" />,
-      variant: 'default' as const
-    },
-    {
-      label: 'Natijalarni ko\'rish',
-      href: '/parent/results',
-      icon: <BarChart3 className="w-4 h-4" />,
-      variant: 'outline' as const
-    }
-  ];
-
-  const childrenActions = [
-    {
-      label: 'Barchasi',
+      label: 'Farzandlarim',
       href: '/parent/children',
       icon: <Users className="w-4 h-4" />,
-      variant: 'outline' as const
+      color: 'from-blue-500 to-blue-600',
+      description: 'Farzandlaringizni boshqaring'
     },
     {
-      label: 'Qo\'shish',
-      href: '/parent/children',
-      icon: <UserPlus className="w-4 h-4" />,
-      variant: 'default' as const
+      label: 'Natijalar',
+      href: '/parent/results',
+      icon: <BarChart3 className="w-4 h-4" />,
+      color: 'from-green-500 to-green-600',
+      description: 'Farzandlaringiz natijalarini ko\'ring'
+    },
+    {
+      label: 'Bildirishnomalar',
+      href: '/parent/notifications',
+      icon: <Award className="w-4 h-4" />,
+      color: 'from-purple-500 to-purple-600',
+      description: 'Bildirishnomalarni ko\'ring'
     }
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Quick Actions Widget */}
-      <DashboardWidget
-        title="Tezkor amallar"
-        subtitle="Farzandlaringizni boshqaring"
-        icon={<Users className="w-6 h-6" />}
-        gradient="from-purple-500 to-pink-600"
-        actions={quickActions}
-      />
+    <div className="space-y-8">
+      {/* Asosiy statistikalar - yumshoq ko'rinish */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold text-blue-900">{children.length}</span>
+          </div>
+          <h3 className="text-lg font-semibold text-blue-900 mb-1">Farzandlarim</h3>
+          <p className="text-sm text-blue-600">Ro'yxatdan o'tgan farzandlar</p>
+        </div>
 
-      {/* Statistics Grid */}
-      <div className="responsive-grid-2-4 gap-4">
-        <DashboardWidget
-          title="Farzandlar soni"
-          value={children.length}
-          subtitle="Ro'yxatda turganlar"
-          icon={<Users className="w-6 h-6" />}
-          gradient="from-blue-500 to-blue-600"
-          actions={childrenActions}
-        />
+        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+              <FileText className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold text-green-900">{completedAttempts.length}</span>
+          </div>
+          <h3 className="text-lg font-semibold text-green-900 mb-1">Jami testlar</h3>
+          <p className="text-sm text-green-600">Farzandlaringiz bajargan testlar</p>
+        </div>
 
-        <DashboardWidget
-          title="Faol o'quvchilar"
-          value={children.filter((c: any) => c.status === 'active').length}
-          subtitle="Hozir o'qiyotganlar"
-          icon={<TrendingUp className="w-6 h-6" />}
-          gradient="from-green-500 to-green-600"
-        />
-
-        <DashboardWidget
-          title="Bu oy testlar"
-          value={0}
-          subtitle="Ishlangan testlar"
-          icon={<Calendar className="w-6 h-6" />}
-          gradient="from-orange-500 to-orange-600"
-        />
-
-        <DashboardWidget
-          title="Yuqori natijalar"
-          value={0}
-          subtitle="80% dan yuqori"
-          icon={<Award className="w-6 h-6" />}
-          gradient="from-yellow-500 to-yellow-600"
-        />
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold text-purple-900">{averageScore}%</span>
+          </div>
+          <h3 className="text-lg font-semibold text-purple-900 mb-1">O'rtacha ball</h3>
+          <p className="text-sm text-purple-600">Umumiy o'rtacha natija</p>
+        </div>
       </div>
 
-      {/* Children Overview */}
-      <DashboardWidget
-        title="Farzandlaringiz"
-        subtitle="O'quv jarayoni haqida ma'lumot"
-        icon={<BarChart3 className="w-6 h-6" />}
-        gradient="from-indigo-500 to-purple-600"
-      >
-        <div className="space-y-4">
-          {children.length > 0 ? (
-            children.map((child: any) => (
-              <div key={child.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                    {child.firstName?.charAt(0) || child.username?.charAt(0) || 'F'}
+      {/* Tezkor amallar - yumshoq ko'rinish */}
+      <div className="bg-gradient-to-r from-white to-blue-50 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-xl font-semibold text-blue-900 mb-6">Tezkor amallar</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {quickActions.map((action, index) => (
+            <a
+              key={index}
+              href={action.href}
+              className="group flex items-center p-4 rounded-xl bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+            >
+              <div className={`w-10 h-10 bg-gradient-to-r ${action.color} rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300`}>
+                {action.icon}
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-900 group-hover:text-blue-900 transition-colors">{action.label}</h4>
+                <p className="text-sm text-gray-600">{action.description}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* So'nggi faoliyat - yumshoq ko'rinish */}
+      {completedAttempts.length > 0 && (
+        <div className="bg-gradient-to-r from-white to-green-50 rounded-2xl p-6 shadow-sm">
+          <h3 className="text-xl font-semibold text-green-900 mb-6">So'nggi test natijalari</h3>
+          <div className="space-y-3">
+            {completedAttempts.slice(0, 3).map((attempt: any, index: number) => (
+              <div key={index} className="flex items-center justify-between p-4 bg-white rounded-xl hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center mr-4">
+                    <Clock className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {child.firstName && child.lastName 
-                        ? `${child.firstName} ${child.lastName}`
-                        : child.username
-                      }
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {child.grade ? `${child.grade}-sinf` : 'Sinf ko\'rsatilmagan'}
+                    <p className="font-medium text-gray-900">{attempt.childName || 'Farzand'}</p>
+                    <p className="text-sm text-gray-600">
+                      {attempt.testTitle || 'Test'} - {new Date(attempt.completedAt).toLocaleDateString('uz-UZ')}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="inline-flex px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                    Faol
-                  </span>
+                  <p className="text-xl font-bold text-green-600">{attempt.score}%</p>
+                  <p className="text-sm text-gray-500">Ball</p>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-gray-400" />
-              </div>
-              <p className="text-gray-500 text-sm mb-4">Hozircha farzandlar qo'shilmagan</p>
-              <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                Birinchi farzandni qo'shish
-              </button>
-            </div>
-          )}
-        </div>
-      </DashboardWidget>
-
-      {/* Recent Activity */}
-      <DashboardWidget
-        title="So'nggi faoliyat"
-        subtitle="Farzandlaringizning oxirgi natijalari"
-        icon={<Clock className="w-6 h-6" />}
-        gradient="from-emerald-500 to-teal-600"
-      >
-        <div className="space-y-3">
-          {/* Placeholder for recent activities */}
-          <div className="text-center py-6">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Star className="w-6 h-6 text-gray-400" />
-            </div>
-            <p className="text-gray-500 text-sm">
-              Farzandlaringizning test natijalari bu yerda ko'rsatiladi
-            </p>
+            ))}
           </div>
         </div>
-      </DashboardWidget>
+      )}
     </div>
   );
 };

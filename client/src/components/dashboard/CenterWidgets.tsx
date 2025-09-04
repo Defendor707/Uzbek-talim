@@ -1,159 +1,154 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardWidget from './DashboardWidget';
-import { Users, GraduationCap, Building2, BarChart3, UserPlus, Settings, TrendingUp, Award } from 'lucide-react';
+import { Users, FileText, BarChart3, BookOpen, Settings, Award, Clock, TrendingUp, Building2 } from 'lucide-react';
 
 const CenterWidgets: React.FC = () => {
-  // Fetch data for widgets (placeholder queries)
-  const { data: teachers = [] } = useQuery<any[]>({
-    queryKey: ['/api/center/teachers'],
-    queryFn: () => Promise.resolve([]) // Placeholder
+  // Fetch data for widgets
+  const { data: students = [] } = useQuery<any[]>({
+    queryKey: ['/api/center/students'],
   });
 
-  const { data: students = [] } = useQuery<any[]>({
-    queryKey: ['/api/center/students'], 
-    queryFn: () => Promise.resolve([]) // Placeholder
+  const { data: teachers = [] } = useQuery<any[]>({
+    queryKey: ['/api/center/teachers'],
   });
+
+  const { data: tests = [] } = useQuery<any[]>({
+    queryKey: ['/api/center/tests'],
+  });
+
+  const { data: attempts = [] } = useQuery<any[]>({
+    queryKey: ['/api/center/attempts'],
+  });
+
+  // Calculate statistics
+  const completedAttempts = attempts.filter((a: any) => a.status === 'completed');
+  const averageScore = completedAttempts.length > 0 
+    ? Math.round(completedAttempts.reduce((sum: number, a: any) => sum + (Number(a.score) || 0), 0) / completedAttempts.length)
+    : 0;
 
   const quickActions = [
     {
-      label: 'O\'qituvchi qo\'shish',
-      href: '/center/teachers',
-      icon: <UserPlus className="w-4 h-4" />,
-      variant: 'default' as const
-    },
-    {
-      label: 'Hisobotlar',
-      href: '/center/reports',
-      icon: <BarChart3 className="w-4 h-4" />,
-      variant: 'outline' as const
-    },
-    {
-      label: 'Sozlamalar',
-      href: '/center/settings',
-      icon: <Settings className="w-4 h-4" />,
-      variant: 'outline' as const
-    }
-  ];
-
-  const teacherActions = [
-    {
-      label: 'Barchasi',
-      href: '/center/teachers',
-      icon: <GraduationCap className="w-4 h-4" />,
-      variant: 'outline' as const
-    },
-    {
-      label: 'Qo\'shish',
-      href: '/center/teachers',
-      icon: <UserPlus className="w-4 h-4" />,
-      variant: 'default' as const
-    }
-  ];
-
-  const studentActions = [
-    {
-      label: 'Barchasi',
+      label: 'O\'quvchilar',
       href: '/center/students',
       icon: <Users className="w-4 h-4" />,
-      variant: 'outline' as const
+      color: 'from-blue-500 to-blue-600',
+      description: 'O\'quvchilarni boshqaring'
+    },
+    {
+      label: 'O\'qituvchilar',
+      href: '/center/teachers',
+      icon: <Building2 className="w-4 h-4" />,
+      color: 'from-green-500 to-green-600',
+      description: 'O\'qituvchilarni boshqaring'
+    },
+    {
+      label: 'Testlar',
+      href: '/center/tests',
+      icon: <FileText className="w-4 h-4" />,
+      color: 'from-purple-500 to-purple-600',
+      description: 'Testlarni boshqaring'
     }
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Quick Actions Widget */}
-      <DashboardWidget
-        title="Tezkor amallar"
-        subtitle="Markaz boshqaruvi"
-        icon={<Building2 className="w-6 h-6" />}
-        gradient="from-indigo-500 to-purple-600"
-        actions={quickActions}
-      />
+    <div className="space-y-8">
+      {/* Asosiy statistikalar - yumshoq ko'rinish */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold text-blue-900">{students.length}</span>
+          </div>
+          <h3 className="text-lg font-semibold text-blue-900 mb-1">O'quvchilar</h3>
+          <p className="text-sm text-blue-600">Ro'yxatdan o'tgan o'quvchilar</p>
+        </div>
 
-      {/* Statistics Grid */}
-      <div className="responsive-grid-2-4 gap-4">
-        <DashboardWidget
-          title="O'qituvchilar"
-          value={teachers.length}
-          subtitle="Faol o'qituvchilar"
-          icon={<GraduationCap className="w-6 h-6" />}
-          gradient="from-blue-500 to-blue-600"
-          actions={teacherActions}
-        />
+        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+              <Building2 className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold text-green-900">{teachers.length}</span>
+          </div>
+          <h3 className="text-lg font-semibold text-green-900 mb-1">O'qituvchilar</h3>
+          <p className="text-sm text-green-600">Faol o'qituvchilar</p>
+        </div>
 
-        <DashboardWidget
-          title="O'quvchilar"
-          value={students.length}
-          subtitle="Ro'yxatda turganlar"
-          icon={<Users className="w-6 h-6" />}
-          gradient="from-green-500 to-green-600"
-          actions={studentActions}
-        />
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <FileText className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold text-purple-900">{tests.length}</span>
+          </div>
+          <h3 className="text-lg font-semibold text-purple-900 mb-1">Testlar</h3>
+          <p className="text-sm text-purple-600">Yaratilgan testlar</p>
+        </div>
 
-        <DashboardWidget
-          title="Bu oy testlar"
-          value={0}
-          subtitle="Yaratilgan testlar"
-          icon={<BarChart3 className="w-6 h-6" />}
-          gradient="from-orange-500 to-orange-600"
-        />
-
-        <DashboardWidget
-          title="Faollik darajasi"
-          value="85%"
-          subtitle="O'rtacha faollik"
-          icon={<TrendingUp className="w-6 h-6" />}
-          gradient="from-purple-500 to-purple-600"
-        />
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold text-orange-900">{averageScore}%</span>
+          </div>
+          <h3 className="text-lg font-semibold text-orange-900 mb-1">O'rtacha ball</h3>
+          <p className="text-sm text-orange-600">Umumiy o'rtacha natija</p>
+        </div>
       </div>
 
-      {/* Center Overview */}
-      <DashboardWidget
-        title="Markaz ko'rsatkichlari"
-        subtitle="Umumiy statistika"
-        icon={<Award className="w-6 h-6" />}
-        gradient="from-emerald-500 to-teal-600"
-      >
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">{teachers.length}</div>
-            <div className="text-sm text-gray-600">O'qituvchilar</div>
-          </div>
-          <div className="text-center p-4 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">{students.length}</div>
-            <div className="text-sm text-gray-600">O'quvchilar</div>
-          </div>
-          <div className="text-center p-4 bg-orange-50 rounded-lg">
-            <div className="text-2xl font-bold text-orange-600">0</div>
-            <div className="text-sm text-gray-600">Testlar</div>
-          </div>
-          <div className="text-center p-4 bg-purple-50 rounded-lg">
-            <div className="text-2xl font-bold text-purple-600">0</div>
-            <div className="text-sm text-gray-600">Darsliklar</div>
-          </div>
+      {/* Tezkor amallar - yumshoq ko'rinish */}
+      <div className="bg-gradient-to-r from-white to-blue-50 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-xl font-semibold text-blue-900 mb-6">Tezkor amallar</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {quickActions.map((action, index) => (
+            <a
+              key={index}
+              href={action.href}
+              className="group flex items-center p-4 rounded-xl bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+            >
+              <div className={`w-10 h-10 bg-gradient-to-r ${action.color} rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300`}>
+                {action.icon}
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-900 group-hover:text-blue-900 transition-colors">{action.label}</h4>
+                <p className="text-sm text-gray-600">{action.description}</p>
+              </div>
+            </a>
+          ))}
         </div>
-      </DashboardWidget>
+      </div>
 
-      {/* Recent Activity */}
-      <DashboardWidget
-        title="So'nggi faoliyat"
-        subtitle="Markaz bo'yicha oxirgi yangiliklar"
-        icon={<BarChart3 className="w-6 h-6" />}
-        gradient="from-pink-500 to-rose-600"
-      >
-        <div className="space-y-3">
-          <div className="text-center py-8">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Building2 className="w-8 h-8 text-gray-400" />
-            </div>
-            <p className="text-gray-500 text-sm mb-2">Markaz faoliyati</p>
-            <p className="text-gray-400 text-xs">
-              Bu yerda markaz bo'yicha so'nggi faoliyat ko'rsatiladi
-            </p>
+      {/* So'nggi faoliyat - yumshoq ko'rinish */}
+      {completedAttempts.length > 0 && (
+        <div className="bg-gradient-to-r from-white to-green-50 rounded-2xl p-6 shadow-sm">
+          <h3 className="text-xl font-semibold text-green-900 mb-6">So'nggi test natijalari</h3>
+          <div className="space-y-3">
+            {completedAttempts.slice(0, 3).map((attempt: any, index: number) => (
+              <div key={index} className="flex items-center justify-between p-4 bg-white rounded-xl hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center mr-4">
+                    <Clock className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{attempt.studentName || 'O\'quvchi'}</p>
+                    <p className="text-sm text-gray-600">
+                      {attempt.testTitle || 'Test'} - {new Date(attempt.completedAt).toLocaleDateString('uz-UZ')}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-bold text-green-600">{attempt.score}%</p>
+                  <p className="text-sm text-gray-500">Ball</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </DashboardWidget>
+      )}
     </div>
   );
 };

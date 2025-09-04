@@ -146,10 +146,10 @@ const TeacherProfile: React.FC = () => {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 10 * 1024 * 1024) { // 5MB limit
         toast({
           title: "Xatolik",
-          description: "Rasm hajmi 5MB dan oshmasligi kerak",
+          description: "Rasm hajmi 10MB dan oshmasligi kerak",
           variant: "destructive",
         });
         return;
@@ -321,7 +321,7 @@ const TeacherProfile: React.FC = () => {
                 )}
               </div>
               <p className="text-sm text-gray-500 text-center">
-                Rasm hajmi 5MB dan oshmasligi kerak. JPG, PNG formatlar qabul qilinadi.
+                Rasm hajmi 10MB dan oshmasligi kerak. JPG, PNG formatlar qabul qilinadi.
               </p>
             </div>
           </CardContent>

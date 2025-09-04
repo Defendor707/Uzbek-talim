@@ -307,6 +307,30 @@ export const insertTeacherProfileSchema = createInsertSchema(teacherProfiles)
 // Schema for inserting center profiles
 export const insertCenterProfileSchema = createInsertSchema(centerProfiles)
 
+// Schema for inserting parent profiles
+export const insertParentProfileSchema = createInsertSchema(parentProfiles)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    phoneNumber: z.string().optional(),
+    bio: z.string().max(500, "Bio 500 ta belgidan oshmasligi kerak").optional(),
+    children: z.array(z.number()).optional(),
+  });
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    centerName: z.string().min(2, "Markaz nomi kamida 2 ta belgidan iborat bo'lishi kerak"),
+    address: z.string().min(10, "Manzil kamida 10 ta belgidan iborat bo'lishi kerak"),
+    phoneNumber: z.string().optional(),
+    email: z.string().email("Noto'g'ri email format").optional().or(z.literal("")),
+    website: z.string().url("Noto'g'ri veb-sayt URL").optional().or(z.literal("")),
+    description: z.string().optional(),
+    director: z.string().optional(),
+    establishedYear: z.number().min(1900).max(new Date().getFullYear()).optional(),
+    capacity: z.number().min(1).optional(),
+    specializations: z.array(z.string()).optional(),
+    facilities: z.array(z.string()).optional(),
+    workingHours: z.string().optional(),
+  });
+
 // Schema for inserting lessons
 export const insertLessonSchema = createInsertSchema(lessons)
   .omit({ id: true, createdAt: true, updatedAt: true, viewCount: true, likeCount: true })
@@ -394,6 +418,16 @@ export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type LoginCredentials = z.infer<typeof loginSchema>;
 export type ForgotPasswordRequest = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordRequest = z.infer<typeof resetPasswordSchema>;
+
+export type StudentProfile = typeof studentProfiles.$inferSelect;
+export type InsertStudentProfile = z.infer<typeof insertStudentProfileSchema>;
+
+export type TeacherProfile = typeof teacherProfiles.$inferSelect;
+export type InsertTeacherProfile = z.infer<typeof insertTeacherProfileSchema>;
+
+export type CenterProfile = typeof centerProfiles.$inferSelect;
+export type InsertCenterProfile = z.infer<typeof insertCenterProfileSchema>;
+export type ParentProfile = typeof parentProfiles.$inferSelect;
 export type InsertParentProfile = z.infer<typeof insertParentProfileSchema>;
 
 export type Lesson = typeof lessons.$inferSelect;
@@ -404,6 +438,17 @@ export type InsertTest = z.infer<typeof insertTestSchema>;
 
 export type Question = typeof questions.$inferSelect;
 export type InsertQuestion = z.infer<typeof insertQuestionSchema>;
+
+export type TestAttempt = typeof testAttempts.$inferSelect;
+export type InsertTestAttempt = z.infer<typeof insertTestAttemptSchema>;
+
+export type StudentAnswer = typeof studentAnswers.$inferSelect;
+export type InsertStudentAnswer = z.infer<typeof insertStudentAnswerSchema>;
+
+export type Schedule = typeof schedules.$inferSelect;
+export type InsertSchedule = z.infer<typeof insertScheduleSchema>;
+
+export type ParentNotificationSettings = typeof parentNotificationSettings.$inferSelect;
 export type InsertParentNotificationSettings = z.infer<typeof insertParentNotificationSettingsSchema>;
 
 

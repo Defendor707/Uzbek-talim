@@ -15,48 +15,58 @@ import useAuth from '@/hooks/useAuth';
 import ResponsiveDashboard from '@/components/dashboard/ResponsiveDashboard';
 import { Upload, Image, User } from 'lucide-react';
 
-// Student Profile Schema
-const studentProfileSchema = z.object({
+// Teacher Profile Schema
+const teacherProfileSchema = z.object({
   fullName: z.string()
     .min(2, 'Ism-familya kamida 2 ta harfdan iborat bo\'lishi kerak')
     .max(50, 'Ism-familya 50 ta harfdan oshmasligi kerak'),
   phoneNumber: z.string().optional().or(z.literal('')),
+  specialty: z.union([
+    z.string()
+      .min(2, 'Mutaxassislik kamida 2 ta harfdan iborat bo\'lishi kerak')
+      .max(20, 'Mutaxassislik 20 ta harfdan oshmasligi kerak')
+      .regex(/^[a-zA-ZўқғҳҚҒҲЎ\s]+$/, 'Mutaxassislikda faqat harflar bo\'lishi mumkin'),
+    z.literal('')
+  ]).optional(),
   bio: z.string()
     .max(200, 'Haqida bo\'limi 200 ta harfdan oshmasligi kerak')
     .optional()
     .or(z.literal('')),
+  experience: z.number().min(0, 'Tajriba manfiy bo\'lishi mumkin emas').optional().or(z.nan()),
 });
 
-type StudentProfileFormData = z.infer<typeof studentProfileSchema>;
+type TeacherProfileFormData = z.infer<typeof teacherProfileSchema>;
 
-const StudentProfile: React.FC = () => {
+const TeacherProfile: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Fetch student profile
+  // Fetch teacher profile
   const { data: profile, isLoading } = useQuery<any>({
-    queryKey: ['/api/profile/student'],
+    queryKey: ['/api/profile/teacher'],
     retry: false,
   });
 
-  const form = useForm<StudentProfileFormData>({
-    resolver: zodResolver(studentProfileSchema),
+  const form = useForm<TeacherProfileFormData>({
+    resolver: zodResolver(teacherProfileSchema),
     defaultValues: {
       fullName: user?.fullName || '',
       phoneNumber: profile?.phoneNumber || '',
+      specialty: profile?.specialty || '',
       bio: profile?.bio || '',
+      experience: profile?.experience || 0,
     },
   });
 
   // Create profile mutation
   const createProfileMutation = useMutation({
-    mutationFn: (data: StudentProfileFormData) => 
-      apiRequest('POST', '/api/profile/student', data),
+    mutationFn: (data: TeacherProfileFormData) => 
+      apiRequest('POST', '/api/profile/teacher', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profile/student'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] }); // Refresh user data
+      queryClient.invalidateQueries({ queryKey: ['/api/profile/teacher'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       toast({
         title: 'Muvaffaqiyat',
         description: 'Profil muvaffaqiyatli yaratildi',
@@ -73,11 +83,11 @@ const StudentProfile: React.FC = () => {
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
-    mutationFn: (data: StudentProfileFormData) => 
-      apiRequest('PUT', '/api/profile/student', data),
+    mutationFn: (data: TeacherProfileFormData) => 
+      apiRequest('PUT', '/api/profile/teacher', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profile/student'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] }); // Refresh user data
+      queryClient.invalidateQueries({ queryKey: ['/api/profile/teacher'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       toast({
         title: 'Muvaffaqiyat',
         description: 'Profil muvaffaqiyatli yangilandi',
@@ -98,7 +108,7 @@ const StudentProfile: React.FC = () => {
       const formData = new FormData();
       formData.append('profileImage', file);
       
-      const response = await fetch('/api/student/upload-image', {
+      const response = await fetch('/api/teacher/upload-image', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -114,7 +124,7 @@ const StudentProfile: React.FC = () => {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profile/student'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/profile/teacher'] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       toast({
         title: 'Muvaffaqiyat',
@@ -136,10 +146,10 @@ const StudentProfile: React.FC = () => {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
         toast({
           title: "Xatolik",
-          description: "Rasm hajmi 10MB dan oshmasligi kerak",
+          description: "Rasm hajmi 5MB dan oshmasligi kerak",
           variant: "destructive",
         });
         return;
@@ -165,7 +175,7 @@ const StudentProfile: React.FC = () => {
     }
   };
 
-  const onSubmit = (data: StudentProfileFormData) => {
+  const onSubmit = (data: TeacherProfileFormData) => {
     if (profile) {
       updateProfileMutation.mutate(data);
     } else {
@@ -178,7 +188,9 @@ const StudentProfile: React.FC = () => {
     form.reset({
       fullName: user?.fullName || '',
       phoneNumber: profile?.phoneNumber || '',
+      specialty: profile?.specialty || '',
       bio: profile?.bio || '',
+      experience: profile?.experience || 0,
     });
   }, [profile, user, form]);
 
@@ -192,17 +204,7 @@ const StudentProfile: React.FC = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
         </svg>
       ),
-      href: '/dashboard/student',
-    },
-    {
-      id: 'tests',
-      title: 'Testlar',
-      icon: (
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-        </svg>
-      ),
-      href: '/student/tests',
+      href: '/dashboard/teacher',
     },
     {
       id: 'lessons',
@@ -212,16 +214,26 @@ const StudentProfile: React.FC = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
       ),
-      href: '/student/lessons',
+      href: '/teacher/lessons',
+    },
+    {
+      id: 'tests',
+      title: 'Testlar',
+      icon: (
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+      ),
+      href: '/teacher/tests'
     }
   ];
 
   if (isLoading) {
     return (
       <ResponsiveDashboard 
-        userRole="student" 
+        userRole="teacher" 
         sections={dashboardSections}
-        currentPage="O'quvchi Profil"
+        currentPage="O'qituvchi Profil"
       >
         <div className="flex items-center justify-center h-64">
           <div className="text-gray-600">Yuklanmoqda...</div>
@@ -232,9 +244,9 @@ const StudentProfile: React.FC = () => {
 
   return (
     <ResponsiveDashboard 
-      userRole="student" 
+      userRole="teacher" 
       sections={dashboardSections}
-      currentPage="O'quvchi Profil"
+      currentPage="O'qituvchi Profil"
     >
       <div>
         <div className="max-w-4xl mx-auto">
@@ -309,7 +321,7 @@ const StudentProfile: React.FC = () => {
                 )}
               </div>
               <p className="text-sm text-gray-500 text-center">
-                Rasm hajmi 10MB dan oshmasligi kerak. JPG, PNG formatlar qabul qilinadi.
+                Rasm hajmi 5MB dan oshmasligi kerak. JPG, PNG formatlar qabul qilinadi.
               </p>
             </div>
           </CardContent>
@@ -354,7 +366,36 @@ const StudentProfile: React.FC = () => {
                 </div>
               </div>
 
-
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="specialty">Mutaxassislik</Label>
+                  <Input
+                    id="specialty"
+                    {...form.register('specialty')}
+                    placeholder="Masalan: Matematika, Fizika, IT"
+                    maxLength={20}
+                  />
+                  {form.formState.errors.specialty && (
+                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.specialty.message}</p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">Ixtiyoriy. Maksimal 20 harf</p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="experience">Tajriba (yillarda)</Label>
+                  <Input
+                    id="experience"
+                    type="number"
+                    {...form.register('experience', { valueAsNumber: true })}
+                    placeholder="0"
+                    min="0"
+                  />
+                  {form.formState.errors.experience && (
+                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.experience.message}</p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">Ixtiyoriy</p>
+                </div>
+              </div>
 
               {/* Bio */}
               <div>
@@ -369,10 +410,8 @@ const StudentProfile: React.FC = () => {
                 {form.formState.errors.bio && (
                   <p className="text-red-500 text-sm mt-1">{form.formState.errors.bio.message}</p>
                 )}
-                <p className="text-sm text-gray-500 mt-1">Ixtiyoriy. Maksimal 200 harf</p>
+                <p className="text-sm text-gray-500 mt-1">Maksimal 200 harf</p>
               </div>
-
-
 
               {/* Submit Button */}
               <div className="flex gap-3">
@@ -392,4 +431,4 @@ const StudentProfile: React.FC = () => {
   );
 };
 
-export default StudentProfile;
+export default TeacherProfile;

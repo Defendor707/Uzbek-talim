@@ -837,6 +837,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+  // Profile image upload endpoints
+  app.post("/api/profile/student/image", authenticate, authorize(["student"]), uploadProfileImage, async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image uploaded" });
+      }
+
+      const imageUrl = `/uploads/profiles/${req.file.filename}`;
+      await storage.updateUserProfile(req.user.id, { profileImage: imageUrl });
+
+      res.json({ success: true, imageUrl });
+    } catch (error) {
+      console.error("Error uploading student profile image:", error);
+      res.status(500).json({ error: "Failed to upload profile image" });
+    }
+  });
+
+  app.post("/api/profile/teacher/image", authenticate, authorize(["teacher"]), uploadProfileImage, async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image uploaded" });
+      }
+
+      const imageUrl = `/uploads/profiles/${req.file.filename}`;
+      await storage.updateUserProfile(req.user.id, { profileImage: imageUrl });
+
+      res.json({ success: true, imageUrl });
+    } catch (error) {
+      console.error("Error uploading teacher profile image:", error);
+      res.status(500).json({ error: "Failed to upload profile image" });
+    }
+  });
+
+  app.post("/api/profile/parent/image", authenticate, authorize(["parent"]), uploadProfileImage, async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image uploaded" });
+      }
+
+      const imageUrl = `/uploads/profiles/${req.file.filename}`;
+      await storage.updateUserProfile(req.user.id, { profileImage: imageUrl });
+
+      res.json({ success: true, imageUrl });
+    } catch (error) {
+      console.error("Error uploading parent profile image:", error);
+      res.status(500).json({ error: "Failed to upload profile image" });
+    }
+  });
+
+  app.post("/api/profile/center/image", authenticate, authorize(["center"]), uploadProfileImage, async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image uploaded" });
+      }
+
+      const imageUrl = `/uploads/profiles/${req.file.filename}`;
+      await storage.updateUserProfile(req.user.id, { profileImage: imageUrl });
+
+      res.json({ success: true, imageUrl });
+    } catch (error) {
+      console.error("Error uploading center profile image:", error);
+      res.status(500).json({ error: "Failed to upload profile image" });
+    }
+  });
+
   // Error handling middleware
   app.use(globalErrorHandler);
 

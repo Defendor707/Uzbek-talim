@@ -88,6 +88,13 @@ app.use((req, res, next) => {
       log(`Database optimization failed: ${error}`, 'database');
     }
     
+      // Debug telegram token presence
+      if (!process.env.TELEGRAM_BOT_TOKEN) {
+        log('No TELEGRAM_BOT_TOKEN detected', 'telegram');
+      } else {
+        const t = process.env.TELEGRAM_BOT_TOKEN;
+        log(`TELEGRAM_BOT_TOKEN present (len=${t.length})`, 'telegram');
+      }
     // Start the Telegram bot
     try {
       await startTelegramBot();
