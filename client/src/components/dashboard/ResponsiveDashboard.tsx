@@ -285,12 +285,12 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 </div>
                 
                 <div className="flex items-center space-x-6">
-                  <Button variant="ghost" size="sm" className="p-3 h-10 w-10 rounded-lg hover:bg-white/20 text-white">
                   <Link href={`/${userRole}/notifications`}>
                     <Button variant="ghost" size="sm" className="p-3 h-10 w-10 rounded-lg hover:bg-white/20 text-white">
                       <Bell className="h-5 w-5" />
                     </Button>
                   </Link>
+                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="flex items-center space-x-3 text-white hover:bg-white/20">
                         <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
