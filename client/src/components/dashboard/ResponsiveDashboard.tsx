@@ -149,11 +149,11 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               
               <div className="flex items-center space-x-3">
                 <Button variant="ghost" size="sm" className="p-2 h-10 w-10 rounded-lg hover:bg-white/20 text-white">
-                  <Bell className="h-5 w-5" />
-                </Button>
-                
-                {/* Profil tugmasi */}
-                <DropdownMenu>
+                <Link href={`/${userRole}/notifications`}>
+                  <Button variant="ghost" size="sm" className="p-2 h-10 w-10 rounded-lg hover:bg-white/20 text-white">
+                    <Bell className="h-5 w-5" />
+                  </Button>
+                </Link>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="flex items-center space-x-2 p-2 text-white hover:bg-white/20">
                       <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
@@ -286,11 +286,11 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 
                 <div className="flex items-center space-x-6">
                   <Button variant="ghost" size="sm" className="p-3 h-10 w-10 rounded-lg hover:bg-white/20 text-white">
-                    <Bell className="h-5 w-5" />
-                  </Button>
-                  
-                  {/* Profil tugmasi */}
-                  <DropdownMenu>
+                  <Link href={`/${userRole}/notifications`}>
+                    <Button variant="ghost" size="sm" className="p-3 h-10 w-10 rounded-lg hover:bg-white/20 text-white">
+                      <Bell className="h-5 w-5" />
+                    </Button>
+                  </Link>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="flex items-center space-x-3 text-white hover:bg-white/20">
                         <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
