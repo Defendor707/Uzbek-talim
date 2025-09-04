@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import useAuth from '@/hooks/useAuth';
-import { Eye, EyeOff, ArrowLeft, Info, BookOpen, Users, GraduationCap, Building, Shield, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, ChevronLeft, ChevronRight, Play, BookOpen, Users, GraduationCap, Building, Shield, CheckCircle } from 'lucide-react';
 
 const loginSchema = z.object({
   username: z.string().min(3, 'Foydalanuvchi nomi kamida 3 ta belgidan iborat bo\'lishi kerak'),
@@ -24,6 +24,8 @@ interface MobileLoginPageProps {
 const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation }) => {
   const { login, isLoggingIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [showPresentation, setShowPresentation] = useState(false);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -39,6 +41,149 @@ const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation })
       password: values.password,
     });
   };
+
+  const presentationSlides = [
+    {
+      title: "O'zbek Talim",
+      subtitle: "Zamonaviy ta'lim platformasi",
+      description: "O'zbekiston ta'lim tizimi uchun innovatsion yechim",
+      icon: <GraduationCap className="w-16 h-16 text-blue-600" />,
+      color: "from-blue-500 to-blue-700"
+    },
+    {
+      title: "O'qituvchilar uchun",
+      subtitle: "Darslarni boshqaring",
+      description: "Testlar yarating, o'quvchilarni kuzating va natijalarni tahlil qiling",
+      icon: <BookOpen className="w-16 h-16 text-green-600" />,
+      color: "from-green-500 to-green-700"
+    },
+    {
+      title: "O'quvchilar uchun",
+      subtitle: "O'rganing va rivoqlaning",
+      description: "Darslarni ko'ring, testlarni bajaring va bilimingizni oshiring",
+      icon: <Users className="w-16 h-16 text-purple-600" />,
+      color: "from-purple-500 to-purple-700"
+    },
+    {
+      title: "Ota-onalar uchun",
+      subtitle: "Farzandingizni kuzating",
+      description: "Bolangizning o'qish jarayonini kuzatib boring va natijalarni ko'ring",
+      icon: <Building className="w-16 h-16 text-orange-600" />,
+      color: "from-orange-500 to-orange-700"
+    }
+  ];
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % presentationSlides.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + presentationSlides.length) % presentationSlides.length);
+  };
+
+  if (showPresentation) {
+    return (
+      <div className="gov-theme min-h-screen">
+        {/* Presentation Header */}
+        <div className="gov-header">
+          <div className="gov-header-content">
+            <div className="flex items-center justify-between py-4">
+              <Button
+                variant="ghost"
+                onClick={() => setShowPresentation(false)}
+                className="text-white hover:bg-white/20"
+              >
+                <ChevronLeft className="w-5 h-5 mr-2" />
+                Orqaga
+              </Button>
+              <div className="text-white">
+                <h1 className="text-xl font-bold">O'zbek Talim</h1>
+                <p className="text-sm text-white/80">Ta'lim platformasi</p>
+              </div>
+              <div className="w-20"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Presentation Content */}
+        <div className="gov-main">
+          <div className="gov-container">
+            <div className="max-w-4xl mx-auto">
+              <div className="gov-card gov-fade-in">
+                <div className="gov-card-content">
+                  <div className="text-center mb-8">
+                    <div className={`w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-r ${presentationSlides[currentSlide].color} flex items-center justify-center text-white`}>
+                      {presentationSlides[currentSlide].icon}
+                    </div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                      {presentationSlides[currentSlide].title}
+                    </h2>
+                    <h3 className="text-xl text-gray-600 mb-4">
+                      {presentationSlides[currentSlide].subtitle}
+                    </h3>
+                    <p className="text-lg text-gray-700 max-w-2xl mx-auto">
+                      {presentationSlides[currentSlide].description}
+                    </p>
+                  </div>
+
+                  {/* Slide Navigation */}
+                  <div className="flex items-center justify-center space-x-4 mb-8">
+                    <Button
+                      variant="outline"
+                      onClick={prevSlide}
+                      className="gov-btn gov-btn-secondary"
+                    >
+                      <ChevronLeft className="w-4 h-4 mr-2" />
+                      Oldingi
+                    </Button>
+                    
+                    <div className="flex space-x-2">
+                      {presentationSlides.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentSlide(index)}
+                          className={`w-3 h-3 rounded-full transition-colors ${
+                            index === currentSlide ? 'bg-blue-600' : 'bg-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      onClick={nextSlide}
+                      className="gov-btn gov-btn-secondary"
+                    >
+                      Keyingi
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="text-center">
+                    <Button
+                      onClick={() => setShowPresentation(false)}
+                      className="gov-btn gov-btn-primary mr-4"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Tizimga kirish
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowPresentation(false)}
+                      className="gov-btn gov-btn-secondary"
+                    >
+                      Orqaga qaytish
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="gov-theme min-h-screen">
@@ -67,6 +212,18 @@ const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation })
       <div className="gov-main">
         <div className="gov-container">
           <div className="max-w-md mx-auto">
+            {/* Presentation Button */}
+            <div className="text-center mb-6">
+              <Button
+                onClick={() => setShowPresentation(true)}
+                variant="outline"
+                className="gov-btn gov-btn-secondary"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Platforma haqida ma'lumot
+              </Button>
+            </div>
+
             <div className="gov-card gov-fade-in">
               <div className="gov-card-header">
                 <h2 className="gov-card-title">Tizimga kirish</h2>
@@ -179,64 +336,6 @@ const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation })
                       Parolni unutdingizmi?
                     </button>
                   </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Role Cards */}
-            <div className="mt-8 grid grid-cols-2 gap-4">
-              <div className="gov-card gov-fade-in">
-                <div className="gov-card-content text-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                    <GraduationCap className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">O'qituvchi</h3>
-                  <p className="text-xs text-gray-600">Darslar va testlar</p>
-                </div>
-              </div>
-              
-              <div className="gov-card gov-fade-in">
-                <div className="gov-card-content text-center">
-                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                    <BookOpen className="w-6 h-6 text-green-600" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">O'quvchi</h3>
-                  <p className="text-xs text-gray-600">O'qish va testlar</p>
-                </div>
-              </div>
-              
-              <div className="gov-card gov-fade-in">
-                <div className="gov-card-content text-center">
-                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                    <Users className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">Ota-ona</h3>
-                  <p className="text-xs text-gray-600">Bolalar kuzatish</p>
-                </div>
-              </div>
-              
-              <div className="gov-card gov-fade-in">
-                <div className="gov-card-content text-center">
-                  <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                    <Building className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">Markaz</h3>
-                  <p className="text-xs text-gray-600">Boshqarish</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Security Notice */}
-            <div className="mt-6 gov-card gov-fade-in">
-              <div className="gov-card-content">
-                <div className="flex items-start space-x-3">
-                  <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-1">Xavfsizlik</h4>
-                    <p className="text-xs text-gray-600">
-                      Barcha ma'lumotlaringiz xavfsiz saqlanadi va faqat sizga tegishli.
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
