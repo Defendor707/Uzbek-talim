@@ -143,23 +143,24 @@ const TeacherProfile: React.FC = () => {
   });
 
   // Handle image selection
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast({
-          title: "Xatolik",
-          description: "Rasm hajmi 5MB dan oshmasligi kerak",
-          variant: "destructive",
-        });
-        return;
-      }
-      
       setSelectedImage(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
       };
+      reader.readAsDataURL(file);
+      
+      // Avtomatik yuklash
+      try {
+        await uploadImageMutation.mutateAsync(file);
+      } catch (error) {
+        // Error handled in mutation
+      }
+    }
+  };
       reader.readAsDataURL(file);
     }
   };
@@ -294,31 +295,6 @@ const TeacherProfile: React.FC = () => {
                   Rasm tanlash
                 </Label>
                 
-                {selectedImage && (
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">{selectedImage.name}</span>
-                    <Button
-                      type="button"
-                      onClick={handleImageUpload}
-                      disabled={uploadImageMutation.isPending}
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      {uploadImageMutation.isPending ? 'Yuklanmoqda...' : 'Yuklash'}
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        setSelectedImage(null);
-                        setImagePreview(null);
-                      }}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Bekor qilish
-                    </Button>
-                  </div>
-                )}
               </div>
               <p className="text-sm text-gray-500 text-center">
                 Rasm hajmi 5MB dan oshmasligi kerak. JPG, PNG formatlar qabul qilinadi.

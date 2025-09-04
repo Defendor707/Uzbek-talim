@@ -7,7 +7,7 @@ import { Link, useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
 import { useMobile } from '@/hooks/use-mobile';
 import useAuth from '@/hooks/useAuth';
-import { ChevronLeft, ChevronRight, Menu, User, Settings, LogOut, Bell, Flag, Star, Home, BookOpen, Users, Building, BarChart3, MessageSquare, Calendar, FileText } from 'lucide-react';
+import { ChevronLeft, Menu, User, Settings, LogOut, Bell, Home, BookOpen, Users, Building, BarChart3, MessageSquare, Calendar, FileText } from 'lucide-react';
 
 interface DashboardSection {
   id: string;
@@ -59,6 +59,8 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const handleLogout = () => {
     setSidebarOpen(false);
     logout();
+    // Logout qilganda login sahifasiga o'tish
+    window.location.href = '/login';
   };
 
   // Mobile Layout
@@ -197,13 +199,32 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             </div>
             
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2 text-uzbek-gold">
-                <Flag className="w-5 h-5" />
-                <Star className="w-5 h-5" />
-              </div>
               <Button variant="ghost" size="sm" className="p-3 h-10 w-10 rounded-xl hover:bg-green-100">
                 <Bell className="h-5 w-5" />
               </Button>
+              
+              {/* Profil tugmasi */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2 p-2">
+                    <div className="w-8 h-8 rounded-full bg-uzbek-green flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link href={`/${userRole}/profile`} className="flex items-center">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Profil sozlamalari
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout} className="text-uzbek-red">
+                    <LogOut className="w-4 h-4 mr-2" />
+                      Chiqish
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -328,14 +349,11 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               </div>
               
               <div className="flex items-center space-x-6">
-                <div className="flex items-center space-x-3 text-uzbek-gold">
-                  <Flag className="w-6 h-6" />
-                  <Star className="w-6 h-6" />
-                </div>
                 <Button variant="ghost" size="sm" className="p-3 h-10 w-10 rounded-xl hover:bg-green-100">
                   <Bell className="h-5 w-5" />
                 </Button>
                 
+                {/* Profil tugmasi */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="flex items-center space-x-3">
@@ -349,7 +367,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                     <DropdownMenuItem asChild>
                       <Link href={`/${userRole}/profile`} className="flex items-center">
                         <Settings className="w-5 h-5 mr-3" />
-                        Profil
+                        Profil sozlamalari
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleLogout} className="text-uzbek-red">
