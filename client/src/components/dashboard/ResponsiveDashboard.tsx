@@ -196,31 +196,6 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           </div>
         </div>
 
-        {/* Mobile Bottom Navigation */}
-        <div className="gov-mobile-nav hidden">
-          <ul className="gov-mobile-nav-list hidden">
-            {sections.slice(0, 4).map((section) => (
-              <li key={section.id} className="gov-mobile-nav-item">
-                <Link href={section.href}>
-                  <div className={cn(
-                    "gov-mobile-nav-link",
-                    location === section.href ? "active" : ""
-                  )}>
-                    <div className="w-5 h-5">
-                      {section.icon}
-                    </div>
-                    <span>{section.title}</span>
-                    {section.badge && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[16px] text-center">
-                        {section.badge}
-                      </span>
-                    )}
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
       </div>
     );
   }
