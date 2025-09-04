@@ -1,0 +1,298 @@
+/* Role-based Theme Colors and Backgrounds */
+
+/* Teacher Theme - Blue/Professional */
+.teacher-theme {
+  --primary-color: #3b82f6;
+  --primary-light: #60a5fa;
+  --primary-dark: #1d4ed8;
+  --secondary-color: #10b981;
+  --accent-color: #f59e0b;
+  --background-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --card-gradient: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+}
+
+.teacher-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+.teacher-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.1);
+}
+
+/* Student Theme - Green/Energetic */
+.student-theme {
+  --primary-color: #10b981;
+  --primary-light: #34d399;
+  --primary-dark: #059669;
+  --secondary-color: #3b82f6;
+  --accent-color: #f59e0b;
+  --background-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --card-gradient: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%);
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+}
+
+.student-bg {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  min-height: 100vh;
+}
+
+.student-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%);
+  border: 1px solid rgba(16, 185, 129, 0.1);
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.1);
+}
+
+/* Parent Theme - Purple/Caring */
+.parent-theme {
+  --primary-color: #8b5cf6;
+  --primary-light: #a78bfa;
+  --primary-dark: #7c3aed;
+  --secondary-color: #ec4899;
+  --accent-color: #f59e0b;
+  --background-gradient: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  --card-gradient: linear-gradient(145deg, #ffffff 0%, #faf5ff 100%);
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+}
+
+.parent-bg {
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  min-height: 100vh;
+}
+
+.parent-card {
+  background: linear-gradient(145deg, #ffffff 0%, #faf5ff 100%);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.1);
+}
+
+/* Center Theme - Orange/Corporate */
+.center-theme {
+  --primary-color: #f59e0b;
+  --primary-light: #fbbf24;
+  --primary-dark: #d97706;
+  --secondary-color: #ef4444;
+  --accent-color: #8b5cf6;
+  --background-gradient: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  --card-gradient: linear-gradient(145deg, #ffffff 0%, #fffbeb 100%);
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+}
+
+.center-bg {
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  min-height: 100vh;
+}
+
+.center-card {
+  background: linear-gradient(145deg, #ffffff 0%, #fffbeb 100%);
+  border: 1px solid rgba(245, 158, 11, 0.1);
+  box-shadow: 0 10px 25px rgba(245, 158, 11, 0.1);
+}
+
+/* Enhanced Gradient Backgrounds */
+.gradient-ocean {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-forest {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.gradient-sunset {
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+}
+
+.gradient-fire {
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+}
+
+/* Glass Morphism Effects */
+.glass-card {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.glass-nav {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Enhanced Shadows */
+.shadow-role {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-role-lg {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Role-specific Button Styles */
+.btn-teacher {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-teacher:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+}
+
+.btn-student {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-student:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+}
+
+.btn-parent {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-parent:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);
+}
+
+.btn-center {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-center:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3);
+}
+
+/* Role-specific Text Colors */
+.text-teacher {
+  color: #3b82f6;
+}
+
+.text-student {
+  color: #10b981;
+}
+
+.text-parent {
+  color: #8b5cf6;
+}
+
+.text-center {
+  color: #f59e0b;
+}
+
+/* Enhanced Mobile Navigation */
+.mobile-nav-teacher {
+  background: rgba(59, 130, 246, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.mobile-nav-student {
+  background: rgba(16, 185, 129, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.mobile-nav-parent {
+  background: rgba(139, 92, 246, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.mobile-nav-center {
+  background: rgba(245, 158, 11, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+/* Role-specific Icons */
+.icon-teacher {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.icon-student {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.icon-parent {
+  color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.icon-center {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+/* Animated Backgrounds */
+.animated-bg {
+  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Floating Elements */
+.floating {
+  animation: floating 3s ease-in-out infinite;
+}
+
+@keyframes floating {
+  0% {
+    transform: translate(0, 0px);
+  }
+  50% {
+    transform: translate(0, -10px);
+  }
+  100% {
+    transform: translate(0, -0px);
+  }
+}
+
+/* Pulse Animation */
+.pulse-role {
+  animation: pulse-role 2s infinite;
+}
+
+@keyframes pulse-role {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Link, useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
@@ -60,10 +61,61 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     logout();
   };
 
+  // Get role-specific theme classes
+  const getRoleTheme = (role: string) => {
+    switch (role) {
+      case 'teacher': return 'teacher-bg';
+      case 'student': return 'student-bg';
+      case 'parent': return 'parent-bg';
+      case 'center': return 'center-bg';
+      default: return 'gradient-ocean';
+    }
+  };
+
+  const getRoleCardClass = (role: string) => {
+    switch (role) {
+      case 'teacher': return 'teacher-card';
+      case 'student': return 'student-card';
+      case 'parent': return 'parent-card';
+      case 'center': return 'center-card';
+      default: return 'mobile-card';
+    }
+  };
+
+  const getRoleNavClass = (role: string) => {
+    switch (role) {
+      case 'teacher': return 'mobile-nav-teacher';
+      case 'student': return 'mobile-nav-student';
+      case 'parent': return 'mobile-nav-parent';
+      case 'center': return 'mobile-nav-center';
+      default: return 'bg-white';
+    }
+  };
+
+  const getRoleIconClass = (role: string) => {
+    switch (role) {
+      case 'teacher': return 'icon-teacher';
+      case 'student': return 'icon-student';
+      case 'parent': return 'icon-parent';
+      case 'center': return 'icon-center';
+      default: return 'bg-gray-100 text-gray-600';
+    }
+  };
+
+  const getRoleTextClass = (role: string) => {
+    switch (role) {
+      case 'teacher': return 'text-teacher';
+      case 'student': return 'text-student';
+      case 'parent': return 'text-parent';
+      case 'center': return 'text-center';
+      default: return 'text-gray-600';
+    }
+  };
+
   // Mobile Layout
   if (isMobile) {
     return (
-      <div className="min-h-screen gradient-ocean pb-20">
+      <div className={`min-h-screen ${getRoleTheme(userRole)} pb-20`}>
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
           <div className="fixed inset-0 z-50">
@@ -84,7 +136,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">O'zbek Talim</h2>
-                    <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
+                    <p className={`text-xs ${getRoleTextClass(userRole)}`}>{getRoleTitle(userRole)}</p>
                   </div>
                 </div>
                 <Button
@@ -98,171 +150,155 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               </div>
 
               {/* Mobile Sidebar Navigation */}
-              <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
-                {sections.map((section) => {
-                  const isActive = location === section.href || location.startsWith(section.href + '/');
-                  return (
-                    <Link key={section.id} href={section.href} onClick={() => setSidebarOpen(false)}>
+              <div className="flex-1 overflow-y-auto py-4">
+                <nav className="space-y-1 px-3">
+                  {sections.map((section) => (
+                    <Link key={section.id} href={section.href}>
                       <div className={cn(
-                        "flex items-center px-4 py-3 space-x-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer group",
-                        isActive 
-                          ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm" 
-                          : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                        "flex items-center justify-between px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200",
+                        location === section.href
+                          ? `${getRoleIconClass(userRole)} text-white`
+                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                       )}>
-                        <span className={cn(
-                          "w-5 h-5 transition-colors flex-shrink-0",
-                          isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"
-                        )}>
-                          {section.icon}
-                        </span>
-                        <span className="flex-1 truncate">{section.title}</span>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-5 h-5">
+                            {section.icon}
+                          </div>
+                          <span>{section.title}</span>
+                        </div>
                         {section.badge && (
-                          <span className={cn(
-                            "px-2 py-1 text-xs rounded-full font-medium",
-                            isActive 
-                              ? "bg-blue-100 text-blue-700" 
-                              : "bg-gray-100 text-gray-600"
-                          )}>
+                          <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
                             {section.badge}
                           </span>
                         )}
                       </div>
                     </Link>
-                  );
-                })}
-              </nav>
-
-
-            </div>
-          </div>
-        )}
-        {/* Mobile Header */}
-        <header className="glass border-b border-white/20 px-4 py-3 sticky top-0 z-40 backdrop-blur-xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-
-                  setSidebarOpen(true);
-                }}
-                className="p-2 h-8 w-8 rounded-lg hover:bg-gray-100 mr-2"
-              >
-                <Menu className="h-4 w-4 text-gray-600" />
-              </Button>
-              <div className="w-8 h-8 rounded-lg overflow-hidden">
-                <img 
-                  src="/logo.jpg" 
-                  alt="O'zbek Talim Logo" 
-                  className="w-full h-full object-cover"
-                />
+                  ))}
+                </nav>
               </div>
-              <div>
-                <h1 className="text-lg font-bold text-gray-900">O'zbek Talim</h1>
-                <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
-              </div>
-            </div>
-            
-            {/* Notifications and Profile */}
-            <div className="flex items-center space-x-2">
-              {/* Notifications Button - Mobile Version */}
-              <Link href={`/${userRole}/notifications`}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "relative p-2 h-8 w-8",
-                    location === `/${userRole}/notifications`
-                      ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
-                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                  )}
-                >
-                  <Bell className="h-4 w-4" />
-                </Button>
-              </Link>
-              
-              {/* Profile Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-8 w-8 rounded-full p-0">
-                    {user?.profileImage ? (
-                      <img 
-                        src={user.profileImage} 
-                        alt="Profil surati" 
-                        className="w-8 h-8 rounded-full object-cover border border-gray-200"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-white" />
-                      </div>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-3 py-2 border-b">
-                    <p className="text-sm font-medium">{user?.username}</p>
-                    <p className="text-xs text-gray-500">{getRoleTitle(userRole)}</p>
+
+              {/* Mobile Sidebar Footer */}
+              <div className="p-4 border-t border-gray-200">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                    <User className="w-4 h-4 text-gray-600" />
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {user?.fullName || 'Foydalanuvchi'}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {user?.email || ''}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
                   <Link href={`/${userRole}/profile`}>
-                    <DropdownMenuItem>
-                      <User className="w-4 h-4 mr-2" />
+                    <div className="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                      <Settings className="w-4 h-4 mr-3" />
                       Profil
-                    </DropdownMenuItem>
+                    </div>
                   </Link>
-                  <DropdownMenuItem>
-                    <Settings className="w-4 h-4 mr-2" />
-                    Sozlamalar
-                  </DropdownMenuItem>
+                  
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-700 focus:bg-red-50">
-                        <LogOut className="w-4 h-4 mr-2" />
+                      <div className="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer">
+                        <LogOut className="w-4 h-4 mr-3" />
                         Chiqish
-                      </DropdownMenuItem>
+                      </div>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Chiqishni tasdiqlang</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Haqiqatan ham tizimdan chiqmoqchimisiz?
+                          Tizimdan chiqishni xohlaysizmi?
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-                        <AlertDialogAction onClick={logout} className="bg-red-600 hover:bg-red-700">
+                        <AlertDialogAction onClick={handleLogout}>
                           Chiqish
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </div>
+              </div>
             </div>
           </div>
-        </header>
+        )}
+
+        {/* Mobile Header */}
+        <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-200">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 h-8 w-8 rounded-lg hover:bg-gray-100"
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900">{currentPage}</h1>
+                <p className="text-xs text-gray-500">{getWelcomeMessage(userRole)}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button variant="ghost" size="sm" className="p-2 h-8 w-8 rounded-lg hover:bg-gray-100">
+                <Bell className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
 
         {/* Mobile Content */}
-        <main className="px-4 py-6 transition-all duration-300 ease-out">
-          <div className="max-w-lg mx-auto">
+        <div className="p-4 space-y-4">
+          <div className={`${getRoleCardClass(userRole)} rounded-2xl p-6 shadow-role`}>
             {children}
           </div>
-        </main>
+        </div>
 
-
+        {/* Mobile Bottom Navigation */}
+        <div className={`fixed bottom-0 left-0 right-0 ${getRoleNavClass(userRole)} border-t border-white/20`}>
+          <div className="grid grid-cols-4 gap-1 p-2">
+            {sections.slice(0, 4).map((section) => (
+              <Link key={section.id} href={section.href}>
+                <div className={cn(
+                  "flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all duration-200",
+                  location === section.href
+                    ? "bg-white/20 text-white"
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                )}>
+                  <div className="w-5 h-5 mb-1">
+                    {section.icon}
+                  </div>
+                  <span className="text-xs font-medium truncate">{section.title}</span>
+                  {section.badge && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[16px] text-center">
+                      {section.badge}
+                    </span>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   // Desktop Layout
   return (
-    <div className="flex h-screen professional-bg">
-      {/* Desktop Sidebar */}
-      {sidebarOpen && (
-        <div className="w-64 glass-modern border-r border-gray-200/50 flex flex-col transition-all duration-300 ease-in-out shadow-lg">
-          {/* Sidebar Header */}
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+    <div className={`min-h-screen ${getRoleTheme(userRole)}`}>
+      <div className="flex">
+        {/* Desktop Sidebar */}
+        <div className="hidden md:flex md:w-64 md:flex-col">
+          <div className="flex flex-col flex-grow pt-5 overflow-y-auto glass-nav">
+            <div className="flex items-center flex-shrink-0 px-4">
               <div className="w-8 h-8 rounded-lg overflow-hidden">
                 <img 
                   src="/logo.jpg" 
@@ -270,192 +306,138 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">O'zbek Talim</h2>
-                <p className="text-xs text-gray-600">{getRoleTitle(userRole)}</p>
+              <div className="ml-3">
+                <h2 className="text-lg font-bold text-white">O'zbek Talim</h2>
+                <p className="text-xs text-white/80">{getRoleTitle(userRole)}</p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(false)}
-              className="p-2 h-8 w-8 rounded-lg hover:bg-gray-100"
-              title="Sidebar yopish"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* User Info with Dropdown */}
-          <div className="p-4 border-b border-gray-200">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <div className="flex items-center space-x-3 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors">
-                  {user?.profileImage ? (
-                    <img 
-                      src={user.profileImage} 
-                      alt="Profil surati" 
-                      className="w-8 h-8 rounded-full object-cover border border-gray-200 flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User className="w-4 h-4 text-gray-600" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {user?.fullName || user?.username}
-                    </p>
-                    <p className="text-xs text-gray-500">Faol foydalanuvchi</p>
-                  </div>
-                </div>
-              </DropdownMenuTrigger>
-            <DropdownMenuContent side="right" align="start" className="w-56">
-              <div className="px-3 py-2 border-b">
-                <p className="text-sm font-medium">{user?.fullName || user?.username}</p>
-                <p className="text-xs text-gray-500">{user?.email}</p>
-              </div>
-              <DropdownMenuItem asChild>
-                <Link href={`/${userRole}/profile`}>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profil</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={`/${userRole}/settings`}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Sozlamalar</span>
-                </Link>
-              </DropdownMenuItem>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <LogOut className="mr-2 h-4 w-4 text-red-600" />
-                    <span className="text-red-600">Chiqish</span>
-                  </DropdownMenuItem>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Tizimdan chiqish</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Haqiqatan ham tizimdan chiqishni xohlaysizmi? Barcha ochilgan sahifalar yopiladi.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700">
-                      Ha, chiqish
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Desktop Navigation */}
-          <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
-            {sections.map((section) => {
-              const isActive = location === section.href || location.startsWith(section.href + '/');
-              return (
-                <Link key={section.id} href={section.href}>
-                  <div className={cn(
-                    "flex items-center px-4 py-3 space-x-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer group",
-                    isActive 
-                      ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm" 
-                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                  )}>
-                    <span className={cn(
-                      "w-5 h-5 transition-colors flex-shrink-0",
-                      isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"
+            
+            <div className="mt-8 flex-grow flex flex-col">
+              <nav className="flex-1 px-2 space-y-1">
+                {sections.map((section) => (
+                  <Link key={section.id} href={section.href}>
+                    <div className={cn(
+                      "group flex items-center justify-between px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200",
+                      location === section.href
+                        ? "bg-white/20 text-white"
+                        : "text-white/80 hover:bg-white/10 hover:text-white"
                     )}>
-                      {section.icon}
-                    </span>
-                    <span className="flex-1 truncate">{section.title}</span>
-                    {section.badge && (
-                      <span className={cn(
-                        "px-2 py-1 text-xs rounded-full font-medium",
-                        isActive 
-                          ? "bg-blue-100 text-blue-700" 
-                          : "bg-gray-100 text-gray-600"
-                      )}>
-                        {section.badge}
-                      </span>
-                    )}
+                      <div className="flex items-center space-x-3">
+                        <div className="w-5 h-5">
+                          {section.icon}
+                        </div>
+                        <span>{section.title}</span>
+                      </div>
+                      {section.badge && (
+                        <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                          {section.badge}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            {/* Desktop Sidebar Footer */}
+            <div className="flex-shrink-0 p-4 border-t border-white/20">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">
+                    {user?.fullName || 'Foydalanuvchi'}
+                  </p>
+                  <p className="text-xs text-white/70 truncate">
+                    {user?.email || ''}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <Link href={`/${userRole}/profile`}>
+                  <div className="flex items-center px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors">
+                    <Settings className="w-4 h-4 mr-3" />
+                    Profil
                   </div>
                 </Link>
-              );
-            })}
-          </nav>
-
-          {/* Footer */}
-          <div className="px-4 pb-4">
-            <div className="text-xs text-gray-500 text-center">
-              O'zbek Talim v1.0
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <div className="flex items-center px-3 py-2 text-sm text-red-300 hover:bg-red-500/20 rounded-lg transition-colors cursor-pointer">
+                      <LogOut className="w-4 h-4 mr-3" />
+                      Chiqish
+                    </div>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Chiqishni tasdiqlang</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tizimdan chiqishni xohlaysizmi?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleLogout}>
+                        Chiqish
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              {!sidebarOpen && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-
-                    setSidebarOpen(true);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
-                  title="Sidebar ochish"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-              )}
-              {!sidebarOpen && (
-                <div className="w-8 h-8 rounded-lg overflow-hidden mr-3">
-                  <img 
-                    src="/logo.jpg" 
-                    alt="O'zbek Talim Logo" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
+        {/* Desktop Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Desktop Header */}
+          <div className="bg-white/80 backdrop-blur-md border-b border-gray-200">
+            <div className="flex items-center justify-between px-6 py-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{currentPage}</h1>
-                <p className="text-gray-600">{getWelcomeMessage(userRole)}</p>
+                <p className="text-sm text-gray-600">{getWelcomeMessage(userRole)}</p>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <Button variant="ghost" size="sm" className="p-2 h-8 w-8 rounded-lg hover:bg-gray-100">
+                  <Bell className="h-4 w-4" />
+                </Button>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center space-x-2">
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                        <User className="w-4 h-4 text-gray-600" />
+                      </div>
+                      <span className="hidden sm:block">{user?.fullName || 'Foydalanuvchi'}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem asChild>
+                      <Link href={`/${userRole}/profile`} className="flex items-center">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Profil
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Chiqish
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link href={`/${userRole}/notifications`}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "relative p-2",
-                    location === `/${userRole}/notifications`
-                      ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
-                      : "text-gray-500 hover:text-gray-700"
-                  )}
-                >
-                  <Bell className="h-5 w-5" />
-                </Button>
-              </Link>
+          </div>
+
+          {/* Desktop Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className={`${getRoleCardClass(userRole)} rounded-2xl p-8 shadow-role-lg`}>
+              {children}
             </div>
           </div>
-        </header>
-
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6 transition-all duration-300 ease-out">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
-        </main>
+        </div>
       </div>
     </div>
   );

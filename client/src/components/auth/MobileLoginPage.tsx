@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import useAuth from '@/hooks/useAuth';
-import { Eye, EyeOff, ArrowLeft, Info } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Info, BookOpen, Users, GraduationCap, Building } from 'lucide-react';
 
 const loginSchema = z.object({
   username: z.string().min(3, 'Foydalanuvchi nomi kamida 3 ta belgidan iborat bo\'lishi kerak'),
@@ -41,55 +41,63 @@ const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation })
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
+    <div className="min-h-screen animated-bg flex flex-col">
+      {/* Floating Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-20 h-20 bg-white/10 rounded-full floating"></div>
+        <div className="absolute top-40 right-16 w-16 h-16 bg-white/10 rounded-full floating" style={{animationDelay: '1s'}}></div>
+        <div className="absolute bottom-32 left-20 w-12 h-12 bg-white/10 rounded-full floating" style={{animationDelay: '2s'}}></div>
+        <div className="absolute bottom-20 right-10 w-24 h-24 bg-white/10 rounded-full floating" style={{animationDelay: '0.5s'}}></div>
+      </div>
+
       {/* Header with Logo */}
-      <div className="flex-shrink-0 bg-white shadow-sm border-b border-gray-100">
+      <div className="flex-shrink-0 glass-nav">
         <div className="container mx-auto px-4 py-6">
           <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 overflow-hidden shadow-lg">
+            <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-4 overflow-hidden shadow-role-lg floating">
               <img 
                 src="/logo.jpg" 
                 alt="O'zbek Talim Logo" 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-3xl"
               />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">O'zbek Talim</h1>
-            <p className="text-sm text-gray-600">Zamonaviy ta'lim platformasi</p>
+            <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">O'zbek Talim</h1>
+            <p className="text-white/90 text-lg">Zamonaviy ta'lim platformasi</p>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center p-4 pb-8">
+      <div className="flex-1 flex items-center justify-center p-4 pb-8 relative z-10">
         <div className="w-full max-w-sm">
-          <Card className="bg-white shadow-xl border-0 rounded-3xl overflow-hidden">
-            <div className="p-6">
+          <Card className="glass-card rounded-3xl overflow-hidden shadow-role-lg">
+            <div className="p-8">
               {/* Welcome Section */}
-              <div className="text-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">
                   Xush kelibsiz
                 </h2>
-                <p className="text-sm text-gray-600">
+                <p className="text-gray-600">
                   Tizimga kirish uchun ma'lumotlaringizni kiriting
                 </p>
               </div>
 
               {/* Login Form */}
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <FormField
                     control={form.control}
                     name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium text-gray-700">
+                        <FormLabel className="text-sm font-semibold text-gray-700">
                           Foydalanuvchi nomi
                         </FormLabel>
                         <FormControl>
                           <Input 
                             placeholder="foydalanuvchi_nomi" 
                             {...field} 
-                            className="h-12 px-4 text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all duration-200"
+                            className="h-14 px-4 text-base border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all duration-300 shadow-sm"
                           />
                         </FormControl>
                         <FormMessage className="text-xs" />
@@ -102,35 +110,23 @@ const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation })
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <div className="flex justify-between items-center mb-2">
-                          <FormLabel className="text-sm font-medium text-gray-700">
-                            Parol
-                          </FormLabel>
-                          <Link 
-                            href="/forgot-password" 
-                            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                          >
-                            Parolingizni unutdingizmi?
-                          </Link>
-                        </div>
+                        <FormLabel className="text-sm font-semibold text-gray-700">
+                          Parol
+                        </FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input 
-                              type={showPassword ? "text" : "password"}
+                              type={showPassword ? 'text' : 'password'}
                               placeholder="Parolingizni kiriting" 
                               {...field} 
-                              className="h-12 px-4 pr-12 text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all duration-200"
+                              className="h-14 px-4 pr-12 text-base border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-all duration-300 shadow-sm"
                             />
                             <button
                               type="button"
                               onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                             >
-                              {showPassword ? (
-                                <EyeOff className="w-5 h-5" />
-                              ) : (
-                                <Eye className="w-5 h-5" />
-                              )}
+                              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                             </button>
                           </div>
                         </FormControl>
@@ -141,52 +137,84 @@ const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation })
 
                   <Button 
                     type="submit" 
-                    className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
                     disabled={isLoggingIn}
+                    className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:transform-none"
                   >
-                    {isLoggingIn ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Tekshirilmoqda...</span>
-                      </div>
-                    ) : (
-                      'Tizimga kirish'
-                    )}
+                    {isLoggingIn ? 'Kiring...' : 'Tizimga kirish'}
                   </Button>
                 </form>
               </Form>
 
+              {/* Divider */}
+              <div className="my-6">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-white text-gray-500">yoki</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Register Link */}
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-600 mb-3">
-                  Hisobingiz yo'qmi?
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-4">
+                  Hali ro'yxatdan o'tmaganmisiz?
                 </p>
-                <Link 
-                  href="/register" 
-                  className="inline-flex items-center justify-center w-full h-12 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-xl transition-all duration-200"
-                >
-                  Ro'yxatdan o'tish
+                <Link href="/register">
+                  <Button 
+                    variant="outline" 
+                    className="w-full h-12 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold rounded-2xl transition-all duration-300"
+                  >
+                    Ro'yxatdan o'tish
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Forgot Password */}
+              <div className="text-center mt-4">
+                <Link href="/forgot-password">
+                  <button className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                    Parolni unutdingizmi?
+                  </button>
                 </Link>
               </div>
             </div>
           </Card>
 
-          {/* Info and Presentation Link */}
-          <div className="mt-6 space-y-3">
-            {onShowPresentation && (
-              <button
-                onClick={onShowPresentation}
-                className="w-full flex items-center justify-center space-x-2 text-blue-600 hover:text-blue-700 font-medium py-3 rounded-xl hover:bg-white hover:bg-opacity-50 transition-all duration-200"
-              >
-                <Info className="w-4 h-4" />
-                <span className="text-sm">Platformani tanishtirishni ko'rish</span>
-              </button>
-            )}
+          {/* Role Cards */}
+          <div className="mt-8 grid grid-cols-2 gap-4">
+            <div className="glass-card rounded-2xl p-4 text-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <GraduationCap className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">O'qituvchi</h3>
+              <p className="text-xs text-gray-600">Darslar va testlar</p>
+            </div>
             
-            <div className="text-center">
-              <p className="text-xs text-gray-500">
-                © 2025 O'zbek Talim. Barcha huquqlar himoyalangan.
-              </p>
+            <div className="glass-card rounded-2xl p-4 text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <BookOpen className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">O'quvchi</h3>
+              <p className="text-xs text-gray-600">O'qish va testlar</p>
+            </div>
+            
+            <div className="glass-card rounded-2xl p-4 text-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <Users className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Ota-ona</h3>
+              <p className="text-xs text-gray-600">Bolalar kuzatish</p>
+            </div>
+            
+            <div className="glass-card rounded-2xl p-4 text-center">
+              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <Building className="w-6 h-6 text-orange-600" />
+              </div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Markaz</h3>
+              <p className="text-xs text-gray-600">Boshqarish</p>
             </div>
           </div>
         </div>
