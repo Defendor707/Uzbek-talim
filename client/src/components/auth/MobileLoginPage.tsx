@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import useAuth from '@/hooks/useAuth';
-import { Eye, EyeOff, ChevronLeft, ChevronRight, Play, BookOpen, Users, GraduationCap, Building, Shield, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, ChevronLeft, ChevronRight, Play, BookOpen, Users, GraduationCap, Building, Shield, CheckCircle, X } from 'lucide-react';
 
 const loginSchema = z.object({
   username: z.string().min(3, 'Foydalanuvchi nomi kamida 3 ta belgidan iborat bo\'lishi kerak'),
@@ -26,6 +26,10 @@ const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation })
   const [showPassword, setShowPassword] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showPresentation, setShowPresentation] = useState(false);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -46,32 +50,76 @@ const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation })
     {
       title: "O'zbek Talim",
       subtitle: "Zamonaviy ta'lim platformasi",
-      description: "O'zbekiston ta'lim tizimi uchun innovatsion yechim",
-      icon: <GraduationCap className="w-16 h-16 text-blue-600" />,
+      description: "O'zbekiston ta'lim tizimi uchun innovatsion yechim. Barcha o'quv jarayonlarini boshqaring va natijalarni kuzating.",
+      icon: <GraduationCap className="w-20 h-20 text-white" />,
       color: "from-blue-500 to-blue-700"
     },
     {
       title: "O'qituvchilar uchun",
       subtitle: "Darslarni boshqaring",
-      description: "Testlar yarating, o'quvchilarni kuzating va natijalarni tahlil qiling",
-      icon: <BookOpen className="w-16 h-16 text-green-600" />,
+      description: "Testlar yarating, o'quvchilarni kuzating va natijalarni tahlil qiling. Darslaringizni onlayn boshqaring.",
+      icon: <BookOpen className="w-20 h-20 text-white" />,
       color: "from-green-500 to-green-700"
     },
     {
       title: "O'quvchilar uchun",
       subtitle: "O'rganing va rivoqlaning",
-      description: "Darslarni ko'ring, testlarni bajaring va bilimingizni oshiring",
-      icon: <Users className="w-16 h-16 text-purple-600" />,
+      description: "Darslarni ko'ring, testlarni bajaring va bilimingizni oshiring. O'z rivojlanishingizni kuzating.",
+      icon: <Users className="w-20 h-20 text-white" />,
       color: "from-purple-500 to-purple-700"
     },
     {
       title: "Ota-onalar uchun",
       subtitle: "Farzandingizni kuzating",
-      description: "Bolangizning o'qish jarayonini kuzatib boring va natijalarni ko'ring",
-      icon: <Building className="w-16 h-16 text-orange-600" />,
+      description: "Bolangizning o'qish jarayonini kuzatib boring va natijalarni ko'ring. Farzandingizning rivojlanishini kuzating.",
+      icon: <Building className="w-20 h-20 text-white" />,
       color: "from-orange-500 to-orange-700"
     }
   ];
+
+  // Avtomatik slide o'tishi
+  useEffect(() => {
+    if (showPresentation && isAutoPlaying) {
+      intervalRef.current = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % presentationSlides.length);
+      }, 4000); // 4 soniyada bir marta
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [showPresentation, isAutoPlaying, presentationSlides.length]);
+
+  // Touch events
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      nextSlide();
+    }
+    if (isRightSwipe) {
+      prevSlide();
+    }
+  };
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % presentationSlides.length);
@@ -79,6 +127,10 @@ const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation })
 
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + presentationSlides.length) % presentationSlides.length);
+  };
+
+  const toggleAutoPlay = () => {
+    setIsAutoPlaying(!isAutoPlaying);
   };
 
   if (showPresentation) {
@@ -100,7 +152,17 @@ const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation })
                 <h1 className="text-xl font-bold">O'zbek Talim</h1>
                 <p className="text-sm text-white/80">Ta'lim platformasi</p>
               </div>
-              <div className="w-20"></div>
+              <Button
+                variant="ghost"
+                onClick={toggleAutoPlay}
+                className="text-white hover:bg-white/20"
+              >
+                {isAutoPlaying ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Play className="w-5 h-5" />
+                )}
+              </Button>
             </div>
           </div>
         </div>
@@ -109,21 +171,34 @@ const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation })
         <div className="gov-main">
           <div className="gov-container">
             <div className="max-w-4xl mx-auto">
-              <div className="gov-card gov-fade-in">
+              <div 
+                className="gov-card gov-fade-in relative overflow-hidden"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              >
                 <div className="gov-card-content">
                   <div className="text-center mb-8">
-                    <div className={`w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-r ${presentationSlides[currentSlide].color} flex items-center justify-center text-white`}>
+                    <div className={`w-40 h-40 mx-auto mb-8 rounded-full bg-gradient-to-r ${presentationSlides[currentSlide].color} flex items-center justify-center text-white shadow-2xl`}>
                       {presentationSlides[currentSlide].icon}
                     </div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                    <h2 className="text-4xl font-bold text-gray-900 mb-4">
                       {presentationSlides[currentSlide].title}
                     </h2>
-                    <h3 className="text-xl text-gray-600 mb-4">
+                    <h3 className="text-2xl text-gray-600 mb-6">
                       {presentationSlides[currentSlide].subtitle}
                     </h3>
-                    <p className="text-lg text-gray-700 max-w-2xl mx-auto">
+                    <p className="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed">
                       {presentationSlides[currentSlide].description}
                     </p>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="w-full bg-gray-200 rounded-full h-2 mb-8">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${((currentSlide + 1) / presentationSlides.length) * 100}%` }}
+                    ></div>
                   </div>
 
                   {/* Slide Navigation */}
@@ -137,13 +212,13 @@ const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation })
                       Oldingi
                     </Button>
                     
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-3">
                       {presentationSlides.map((_, index) => (
                         <button
                           key={index}
                           onClick={() => setCurrentSlide(index)}
-                          className={`w-3 h-3 rounded-full transition-colors ${
-                            index === currentSlide ? 'bg-blue-600' : 'bg-gray-300'
+                          className={`w-4 h-4 rounded-full transition-all duration-300 ${
+                            index === currentSlide ? 'bg-blue-600 scale-125' : 'bg-gray-300 hover:bg-gray-400'
                           }`}
                         />
                       ))}
@@ -157,6 +232,14 @@ const MobileLoginPage: React.FC<MobileLoginPageProps> = ({ onShowPresentation })
                       Keyingi
                       <ChevronRight className="w-4 h-4 ml-2" />
                     </Button>
+                  </div>
+
+                  {/* Auto Play Indicator */}
+                  <div className="text-center mb-6">
+                    <div className="inline-flex items-center space-x-2 text-sm text-gray-600">
+                      <div className={`w-2 h-2 rounded-full ${isAutoPlaying ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      <span>{isAutoPlaying ? 'Avtomatik o\'tish yoqilgan' : 'Avtomatik o\'tish o\'chirilgan'}</span>
+                    </div>
                   </div>
 
                   {/* Action Buttons */}
