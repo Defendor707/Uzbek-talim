@@ -34,34 +34,23 @@ const CenterProfile: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Handle image selection
-const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "Xatolik",
+          description: "Rasm hajmi 5MB dan oshmasligi kerak",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       setSelectedImage(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
       };
-      reader.readAsDataURL(file);
-      
-      // Avtomatik yuklash
-      try {
-        await uploadImageMutation.mutateAsync(file);
-      } catch (error) {
-        // Error handled in mutation
-      }
-    }
-  };
-      reader.readAsDataURL(file);
-      
-      // Avtomatik yuklash
-      try {
-        await uploadImageMutation.mutateAsync(file);
-      } catch (error) {
-        // Error handled in mutation
-      }
-    }
-  };
       reader.readAsDataURL(file);
     }
   };
@@ -354,6 +343,16 @@ const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
                         <Upload className="w-4 h-4" />
                         Rasm tanlash
                       </label>
+                      {selectedImage && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleImageUpload}
+                          disabled={uploadImageMutation.isPending}
+                        >
+                          {uploadImageMutation.isPending ? 'Yuklanmoqda...' : 'Rasm yuklash'}
+                        </Button>
+                      )}
                     </div>
                   </div>
                   <p className="text-sm text-gray-500 text-center">
