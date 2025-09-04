@@ -186,7 +186,7 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </div>
 
         {/* Mobile Content */}
-        <div className="gov-main pb-20">
+        <div className="gov-main">
           <div className="gov-container">
             <div className="gov-card gov-fade-in">
               <div className="gov-card-content">
@@ -197,8 +197,8 @@ const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </div>
 
         {/* Mobile Bottom Navigation */}
-        <div className="gov-mobile-nav">
-          <ul className="gov-mobile-nav-list">
+        <div className="gov-mobile-nav hidden">
+          <ul className="gov-mobile-nav-list hidden">
             {sections.slice(0, 4).map((section) => (
               <li key={section.id} className="gov-mobile-nav-item">
                 <Link href={section.href}>
