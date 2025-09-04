@@ -53,6 +53,16 @@ const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     }
   };
       reader.readAsDataURL(file);
+      
+      // Avtomatik yuklash
+      try {
+        await uploadImageMutation.mutateAsync(file);
+      } catch (error) {
+        // Error handled in mutation
+      }
+    }
+  };
+      reader.readAsDataURL(file);
     }
   };
 
