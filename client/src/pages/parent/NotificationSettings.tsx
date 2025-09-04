@@ -105,7 +105,6 @@ const NotificationSettings: React.FC = () => {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/parent/notification-settings'] });
     },
-    },
     onError: (error: any) => {
       toast({
         title: "Xatolik",
