@@ -11,7 +11,7 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { generalLimiter, authLimiter, uploadLimiter, testLimiter } from "./middleware/rateLimiter";
 import RateLimiter from "./middleware/rateLimiter";
-import { testsCache, lessonsCache, profileCache, statisticsCache, invalidateTestsCache, invalidateLessonsCache, invalidateUserCache } from "./middleware/cache";
+import { testsCache, lessonsCache, profileCache, statisticsCache, invalidateTestsCache, invalidateLessonsCache, invalidateUserCache, invalidateProfileCache } from "./middleware/cache";
 import { globalErrorHandler, notFoundHandler, requestLogger, asyncHandler } from "./middleware/errorHandler";
 import autoSaveMiddleware from "./middleware/autoSave";
 import * as jwt from "jsonwebtoken";
@@ -382,6 +382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profileData = req.body;
       const updatedProfile = await storage.updateUserProfile(req.user!.userId, profileData);
       invalidateUserCache(req.user!.userId);
+      invalidateProfileCache(req.user!.userId);
       res.json(updatedProfile);
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -504,9 +505,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/teacher/profile", authenticate, authorize(['teacher']), async (req, res) => {
     try {
-      const profileData = schema.insertTeacherProfileSchema.parse(req.body);
+      const profileData = schema.insertTeacherProfileSchema.omit({ userId: true, createdAt: true, updatedAt: true }).parse(req.body);
       const updatedProfile = await storage.updateTeacherProfile(req.user!.userId, profileData);
       invalidateUserCache(req.user!.userId);
+      invalidateProfileCache(req.user!.userId);
       res.json(updatedProfile);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -529,6 +531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.updateTeacherProfileImage(req.user!.userId, filename);
       invalidateUserCache(req.user!.userId);
+      invalidateProfileCache(req.user!.userId);
       res.json({ filename });
     } catch (error) {
       console.error("Error uploading teacher profile image:", error);
@@ -549,9 +552,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/student/profile", authenticate, authorize(['student']), async (req, res) => {
     try {
-      const profileData = schema.insertStudentProfileSchema.parse(req.body);
+      const profileData = schema.insertStudentProfileSchema
+        .omit({ userId: true })
+        .parse(req.body);
       const updatedProfile = await storage.updateStudentProfile(req.user!.userId, profileData);
       invalidateUserCache(req.user!.userId);
+      invalidateProfileCache(req.user!.userId);
       res.json(updatedProfile);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -574,6 +580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.updateStudentProfileImage(req.user!.userId, filename);
       invalidateUserCache(req.user!.userId);
+      invalidateProfileCache(req.user!.userId);
       res.json({ filename });
     } catch (error) {
       console.error("Error uploading student profile image:", error);
@@ -597,6 +604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profileData = req.body;
       const updatedProfile = await storage.updateParentProfile(req.user!.userId, profileData);
       invalidateUserCache(req.user!.userId);
+      invalidateProfileCache(req.user!.userId);
       res.json(updatedProfile);
     } catch (error) {
       console.error("Error updating parent profile:", error);
@@ -675,9 +683,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/center/profile", authenticate, authorize(['center']), async (req, res) => {
     try {
-      const profileData = schema.insertCenterProfileSchema.parse(req.body);
+      const profileData = schema.insertCenterProfileSchema.omit({ userId: true, createdAt: true, updatedAt: true }).parse(req.body);
       const updatedProfile = await storage.updateCenterProfile(req.user!.userId, profileData);
       invalidateUserCache(req.user!.userId);
+      invalidateProfileCache(req.user!.userId);
       res.json(updatedProfile);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -700,6 +709,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.updateCenterProfileImage(req.user!.userId, filename);
       invalidateUserCache(req.user!.userId);
+      invalidateProfileCache(req.user!.userId);
       res.json({ filename });
     } catch (error) {
       console.error("Error uploading center profile image:", error);

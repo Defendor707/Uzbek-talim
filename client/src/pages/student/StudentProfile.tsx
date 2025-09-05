@@ -37,7 +37,7 @@ const StudentProfile: React.FC = () => {
 
   // Fetch student profile
   const { data: profile, isLoading } = useQuery<any>({
-    queryKey: ['/api/profile/student'],
+    queryKey: ['/api/student/profile'],
     retry: false,
   });
 
@@ -53,9 +53,9 @@ const StudentProfile: React.FC = () => {
   // Create profile mutation
   const createProfileMutation = useMutation({
     mutationFn: (data: StudentProfileFormData) => 
-      apiRequest('POST', '/api/profile/student', data),
+      apiRequest('POST', '/api/student/profile', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profile/student'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/student/profile'] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] }); // Refresh user data
       toast({
         title: 'Muvaffaqiyat',
@@ -74,9 +74,9 @@ const StudentProfile: React.FC = () => {
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: (data: StudentProfileFormData) => 
-      apiRequest('PUT', '/api/profile/student', data),
+      apiRequest('PUT', '/api/student/profile', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profile/student'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/student/profile'] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] }); // Refresh user data
       toast({
         title: 'Muvaffaqiyat',
@@ -114,7 +114,7 @@ const StudentProfile: React.FC = () => {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profile/student'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/student/profile'] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       toast({
         title: 'Muvaffaqiyat',

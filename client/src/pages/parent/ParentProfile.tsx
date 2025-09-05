@@ -29,7 +29,7 @@ const ParentProfile: React.FC = () => {
 
   // Fetch parent profile
   const { data: profile, isLoading } = useQuery<any>({
-    queryKey: ['/api/profile/parent'],
+    queryKey: ['/api/parent/profile'],
     retry: false,
   });
 
@@ -44,9 +44,9 @@ const ParentProfile: React.FC = () => {
   // Create profile mutation
   const createProfileMutation = useMutation({
     mutationFn: (data: ParentProfileFormData) => 
-      apiRequest('POST', '/api/profile/parent', data),
+      apiRequest('POST', '/api/parent/profile', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profile/parent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/parent/profile'] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] }); // Refresh user data
       toast({
         title: 'Muvaffaqiyat',
@@ -65,9 +65,9 @@ const ParentProfile: React.FC = () => {
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: (data: ParentProfileFormData) => 
-      apiRequest('PUT', '/api/profile/parent', data),
+      apiRequest('PUT', '/api/parent/profile', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profile/parent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/parent/profile'] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] }); // Refresh user data
       toast({
         title: 'Muvaffaqiyat',
